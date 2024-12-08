@@ -177,9 +177,43 @@ class Lexer:
             elif self.current_char == ')':
                 tokens.append(Token(TT_CLPAR))
                 self.advance()
+
+                
             elif self.current_char in ALPHA:
                 ident_str = ''
                 ident_count = 0
+                pos_start = self.pos.copy()
+
+                if self.current_char == "c":
+                    ident_str += self.current_char
+                    ident_count+=1
+                    self.advance()
+                    if self.current_char == "h":
+                        ident_str += self.current_char
+                        ident_count+=1
+                        self.advance()
+                        if self.current_char == "u":
+                            ident_str += self.current_char
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char == "n":
+                                ident_str += self.current_char
+                                ident_count+=1
+                                self.advance()
+                                if self.current_char == "g":
+                                    ident_str += self.current_char
+                                    ident_count+=1
+                                    self.advance() 
+                                    if self.current_char == "u":
+                                        ident_str += self.current_char
+                                        ident_count+=1
+                                        self.advance()      
+                                        if self.current_char == "s":
+                                            ident_str += self.current_char
+                                            ident_count+=1
+                                            tokens.append(Token(TT_KEYWORD))
+                                            self.advance()  
+                                                
 
             
 
