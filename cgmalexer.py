@@ -854,7 +854,6 @@ class Lexer:
     
         return tokens, None
 
-
     def make_number(self):
         num_str = ''
         dot_count = 0
