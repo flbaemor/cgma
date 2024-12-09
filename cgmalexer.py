@@ -121,8 +121,25 @@ TT_EOF          = 'EOF'     # End of File
 TT_KEYWORD      = 'KEYWORD' # Keywords
 TT_IDENTIFIER   = 'IDENTIFIER' # Identifiers
 
-KEYWORDS = ['append', 'aura', 'back', 'caseoh', 'chat', 'chudeluxe', 'chungus', 'false', 'forsen', 'getout', 'gng', 'hawk', 'hawk tuah', 'insert', 'jit', 'lethimcook', 'lwk', 'nocap', 'npc', 'pause', 'plug', 'remove', 'skibidi', 'sturdy', 'true', 'tuah', 'yap']
+TT_ESCAPESEQUENCE = 'ESCAPESEQUENCE' # Escape Sequence
 
+RESERVED_KEYWORDS = ['append', 'aura', 'back', 'caseoh', 'chat', 'chudeluxe', 'chungus', 'false', 'forsen', 'getout', 'gng', 'hawk', 'hawk tuah', 'insert', 'jit', 'lethimcook', 'lwk', 'nocap', 'npc', 'pause', 'plug', 'remove', 'skibidi', 'sturdy', 'true', 'tuah', 'yap']
+RESERVED_SYMBOLS = [
+    # Unary Operators
+    '++', '--', '-',
+
+    # Relational Operators
+    '==', '!=', '>', '<', '>=', '<=',
+
+    # Arithmetic Operators
+    '+', '-', '*', '/', '%',
+
+    # Logical Operators
+    '&&', '||', '!',
+
+    # Other Symbols
+    '“', '\\', '(', ')', '[', ']', '{', '}', ',', '//', '/*', '*/', ';'
+]
 
 class Token:
     def __init__(self, type_, value=None):
@@ -154,33 +171,6 @@ class Lexer:
         while self.current_char != None:
             if self. current_char in ' \t':
                 self.advance()
-            elif self.current_char in NUM:
-                tokens.append(self.make_number())
-            elif self.current_char == '+':
-                tokens.append(Token(TT_PLUS))
-                self.advance()
-            elif self.current_char == '-':
-                tokens.append(Token(TT_MINUS))
-                self.advance()
-            elif self.current_char == '*':
-                tokens.append(Token(TT_MUL))
-                self.advance()
-            elif self.current_char == '/':
-                tokens.append(Token(TT_DIV))
-                self.advance()
-            elif self.current_char == '%':
-                tokens.append(Token(TT_MOD))
-                self.advance()
-            elif self.current_char == '=':
-                tokens.append(Token(TT_IS))
-                self.advance()
-            elif self.current_char == '(':
-                tokens.append(Token(TT_OPPAR))
-                self.advance()
-            elif self.current_char == ')':
-                tokens.append(Token(TT_CLPAR))
-                self.advance()
-
                 
             elif self.current_char in ALPHA:
                 ident_str = ''
@@ -731,13 +721,137 @@ class Lexer:
                             ident_count += 1
                             tokens.append(Token(TT_KEYWORD))
                             self.advance()
-                            
+
+            elif self.current_char in NUM:
+                tokens.append(self.make_number())
+
+            elif self.current_char == '+':
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == '+':
+                    self.advance()
+                    tokens.append(Token(TT_INC))  # Token for '++'
+                else:
+                    tokens.append(Token(TT_PLUS))  # Token for '+'
+            elif self.current_char == '!':
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    tokens.append(Token(TT_NEQ))  # Token for '!='
+                else:
+                    tokens.append(Token(TT_NOT))  # Token for '!'
+            elif self.current_char == '%':
+                tokens.append(Token(TT_MOD))
+                self.advance()
+            elif self.current_char == '&':
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == '&':
+                    self.advance()
+                    tokens.append(Token(TT_AND))  # Token for '&&'
+                else:
+                    [], IllegalCharError(pos_start, self.pos, "'&'") #ERROR FOR '&'
+            elif self.current_char == '(': 
+                tokens.append(Token(TT_OPPAR))  # Token for '('
+                self.advance()
+            elif self.current_char == ')':
+                tokens.append(Token(TT_CLPAR))  # Token for ')'
+                self.advance()
+            elif self.current_char == '-':
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == '--':
+                    self.advance()
+                    tokens.append(Token(TT_DEC))  # Token for '--'
+                else:
+                    tokens.append(Token(TT_MINUS))  # Token for '-'
+            elif self.current_char == '*':
+                tokens.append(Token(TT_MUL))  # Token for '*'
+                self.advance()
+            elif self.current_char == ',':
+                tokens.append(Token(TT_COMMA))  # Token for ','
+                self.advance()
+            elif self.current_char == '/':
+                tokens.append(Token(TT_DIV))  # Token for '/'
+                self.advance()
+            elif self.current_char == '\\':
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == '"':
+                    self.advance()
+                    tokens.append(Token(TT_ESCAPESEQUENCE))  # Token for '\"'
+                elif self.current_char == '*':
+                    self.advance()
+                    tokens.append(Token(TT_ESCAPESEQUENCE))  # Token for '\*'
+                elif self.current_char == '{':
+                    self.advance()
+                    tokens.append(Token(TT_ESCAPESEQUENCE))  # Token for '\{'
+                elif self.current_char == '}':
+                    self.advance()
+                    tokens.append(Token(TT_ESCAPESEQUENCE))  # Token for '\}'
+                elif self.current_char == 'n':
+                    self.advance()
+                    tokens.append(Token(TT_ESCAPESEQUENCE))  # Token for '\n'
+                elif self.current_char == 't':
+                    self.advance()
+                    tokens.append(Token(TT_ESCAPESEQUENCE))  # Token for '\t'
+                else:
+                    return [], IllegalCharError(pos_start, self.pos, "'\\'")  # ERROR FOR '\'
+            elif self.current_char == ';':
+                tokens.append(Token(TT_SEMICOL))  # Token for ';'
+                self.advance()
+            elif self.current_char == '[':
+                tokens.append(Token(TT_LSQUARE))  # Token for '['
+                self.advance()
+            elif self.current_char == ']':
+                tokens.append(Token(TT_RSQUARE))  # Token for ']'
+                self.advance()
+            elif self.current_char == '{':
+                tokens.append(Token(TT_LBRACE))  # Token for '{'
+                self.advance()
+            elif self.current_char == '}':
+                tokens.append(Token(TT_RBRACE))  # Token for '}'
+                self.advance()
+            elif self.current_char == '|':
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == '|':
+                    self.advance()
+                    tokens.append(Token(TT_OR))  # Token for '||'
+                else:
+                    return [], IllegalCharError(pos_start, self.pos, "'|'")  # ERROR FOR '|'
+            elif self.current_char == '<':
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    tokens.append(Token(TT_LTE))  # Token for '<='
+                else:
+                    tokens.append(Token(TT_LT))  # Token for '<'
+            elif self.current_char == '>':
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    tokens.append(Token(TT_GTE))  # Token for '>='
+                else:
+                    tokens.append(Token(TT_GT))  # Token for '>'
+            elif self.current_char == '=':
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == '=':
+                    self.advance()
+                    tokens.append(Token(TT_EQ))  # Token for '=='
+                else:
+                    tokens.append(Token(TT_IS))  # Token for '='
+
             else:
                 pos_start = self.pos.copy()
                 char = self.current_char
                 self.advance()
                 return[], IllegalCharError(pos_start, self.pos, "'" + char + "'")
-
+    
         return tokens, None
 
 
