@@ -121,6 +121,9 @@ TT_EOF          = 'EOF'     # End of File
 TT_KEYWORD      = 'KEYWORD' # Keywords
 TT_IDENTIFIER   = 'IDENTIFIER' # Identifiers
 
+KEYWORDS = ['append', 'aura', 'back', 'caseoh', 'chat', 'chudeluxe', 'chungus', 'false', 'forsen', 'getout', 'gng', 'hawk', 'hawk tuah', 'insert', 'jit', 'lethimcook', 'lwk', 'nocap', 'npc', 'pause', 'plug', 'remove', 'skibidi', 'sturdy', 'true', 'tuah', 'yap']
+
+
 class Token:
     def __init__(self, type_, value=None):
         self.type = type_
@@ -183,15 +186,102 @@ class Lexer:
                 ident_str = ''
                 ident_count = 0
                 pos_start = self.pos.copy()
-
-                if self.current_char == "c":
+                #Letter A
+                if self.current_char == "a":
                     ident_str += self.current_char
                     ident_count+=1
                     self.advance()
-                    if self.current_char == "h":
+                    if self.current_char == "p":
                         ident_str += self.current_char
                         ident_count+=1
                         self.advance()
+                        if self.current_char == "p":
+                            ident_str += self.current_char
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char == "e":
+                                ident_str += self.current_char
+                                ident_count+=1
+                                self.advance()
+                                if  self.current_char == "n":
+                                    ident_str += self.current_char
+                                    ident_count+=1
+                                    self.advance()
+                                    if self.current_char == "d":
+                                        ident_str += self.current_char
+                                        ident_count+=1
+                                        tokens.append(Token(TT_KEYWORD))
+                                        self.advance()
+                    elif self.current_char == "u":
+                        ident_str += self.current_char
+                        ident_count+=1
+                        self.advance()
+                        if self.current_char == "r":
+                            ident_str += self.current_char
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char == "a":
+                                ident_str += self.current_char
+                                ident_count+=1
+                                tokens.append(Token(TT_KEYWORD))
+                                self.advance()
+                #Letter B
+                if self.current_char == "b":
+                    ident_str += self.current_char
+                    ident_count+=1
+                    self.advance()
+                    if self.current_char == "a":
+                        ident_str += self.current_char
+                        ident_count+=1
+                        self.advance()
+                        if self.current_char == "c":
+                            ident_str += self.current_char
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char == "k":
+                                ident_str += self.current_char
+                                ident_count+=1
+                                tokens.append(Token(TT_KEYWORD))
+                                self.advance()
+                #Letter C
+                if self.current_char == "c":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "a":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "s":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "e":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "o":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    self.advance()
+                                    if self.current_char == "h":
+                                        ident_str += self.current_char
+                                        ident_count += 1
+                                        tokens.append(Token(TT_KEYWORD))
+                                        self.advance()
+                    elif self.current_char == "h":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "a":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "t":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                tokens.append(Token(TT_KEYWORD))
+                                self.advance()
                         if self.current_char == "u":
                             ident_str += self.current_char
                             ident_count+=1
@@ -213,10 +303,435 @@ class Lexer:
                                             ident_count+=1
                                             tokens.append(Token(TT_KEYWORD))
                                             self.advance()  
-                                                
+                        elif self.current_char == "d":
+                            ident_str += self.current_char
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char == "e":
+                                ident_str += self.current_char
+                                ident_count+=1
+                                self.advance()
+                                if self.current_char == "l":
+                                    ident_str += self.current_char
+                                    ident_count+=1
+                                    self.advance()
+                                    if self.current_char == "u":
+                                        ident_str += self.current_char
+                                        ident_count+=1
+                                        self.advance()
+                                        if self.current_char == "x":
+                                            ident_str += self.current_char
+                                            ident_count+=1
+                                            self.advance()
+                                            if self.current_char == "e":
+                                                ident_str += self.current_char
+                                                ident_count+=1
+                                                tokens.append(Token(TT_KEYWORD))
+                                                self.advance()        
 
-            
+                # Letter F
+                if self.current_char == "f":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "a":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "l":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "s":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "e":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    tokens.append(Token(TT_KEYWORD))
+                                    self.advance()
+                    if self.current_char == "o":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "r":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "s":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "e":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    self.advance()
+                                    if self.current_char == "n":
+                                        ident_str += self.current_char
+                                        ident_count += 1
+                                        tokens.append(Token(TT_KEYWORD))
+                                        self.advance()
+                # Letter G
+                if self.current_char == "g":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "e":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "t":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "o":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "u":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    self.advance
+                                    if self.current_char == "t":
+                                        ident_str += self.current_char
+                                        ident_count += 1
+                                        tokens.append(Token(TT_KEYWORD))
+                                        self.advance()
+                    if self.current_char == "n":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance
+                        if self.current_char == "g":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            tokens.append(Token(TT_KEYWORD))
+                            self.advance()
 
+                # Letter H
+                if self.current_char == "h":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "a":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "w":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "k":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                tokens.append(Token(TT_KEYWORD))
+                                self.advance()
+                            if self.current_char == " ":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "t":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    self.advance()
+                                    if self.current_char == "u":
+                                        ident_str += self.current_char
+                                        ident_count += 1
+                                        self.advance()
+                                        if self.current_char == "a":
+                                            ident_str += self.current_char
+                                            ident_count += 1
+                                            self.advance()
+                                            if self.current_char == "h":
+                                                ident_str += self.current_char
+                                                ident_count += 1
+                                                self.advance()
+                                                tokens.append(Token(TT_KEYWORD))    
+                # Letter I
+                if self.current_char == "i":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "n":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "s":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "e":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "r":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    self.advance()
+                                    if self.current_char == "t":
+                                        ident_str += self.current_char
+                                        ident_count += 1
+                                        tokens.append(Token(TT_KEYWORD))
+                                        self.advance()
+                # Letter J
+                if self.current_char == "j":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "i":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "t":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            tokens.append(Token(TT_KEYWORD))
+                            self.advance()
+
+                # Letter L
+                if self.current_char == "l":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "e":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "t":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "h":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "i":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    self.advance()
+                                    if self.current_char == "m":
+                                        ident_str += self.current_char
+                                        ident_count += 1
+                                        self.advance()
+                                        if self.current_char == "c":
+                                            ident_str += self.current_char
+                                            ident_count += 1
+                                            self.advance()
+                                            if self.current_char == "o":
+                                                ident_str += self.current_char
+                                                ident_count += 1
+                                                self.advance()
+                                                if self.current_char == "o":
+                                                    ident_str += self.current_char
+                                                    ident_count += 1
+                                                    self.advance()
+                                                    if self.current_char == "k":
+                                                        ident_str += self.current_char
+                                                        ident_count += 1
+                                                        tokens.append(Token(TT_KEYWORD))
+                                                        self.advance()
+                    if self.current_char == "w":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "k":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            tokens.append(Token(TT_KEYWORD))
+                            self.advance()
+
+                # Letter N
+                if self.current_char == "n":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "o":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "c":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "a":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "p":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    tokens.append(Token(TT_KEYWORD))
+                                    self.advance()
+                    if self.current_char == "p":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "c":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            tokens.append(Token(TT_KEYWORD))
+                            self.advance()
+                        
+                # Letter P
+                if self.current_char == "p":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "a":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "u":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "s":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "e":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    tokens.append(Token(TT_KEYWORD))
+                                    self.advance()
+                    if self.current_char == "l":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "u":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "g":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    tokens.append(Token(TT_KEYWORD))
+                                    self.advance()
+
+                # Letter R
+                if self.current_char == "r":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "e":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "m":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "o":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "v":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    self.advance()
+                                    if self.current_char == "e":
+                                        ident_str += self.current_char
+                                        ident_count += 1
+                                        tokens.append(Token(TT_KEYWORD))
+                                        self.advance()
+                # Letter S
+                if self.current_char == "s":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "k":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "i":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "b":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "i":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    self.advance()
+                                    if self.current_char == "d":
+                                        ident_str += self.current_char
+                                        ident_count += 1
+                                        self.advance()
+                                        if self.current_char == "i":
+                                            ident_str += self.current_char
+                                            ident_count += 1
+                                            tokens.append(Token(TT_KEYWORD))
+                                            self.advance()
+                    if self.current_char == "t":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "u":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "r":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char == "d":
+                                    ident_str += self.current_char
+                                    ident_count += 1
+                                    self.advance()
+                                    if self.current_char == "y":
+                                        ident_str += self.current_char
+                                        ident_count += 1
+                                        tokens.append(Token(TT_KEYWORD))
+                                        self.advance()
+
+                # Letter T
+                if self.current_char == "t":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "r":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "u":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "e":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                tokens.append(Token(TT_KEYWORD))
+                                self.advance()
+                    if self.current_char == "u":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "a":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "h":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                tokens.append(Token(TT_KEYWORD))
+                                self.advance()
+                # Letter Y
+                if self.current_char == "y":
+                    ident_str += self.current_char
+                    ident_count += 1
+                    self.advance()
+                    if self.current_char == "a":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "p":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            tokens.append(Token(TT_KEYWORD))
+                            self.advance()
+                            
             else:
                 pos_start = self.pos.copy()
                 char = self.current_char
