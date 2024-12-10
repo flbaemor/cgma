@@ -1211,7 +1211,30 @@ class Lexer:
                 self.advance()
 
             elif self.current_char in NUM:
-                tokens.append(self.make_number()) # Token for Numbers
+                dot_count = 0
+                ident_str = ""
+                pos_start = self.pos.copy()
+
+                while self.current_char is not None and self.current_char in NUM + ".":
+                    if self.current_char == ".":
+                        if dot_count == 1: 
+                            break
+                        dot_count += 1
+                    ident_str += self.current_char
+                    self.advance()
+
+                if self.current_char is not None and self.current_char not in lit_dlm:
+                    return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
+
+                if dot_count == 0: 
+                    if len(ident_str) > 10: 
+                        return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}' (integer too long)")
+                    tokens.append(Token(TT_CHUNGUS, ident_str))
+                else:  
+                    parts = ident_str.split(".")
+                    if len(parts[0]) > 10 or len(parts[1]) > 5:
+                        return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}' (invalid decimal length)")
+                    tokens.append(Token(TT_CHUDELUXE, ident_str))
 
             elif self.current_char == '"':
                 tokens.append(self.make_string())  # Token for Strings
