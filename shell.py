@@ -1,4 +1,4 @@
-import tkinter as tk 
+import tkinter as tk
 from tkinter import ttk
 import cgmalexer  # Importing your lexer module
 
@@ -7,21 +7,24 @@ def process_input():
     Process the input text using cgmalexer and update the output and error sections.
     """
     input_text = input_textbox.get("1.0", tk.END).strip()  # Get input from the text box
-    result, error = cgmalexer.run('<file>', input_text)
+    tokens, error = cgmalexer.run('<file>', input_text)
 
-    # Display tokens
+    # Display tokens produced before the error
     token_output_textbox.config(state=tk.NORMAL)
     token_output_textbox.delete("1.0", tk.END)
-    if not error:
-        token_output_textbox.insert(tk.END, "\n".join(map(str, result)))
-    else:
-        token_output_textbox.insert(tk.END, "No valid tokens.")
+    
+    # Format and display the tokens produced
+    if tokens:  # If there are tokens, display them
+        token_output_textbox.insert(tk.END, "\n".join(map(str, tokens)))
+    else:  # If no valid tokens
+        token_output_textbox.insert(tk.END, "\n".join(map(str, tokens)))
+        
     token_output_textbox.config(state=tk.DISABLED)
 
-    # Display errors
+    # Display the error if present
     error_output_textbox.config(state=tk.NORMAL)
     error_output_textbox.delete("1.0", tk.END)
-    if error:
+    if error:  # Show error details
         error_output_textbox.insert(tk.END, error.as_string())
     else:
         error_output_textbox.insert(tk.END, "No errors found.")
@@ -64,7 +67,6 @@ error_output_frame.grid(row=2, column=0, columnspan=2, padx=1, pady=1, sticky="n
 
 error_output_textbox = tk.Text(error_output_frame, wrap=tk.WORD, height=10, state=tk.DISABLED, bg="#ffebee")
 error_output_textbox.pack(fill="both", expand=True, padx=1, pady=1)
-
 
 # Run the application
 root.mainloop()

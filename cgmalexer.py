@@ -15,7 +15,7 @@ OPER = ARITH_OPER + RELAT_OPER
 
 #DELIMITERS
 
-clbra_dlm = ' +='
+clbra_dlm = ' +=\n})'
 clcur_dlm = ' \n)}'
 clpar_dlm = ' \n}{)&|}' + ARITH_OPER
 com_dlm = ' ('
@@ -25,15 +25,15 @@ endln_dlm = ' \n'
 esc_dlm = ' "'+ ASCII
 equal_dlm = ' _[(-"+=' + ALPHANUM
 hawk_dlm = ' \n{'
-identif_dlm = '\n )(&|=' + OPER
-lit_dlm = ' ,):\n;' + OPER
+identif_dlm = '\n )(&|=;],[' + OPER
+lit_dlm = ' ;,):\n' + OPER
 lwk_dlm = ' \n&|=)' 
 minus_dlm = ' -()' + ALPHANUM
 npc_dlm = ' :' + ALPHANUM
 not_dlm = ' =(' + ALPHANUM
-opbra_dlm = ' "' + ALPHANUM
+opbra_dlm = ' ]"' + ALPHANUM
 opcur_dlm = ' \n' + ALPHANUM
-operator_dlm = ' _(' + ALPHANUM
+operator_dlm = ' _(=' + ALPHANUM
 oppar_dlm = ' _)("-' + ALPHANUM
 plus_dlm = ' _("+)' + ALPHANUM
 relat_dlm = ' _("' + ALPHANUM
@@ -179,10 +179,6 @@ class Lexer:
         while self.current_char != None:
             if self. current_char in ' \t':
                 self.advance()
-
-            # Token for Identifier
-            elif self.current_char in ALPHA:
-                tokens.append(self.make_identifier())
             
             elif self.current_char in ALPHA:
                 ident_str = ''
@@ -212,12 +208,13 @@ class Lexer:
                                     if self.current_char == "d":
                                         ident_str += self.current_char
                                         ident_count+=1
-                                        if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in com_dlm:
-                                            tokens.append(Token(TT_KEYWORD))
-                                            self.advance()
-                                        else:
-                                            self.advance()
-                                            return [], IllegalCharError(pos_start, self.pos, f"'{char}'")
+                                        self.advance()
+                                        if self.current_char in com_dlm:  # Valid token
+                                            tokens.append(Token(TT_KEYWORD, ident_str))
+                                            continue
+                                        else:  # Invalid delimiter
+                                            tokens.append(Token(TT_KEYWORD, ident_str))
+                                            return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                                             
                     elif self.current_char == "u":
                         ident_str += self.current_char
@@ -230,12 +227,13 @@ class Lexer:
                             if self.current_char == "a":
                                 ident_str += self.current_char
                                 ident_count+=1
-                                if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                    tokens.append(Token(TT_KEYWORD))
-                                    self.advance()
+                                self.advance()
+                                if self.current_char in spc_dlm:
+                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                    continue
                                 else:
-                                    self.advance()
-                                    return [], IllegalCharError(pos_start, self.pos, f"'{char}'")
+                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                    return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                 #Letter B
                 if self.current_char == "b":
                     ident_str += self.current_char
@@ -250,16 +248,14 @@ class Lexer:
                             ident_count += 1
                             self.advance()
                             if self.current_char == "k":
-                                next_char = self.text[self.pos.idx + 1] if self.pos.idx + 1 < len(self.text) else None
-                                if next_char in spc_dlm:
-                                    ident_str += self.current_char
-                                    ident_count += 1
-                                    if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                        tokens.append(Token(TT_KEYWORD))
-                                        self.advance()
-                                    else:
-                                        self.advance()
-                                        return [], IllegalCharError(pos_start, self.pos, f"'{char}'")
+                                ident_str += self.current_char
+                                ident_count+=1
+                                self.advance()
+                                if self.current_char in spc_dlm:
+                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                    continue
+                                else:
+                                    return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
 
                 #Letter C
                 if self.current_char == "c":
@@ -284,13 +280,13 @@ class Lexer:
                                     self.advance()
                                     if self.current_char == "h":
                                         ident_str += self.current_char
-                                        ident_count += 1
-                                        if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                            tokens.append(Token(TT_KEYWORD))
-                                            self.advance()
+                                        ident_count+=1
+                                        self.advance()
+                                        if self.current_char in spc_dlm:
+                                            tokens.append(Token(TT_KEYWORD, ident_str))
+                                            continue
                                         else:
-                                            self.advance()
-                                            return [], IllegalCharError(pos_start, self.pos, f"'{char}'")
+                                            return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                     elif self.current_char == "h":
                         ident_str += self.current_char
                         ident_count += 1
@@ -301,13 +297,13 @@ class Lexer:
                             self.advance()
                             if self.current_char == "t":
                                 ident_str += self.current_char
-                                ident_count += 1
-                                if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in com_dlm:
-                                    tokens.append(Token(TT_KEYWORD))
-                                    self.advance()
+                                ident_count+=1
+                                self.advance()
+                                if self.current_char in com_dlm:
+                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                    continue
                                 else:
-                                    self.advance()
-                                    return [], IllegalCharError(pos_start, self.pos, f"'{char}'")
+                                    return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                         if self.current_char == "u":
                             ident_str += self.current_char
                             ident_count+=1
@@ -327,12 +323,12 @@ class Lexer:
                                         if self.current_char == "s":
                                             ident_str += self.current_char
                                             ident_count+=1
-                                            if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                                tokens.append(Token(TT_KEYWORD))
-                                                self.advance()
+                                            self.advance()
+                                            if self.current_char in spc_dlm:
+                                                tokens.append(Token(TT_KEYWORD, ident_str))
+                                                continue
                                             else:
-                                                self.advance()
-                                                return [], IllegalCharError(pos_start, self.pos, f"'{char}'")
+                                                return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                         elif self.current_char == "d":
                             ident_str += self.current_char
                             ident_count+=1
@@ -356,12 +352,12 @@ class Lexer:
                                             if self.current_char == "e":
                                                 ident_str += self.current_char
                                                 ident_count+=1
-                                                if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                                    tokens.append(Token(TT_KEYWORD))
-                                                    self.advance()
+                                                self.advance()
+                                                if self.current_char in spc_dlm:
+                                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                                    continue
                                                 else:
-                                                    self.advance()
-                                                    return [], IllegalCharError(pos_start, self.pos, f"'{char}'")        
+                                                    return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")       
 
                 # Letter F
                 if self.current_char == "f":
@@ -382,13 +378,13 @@ class Lexer:
                                 self.advance()
                                 if self.current_char == "e":
                                     ident_str += self.current_char
-                                    ident_count += 1
-                                    if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in lwk_dlm:
-                                        tokens.append(Token(TT_KEYWORD))
-                                        self.advance()
+                                    ident_count+=1
+                                    self.advance()
+                                    if self.current_char in lwk_dlm:
+                                        tokens.append(Token(TT_KEYWORD, ident_str))
+                                        continue
                                     else:
-                                        self.advance()
-                                        return [], IllegalCharError(pos_start, self.pos, f"'{char}'")   
+                                        return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'") 
                     if self.current_char == "o":
                         ident_str += self.current_char
                         ident_count += 1
@@ -407,13 +403,13 @@ class Lexer:
                                     self.advance()
                                     if self.current_char == "n":
                                         ident_str += self.current_char
-                                        ident_count += 1
-                                        if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                                tokens.append(Token(TT_KEYWORD))
-                                                self.advance()
+                                        ident_count+=1
+                                        self.advance()
+                                        if self.current_char in spc_dlm:
+                                            tokens.append(Token(TT_KEYWORD, ident_str))
+                                            continue
                                         else:
-                                            self.advance()
-                                            return [], IllegalCharError(pos_start, self.pos, f"'{char}'")   
+                                            return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")   
                 # Letter G
                 if self.current_char == "g":
                     ident_str += self.current_char
@@ -437,26 +433,26 @@ class Lexer:
                                     self.advance
                                     if self.current_char == "t":
                                         ident_str += self.current_char
-                                        ident_count += 1
-                                        if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in endln_dlm:
-                                            tokens.append(Token(TT_KEYWORD))
-                                            self.advance()
+                                        ident_count+=1
+                                        self.advance()
+                                        if self.current_char in endln_dlm:
+                                            tokens.append(Token(TT_KEYWORD, ident_str))
+                                            continue
                                         else:
-                                            self.advance()
-                                            return [], IllegalCharError(pos_start, self.pos, f"'{char}'")   
+                                            return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")  
                     if self.current_char == "n":
                         ident_str += self.current_char
                         ident_count += 1
                         self.advance
                         if self.current_char == "g":
                             ident_str += self.current_char
-                            ident_count += 1
-                            if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                tokens.append(Token(TT_KEYWORD))
-                                self.advance()
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char in spc_dlm:
+                                tokens.append(Token(TT_KEYWORD, ident_str))
+                                continue
                             else:
-                                self.advance()
-                                return [], IllegalCharError(pos_start, self.pos, f"'{char}'")   
+                                return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")   
 
                 # Letter H
                 if self.current_char == "h":
@@ -473,13 +469,13 @@ class Lexer:
                             self.advance()
                             if self.current_char == "k":
                                 ident_str += self.current_char
-                                ident_count += 1
-                                if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in hawk_dlm:
-                                    tokens.append(Token(TT_KEYWORD))
-                                    self.advance()
+                                ident_count+=1
+                                self.advance()
+                                if self.current_char in hawk_dlm:
+                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                    continue
                                 else:
-                                    self.advance()
-                                    return [], IllegalCharError(pos_start, self.pos, f"'{char}'")   
+                                    return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                             if self.current_char == " ":
                                 ident_str += self.current_char
                                 ident_count += 1
@@ -498,13 +494,13 @@ class Lexer:
                                             self.advance()
                                             if self.current_char == "h":
                                                 ident_str += self.current_char
-                                                ident_count += 1
-                                                if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in com_dlm:
-                                                    tokens.append(Token(TT_KEYWORD))
-                                                    self.advance()
+                                                ident_count+=1
+                                                self.advance()
+                                                if self.current_char in com_dlm:
+                                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                                    continue
                                                 else:
-                                                    self.advance()
-                                                    return [], IllegalCharError(pos_start, self.pos, f"'{char}'")     
+                                                    return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")  
                 # Letter I
                 if self.current_char == "i":
                     ident_str += self.current_char
@@ -528,13 +524,13 @@ class Lexer:
                                     self.advance()
                                     if self.current_char == "t":
                                         ident_str += self.current_char
-                                        ident_count += 1
-                                        if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in com_dlm:
-                                            tokens.append(Token(TT_KEYWORD))
-                                            self.advance()
+                                        ident_count+=1
+                                        self.advance()
+                                        if self.current_char in com_dlm:
+                                            tokens.append(Token(TT_KEYWORD, ident_str))
+                                            continue
                                         else:
-                                            self.advance()
-                                            return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                            return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                 # Letter J
                 if self.current_char == "j":
                     ident_str += self.current_char
@@ -546,13 +542,13 @@ class Lexer:
                         self.advance()
                         if self.current_char == "t":
                             ident_str += self.current_char
-                            ident_count += 1
-                            if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in com_dlm:
-                                tokens.append(Token(TT_KEYWORD))
-                                self.advance()
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char in com_dlm:
+                                tokens.append(Token(TT_KEYWORD, ident_str))
+                                continue
                             else:
-                                self.advance()
-                                return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
 
                 # Letter L
                 if self.current_char == "l":
@@ -593,26 +589,26 @@ class Lexer:
                                                     self.advance()
                                                     if self.current_char == "k":
                                                         ident_str += self.current_char
-                                                        ident_count += 1
-                                                        if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in com_dlm:
-                                                            tokens.append(Token(TT_KEYWORD))
-                                                            self.advance()
+                                                        ident_count+=1
+                                                        self.advance()
+                                                        if self.current_char in com_dlm:
+                                                            tokens.append(Token(TT_KEYWORD, ident_str))
+                                                            continue
                                                         else:
-                                                            self.advance()
-                                                            return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                                            return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                     if self.current_char == "w":
                         ident_str += self.current_char
                         ident_count += 1
                         self.advance()
                         if self.current_char == "k":
                             ident_str += self.current_char
-                            ident_count += 1
-                            if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                tokens.append(Token(TT_KEYWORD))
-                                self.advance()
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char in spc_dlm:
+                                tokens.append(Token(TT_KEYWORD, ident_str))
+                                continue
                             else:
-                                self.advance()
-                                return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
 
                 # Letter N
                 if self.current_char == "n":
@@ -633,26 +629,26 @@ class Lexer:
                                 self.advance()
                                 if self.current_char == "p":
                                     ident_str += self.current_char
-                                    ident_count += 1
-                                    if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                        tokens.append(Token(TT_KEYWORD))
-                                        self.advance()
+                                    ident_count+=1
+                                    self.advance()
+                                    if self.current_char in spc_dlm:
+                                        tokens.append(Token(TT_KEYWORD, ident_str))
+                                        continue
                                     else:
-                                        self.advance()
-                                        return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                        return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                     if self.current_char == "p":
                         ident_str += self.current_char
                         ident_count += 1
                         self.advance()
                         if self.current_char == "c":
                             ident_str += self.current_char
-                            ident_count += 1
-                            if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                tokens.append(Token(TT_KEYWORD))
-                                self.advance()
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char in npc_dlm:
+                                tokens.append(Token(TT_KEYWORD, ident_str))
+                                continue
                             else:
-                                self.advance()
-                                return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                         
                 # Letter P
                 if self.current_char == "p":
@@ -673,13 +669,13 @@ class Lexer:
                                 self.advance()
                                 if self.current_char == "e":
                                     ident_str += self.current_char
-                                    ident_count += 1
-                                    if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in endln_dlm:
-                                        tokens.append(Token(TT_KEYWORD))
-                                        self.advance()
+                                    ident_count+=1
+                                    self.advance()
+                                    if self.current_char in endln_dlm:
+                                        tokens.append(Token(TT_KEYWORD, ident_str))
+                                        continue
                                     else:
-                                        self.advance()
-                                        return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                        return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                     if self.current_char == "l":
                             ident_str += self.current_char
                             ident_count += 1
@@ -690,13 +686,13 @@ class Lexer:
                                 self.advance()
                                 if self.current_char == "g":
                                     ident_str += self.current_char
-                                    ident_count += 1
-                                    if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in com_dlm:
-                                        tokens.append(Token(TT_KEYWORD))
-                                        self.advance()
+                                    ident_count+=1
+                                    self.advance()
+                                    if self.current_char in com_dlm:
+                                        tokens.append(Token(TT_KEYWORD, ident_str))
+                                        continue
                                     else:
-                                        self.advance()
-                                        return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                        return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
 
                 # Letter R
                 if self.current_char == "r":
@@ -721,13 +717,13 @@ class Lexer:
                                     self.advance()
                                     if self.current_char == "e":
                                         ident_str += self.current_char
-                                        ident_count += 1
-                                        if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in endln_dlm:
-                                            tokens.append(Token(TT_KEYWORD))
-                                            self.advance()
+                                        ident_count+=1
+                                        self.advance()
+                                        if self.current_char in com_dlm:
+                                            tokens.append(Token(TT_KEYWORD, ident_str))
+                                            continue
                                         else:
-                                            self.advance()
-                                            return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                            return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                 # Letter S
                 if self.current_char == "s":
                     ident_str += self.current_char
@@ -755,13 +751,13 @@ class Lexer:
                                         self.advance()
                                         if self.current_char == "i":
                                             ident_str += self.current_char
-                                            ident_count += 1
-                                            if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in endln_dlm:
-                                                tokens.append(Token(TT_KEYWORD))
-                                                self.advance()
+                                            ident_count+=1
+                                            self.advance()
+                                            if self.current_char in com_dlm:
+                                                tokens.append(Token(TT_KEYWORD, ident_str))
+                                                continue
                                             else:
-                                                self.advance()
-                                                return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                                return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                     if self.current_char == "t":
                         ident_str += self.current_char
                         ident_count += 1
@@ -780,13 +776,13 @@ class Lexer:
                                     self.advance()
                                     if self.current_char == "y":
                                         ident_str += self.current_char
-                                        ident_count += 1
-                                        if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in spc_dlm:
-                                            tokens.append(Token(TT_KEYWORD))
-                                            self.advance()
+                                        ident_count+=1
+                                        self.advance()
+                                        if self.current_char in spc_dlm:
+                                            tokens.append(Token(TT_KEYWORD, ident_str))
+                                            continue
                                         else:
-                                            self.advance()
-                                            return [], IllegalCharError(pos_start, self.pos, f"'{char}'")  
+                                            return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'") 
 
                 # Letter T
                 if self.current_char == "t":
@@ -803,13 +799,13 @@ class Lexer:
                             self.advance()
                             if self.current_char == "e":
                                 ident_str += self.current_char
-                                ident_count += 1
-                                if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in endln_dlm:
-                                    tokens.append(Token(TT_KEYWORD))
-                                    self.advance()
+                                ident_count+=1
+                                self.advance()
+                                if self.current_char in lwk_dlm:
+                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                    continue
                                 else:
-                                    self.advance()
-                                    return [], IllegalCharError(pos_start, self.pos, f"'{char}'")
+                                    return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                     if self.current_char == "u":
                         ident_str += self.current_char
                         ident_count += 1
@@ -820,13 +816,13 @@ class Lexer:
                             self.advance()
                             if self.current_char == "h":
                                 ident_str += self.current_char
-                                ident_count += 1
-                                if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in com_dlm:
-                                    tokens.append(Token(TT_KEYWORD))
-                                    self.advance()
+                                ident_count+=1
+                                self.advance()
+                                if self.current_char in com_dlm:
+                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                    continue
                                 else:
-                                    self.advance()
-                                    return [], IllegalCharError(pos_start, self.pos, f"'{char}'")
+                                    return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                 # Letter Y
                 if self.current_char == "y":
                     ident_str += self.current_char
@@ -838,13 +834,24 @@ class Lexer:
                         self.advance()
                         if self.current_char == "p":
                             ident_str += self.current_char
-                            ident_count += 1
-                            if self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in com_dlm:
-                                tokens.append(Token(TT_KEYWORD))
-                                self.advance()
+                            ident_count+=1
+                            self.advance()
+                            if self.current_char in com_dlm:
+                                tokens.append(Token(TT_KEYWORD, ident_str))
+                                continue
                             else:
-                                self.advance()
-                                return [], IllegalCharError(pos_start, self.pos, f"'{char}'")
+                                return [], IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
+                            
+                while self.current_char is not None and (self.current_char in ALPHANUM or self.current_char == '_'):
+                    ident_str += self.current_char
+                    self.advance()
+                
+                if self.current_char in identif_dlm:
+                    tokens.append(Token(TT_IDENTIFIER, ident_str))
+                    
+                else:
+                    tokens.append(Token(TT_IDENTIFIER, ident_str))
+                    return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}'")
                             
 
             elif self.current_char == '+' and (self.pos.idx + 1 < len(self.text) and self.text[self.pos.idx + 1] in plus_dlm):
