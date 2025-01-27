@@ -841,6 +841,28 @@ class Lexer:
                     ident_str += self.current_char
                     ident_count += 1
                     self.advance()
+                    if self.current_char == "a":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "p":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "e":
+                                ident_str += self.current_char
+                                ident_count+=1
+                                self.advance()
+                                if self.current_char == "r":
+                                    ident_str += self.current_char
+                                    ident_count+=1
+                                    self.advance()
+                                    if self.current_char is None or self.current_char in com_dlm:
+                                        tokens.append(Token(TT_KEYWORD, ident_str))
+                                        continue
+                                    else:
+                                        tokens.append(Token(TT_KEYWORD, ident_str))
+                                        return tokens, IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")
                     if self.current_char == "r":
                         ident_str += self.current_char
                         ident_count += 1
@@ -859,6 +881,16 @@ class Lexer:
                                 else:
                                     tokens.append(Token(TT_KEYWORD, ident_str))
                                     return tokens, IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")
+                    if self.current_char == 's':
+                        ident_str += self.current_char
+                        ident_count+=1
+                        self.advance()
+                        if self.current_char is None or self.current_char in com_dlm:
+                            tokens.append(Token(TT_KEYWORD, ident_str))
+                            continue
+                        else:
+                            tokens.append(Token(TT_KEYWORD, ident_str))
+                            return tokens, IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")
                     if self.current_char == "u":
                         ident_str += self.current_char
                         ident_count += 1
@@ -1456,7 +1488,8 @@ class Lexer:
                 self.advance()
                 return[], IllegalCharError(pos_start, self.pos, "'" + char + "'")
                 
-    
+        if self.current_char is None:
+            tokens.append(Token(TT_EOF, ""))
         return tokens, None
 
         
@@ -1483,8 +1516,6 @@ class Lexer:
                 else:
                     string += self.current_char
             self.advance()
-
-        
 
         if self.current_char != '"' and self.current_char is None:
             pos_end = self.pos.copy()
