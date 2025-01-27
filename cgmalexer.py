@@ -1,3 +1,4 @@
+#
 #CONSTANTS
 
 ALPHA_LOWER = 'abcdefghijklmnopqrstuvwxyz'
