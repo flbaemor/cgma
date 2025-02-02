@@ -24,7 +24,7 @@ comma_dlm = ' _"\t' + ALPHANUM
 comnt_dlm = ' \n\t' + ASCII
 endln_dlm = ' \n\t'
 esc_dlm =   ' "\t'+ ASCII
-equal_dlm = ' _[(-"+\t' + ALPHANUM
+equal_dlm = ' _[(-"+\t!' + ALPHANUM
 hawk_dlm =  ' \n{\t'
 identif_dlm = ' \n)(&|;[],.\t' + OPER
 lit_dlm =   ' ,):\n;\t/+-%*' + OPER
@@ -32,12 +32,12 @@ lwk_dlm =   ' \n&|=)\t'
 minus_dlm = ' -()\t' + ALPHANUM
 npc_dlm =   ' :\t' + ALPHANUM
 not_dlm =   ' =(\t' + ALPHANUM
-opbra_dlm = ' "]\t' + ALPHANUM
+opbra_dlm = ' "]\t!\'' + ALPHANUM 
 opcur_dlm = ' \n\t}' + ALPHANUM
-operator_dlm = ' _(\t' + ALPHANUM
-oppar_dlm = ' _)("-\t' + ALPHANUM
+operator_dlm = ' _(\t!' + ALPHANUM
+oppar_dlm = ' _)("-\t!' + ALPHANUM
 plus_dlm =  ' _("+)\t' + ALPHANUM
-relat_dlm = ' _("\t' + ALPHANUM
+relat_dlm = ' _("\t!' + ALPHANUM
 scolon_dlm = ' _+-\t' + ALPHANUM
 spc_dlm =   ' \t'
 unary_dlm = ' _)\t' + ALPHANUM
@@ -979,16 +979,16 @@ class Lexer:
                     ident_str += self.current_char
                     self.advance()
                     if self.current_char is not None and self.current_char in relat_dlm:
-                        tokens.append(Token(TT_INC, ident_str))
+                        tokens.append(Token(TT_NEQ, ident_str))
                         continue
                     else:
-                        tokens.append(Token(TT_INC, ident_str))
+                        tokens.append(Token(TT_NEQ, ident_str))
                         return tokens, IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")
                 elif self.current_char is None or self.current_char in not_dlm:
-                    tokens.append(Token(TT_PLUS, ident_str))
+                    tokens.append(Token(TT_NOT, ident_str))
                     continue
                 else:
-                    tokens.append(Token(TT_PLUS, ident_str))
+                    tokens.append(Token(TT_NOT, ident_str))
                     return tokens, IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")
 
                 
@@ -1293,6 +1293,9 @@ class Lexer:
                 if self.current_char is not None and self.current_char in ALPHA:
                     tokens.append(Token(TT_DOT, ident_str))
                     continue
+                elif self.current_char is not None and self.current_char in NUM:
+                    ident_str += self.current_char
+                    return tokens, IllegalCharError(pos_start, self.pos, f"Invalid integer value before '{ident_str}'")
                 else:
                     tokens.append(Token(TT_DOT, ident_str))
                     return tokens, IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")
@@ -1351,6 +1354,7 @@ class Lexer:
                     if len(ident_str) > 10: 
                         return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}' exceeds maximum number of characters")
                     tokens.append(Token(TT_CHUNGUS, ident_str))
+                    
                 else:  # Float case
                     parts = ident_str.split(".")
                     integer_part = parts[0].lstrip("0") or "0"
@@ -1487,7 +1491,7 @@ class Lexer:
                 pos_start = self.pos.copy()
                 char = self.current_char
                 self.advance()
-                return[], IllegalCharError(pos_start, self.pos, "'" + char + "'")
+                return[], IllegalCharError(pos_start, self.pos, "Invalid character '" + char + "'")
                 
         if self.current_char is None:
             tokens.append(Token(TT_EOF, ""))
