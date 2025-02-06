@@ -7,7 +7,7 @@ def process_input():
     Process the input text using cgmalexer and update the output and error sections.
     """
     input_text = input_textbox.get("1.0", tk.END).strip()  # Get input from the text box
-    tokens, error = cgmalexer.run('<file>', input_text)
+    tokens, errors = cgmalexer.run('<file>', input_text)
 
     # Clear the previous tokens
     for item in token_output_tree.get_children():
@@ -20,11 +20,12 @@ def process_input():
     else:  # If no valid tokens
         token_output_tree.insert("", "end", values=("", ""), tags=('bg',))
 
-    # Display the error if present
+    # Display the errors if present
     error_output_textbox.config(state=tk.NORMAL)
     error_output_textbox.delete("1.0", tk.END)
-    if error:  # Show error details
-        error_output_textbox.insert(tk.END, error.as_string())
+    if errors:  # Show error details
+        for error in errors:
+            error_output_textbox.insert(tk.END, error.as_string() + "\n")
     else:
         error_output_textbox.insert(tk.END, "No errors found.")
     error_output_textbox.config(state=tk.DISABLED)
