@@ -21,6 +21,7 @@ clpar_dlm = ' \n}{)&|}\t' + ARITH_OPER
 com_dlm =   '('
 comma_dlm = ' _"\t' + ALPHANUM
 comnt_dlm = ' \n\t' + ASCII
+dot_dlm = ALPHA
 endln_dlm = ' \n\t'
 esc_dlm =   ' "\t'+ ASCII
 equal_dlm = ' _[(-"+\t' + ALPHANUM
@@ -1341,7 +1342,7 @@ class Lexer:
                     ident_str += invalid_part
 
                     if self.current_char is not None and self.current_char not in lit_dlm:
-                        return tokens, IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")
+                        return tokens, IllegalCha\rError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")
                     else:
                         return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}' (invalid identifier)")
 
@@ -1353,9 +1354,12 @@ class Lexer:
                 else:  # Float case
                     parts = ident_str.split(".")
                     integer_part = parts[0].lstrip("0") or "0"
-                    fractional_part = parts[1].rstrip("0") or "0"
+                    fractional_part = parts[1] if len(parts) > 1 else ""
 
-                    ident_str = f"{integer_part}.{fractional_part}"
+                    if fractional_part == "":
+                        return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}' is not a valid decimal number")
+
+                    ident_str = f"{integer_part}.{fractional_part.rstrip('0') or '0'}"
 
                     if len(integer_part) > 10 or len(fractional_part) > 5:
                         return tokens, IllegalCharError(pos_start, self.pos, f"'{ident_str}' exceeds maximum number of characters")
