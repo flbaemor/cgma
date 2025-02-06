@@ -64,6 +64,7 @@ token_output_frame.grid(row=0, column=1, padx=1, pady=1, sticky="nsew")
 style.configure("Custom.Treeview", background="#534857", foreground="#ffffff", fieldbackground="#534857", font=('Consolas', 11))
 style.configure("Custom.Treeview.Heading", background="#000000", foreground="#000000", font=('Courier', 12, 'bold'))
 
+
 # Create a Treeview widget for displaying tokens in a table format
 token_output_tree = ttk.Treeview(token_output_frame, columns=("Type", "Token"), show="headings", style="Custom.Treeview")
 token_output_tree.heading("Type", text="Type", anchor="center")

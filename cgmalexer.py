@@ -1461,8 +1461,6 @@ class Lexer:
                     tokens.append(Token(TT_CHUDELUXE, ident_str))
 
             elif self.current_char == '"':
-                 # Token for Strings
-
                 string = ''
                 pos_start = self.pos.copy()
                 escape_character = False
@@ -1483,7 +1481,6 @@ class Lexer:
                             escape_character = True
                         elif self.current_char == '\n':
                             pos_end = self.pos.copy()
-                            errors.append(IllegalCharError(pos_start, pos_end, f"Missing closing '\"' after '{string}'"))
                             break
                         else:
                             string += self.current_char
@@ -1492,66 +1489,61 @@ class Lexer:
                 if self.current_char == '"':
                     string += self.current_char
                     self.advance()
+
                 else:
                     pos_end = self.pos.copy()
                     errors.append(IllegalCharError(pos_start, pos_end, f"Missing closing '\"' after '{string}'"))
                     continue
 
                 if self.current_char is not None and self.current_char not in lit_dlm:
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid character '{self.current_char}' after string literal '{string}'"))
+                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after string literal '{string}'"))
                     self.advance()
                     continue
-
+            
+                string = string.replace('\n', '\\n')
                 tokens.append(Token(TT_FORSENCD, string))
                 continue
     
-
             elif self.current_char == "'":
                 string = ''
                 char = ''
                 pos_start = self.pos.copy()
-                escape_character = False
                 string += self.current_char
                 self.advance()
 
-                escape_characters = {
-                    'n': '\n',
-                    't': '\t'
-                }
-
                 while self.current_char is not None and self.current_char != "'":
-                        if self.current_char == '\\':
-                            escape_character = True
-                        if self.current_char == '\n':
-                            pos_end = self.pos.copy()
-                            errors.append(IllegalCharError(pos_start, pos_end, f"Unexpected newline in character literal"))
-                            break
-                        else:
-                            char += self.current_char
-                            string += self.current_char
+                    if self.current_char == '\n':
+                        pos_end = self.pos.copy()
+                        break
+                    elif self.current_char == '\\':
+                        pos_end = self.pos.copy()
+                        break
+                    else:
+                        string += self.current_char
+                        char += self.current_char
                     self.advance()
-
-                if len(char) > 1:
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Character literal '{string + self.current_char}' exceeds maximum length of 1 character."))
-                    self.advance()
-                    continue
-
-                if self.current_char != "'" and self.current_char is None:
-                    pos_end = self.pos.copy()
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Missing closing '\'' after '{string}'"))
-                    continue
 
                 if self.current_char == "'":
                     string += self.current_char
                     self.advance()
+                    
+                else:
+                    pos_end = self.pos.copy()
+                    errors.append(IllegalCharError(pos_start, pos_end, f"Missing closing '\'' after '{string}'"))
+                    continue
+
+                if len(char) > 1:
+                    errors.append(IllegalCharError(pos_start, self.pos, f"Character literal '{string}' exceeds maximum length of 1 character."))
+                    continue
 
                 if self.current_char is not None and self.current_char not in lit_dlm:
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{char}'"))
+                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{string}'"))
                     self.advance()
                     continue
 
                 tokens.append(Token(TT_FORSEN, string))
                 continue
+
 
             elif self.current_char == "/":
                 ident_str = self.current_char
@@ -1579,7 +1571,7 @@ class Lexer:
                             self.advance()
                     ident_str = ident_str.replace('\n', ' ')
                     tokens.append(Token(TT_COMMENT, ident_str))
-                    continue
+                    continue    
                 elif self.current_char is not None and self.current_char in operator_dlm:
                     tokens.append(Token(TT_DIV, ident_str))
                     continue
