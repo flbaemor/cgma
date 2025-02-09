@@ -147,7 +147,7 @@ cfg = {
     "<enum_property>": [["IDENTIFIER", "<enum_value>", "<enum_property_tail>"]],
     "<enum_property_tail>": [[",", "IDENTIFIER", "<enum_value>", "<enum_property_tail>"], ["λ"]],
     "<enum_value>": [["=", "CHUNGUS_LIT"], ["λ"]],
-    "<list_value>": [["[", "<predefined_value>", "<list_value_tail>", "]"], ["[]"]],
+    "<list_value>": [["[", "<predefined_value>", "<list_value_tail>", "]"]],
     "<list_assignment>": [
         ["<list_value>"],
         ["append", "(<arg>", "<next_arg>", ")"],
