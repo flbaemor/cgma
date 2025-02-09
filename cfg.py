@@ -38,7 +38,65 @@ def compute_first(cfg):
     
     return first
 
+def compute_follow(cfg, first):
+    follow = defaultdict(set)
+    epsilon = "λ"
+    start_symbol = next(iter(cfg))  # Get the start symbol
+    follow[start_symbol].add("$")  # Rule 1: Add $ to start symbol's Follow set
 
+    changed = True
+    while changed:
+        changed = False
+        for lhs, productions in cfg.items():
+            for prod in productions:
+                for i, symbol in enumerate(prod):
+                    if symbol in cfg:  # Only compute Follow for non-terminals
+                        before = len(follow[symbol])
+
+                        # Rule 2: Everything in First(B) except ε is added to Follow(A)
+                        if i + 1 < len(prod):  # Check next symbol
+                            next_symbol = prod[i + 1]
+                            if next_symbol in cfg:
+                                follow[symbol] |= (first[next_symbol] - {epsilon})
+                            else:
+                                follow[symbol].add(next_symbol)
+                        
+                        # Rule 3: If ε is in First(B) or A → αA (A is at the end)
+                        if i + 1 == len(prod) or (next_symbol in cfg and epsilon in first[next_symbol]):
+                            follow[symbol] |= follow[lhs]
+
+                        if len(follow[symbol]) > before:
+                            changed = True
+
+    return follow
+
+def compute_predict(cfg, first, follow):
+    predict = {}
+    epsilon = "λ"
+    
+    for lhs, productions in cfg.items():
+        for prod in productions:
+            predict_key = (lhs, tuple(prod))
+            predict[predict_key] = set()
+            
+            first_set = set()
+            for symbol in prod:
+                if symbol in cfg:
+                    first_set |= (first[symbol] - {epsilon})
+                    if epsilon not in first[symbol]:
+                        break
+                else:
+                    first_set.add(symbol)
+                    break
+            else:
+                first_set.add(epsilon)
+            
+            predict[predict_key] = first_set
+            if epsilon in first_set:
+                predict[predict_key] |= follow[lhs]
+    
+    return predict
+    
 
 cfg = {
     "<program>": [["<global>", "<user_defined_function>", "chungus", "skibidi", "(", ")", "{", "<body>", "back", "0", "}"]],
@@ -132,7 +190,7 @@ cfg = {
         ["<type_conversion>", "<identifier>", "<taper_function>"],
         ["<type_conversion>", "<expression>"],
         ["<userdeffunc_call>", "<taper_function>"]],
-    "<var_dec_tail>": [[" , IDENTIFIER = <predefined_value>", "<var_dec_tail>"], ["λ"]],
+    "<var_dec_tail>": [[",", "IDENTIFIER", "=", "<predefined_value>", "<var_dec_tail>"], ["λ"]],
     "<list_value_tail>": [[",", "<predefined_value>", "<list_value_tail>"], ["λ"]],
     "<print_arg>": [["<print_arg1>", "<print_argN>"]],
     "<print_arg1>": [["FORSEN_LIT", "<stringCC>"], ["<predefined_value>"]],
@@ -169,5 +227,18 @@ cfg = {
 }
 
 first_sets = compute_first(cfg)
-for non_terminal in cfg.keys():  # Preserve original CFG order
+follow_sets = compute_follow(cfg, first_sets)
+predict_sets = compute_predict(cfg, first_sets, follow_sets)
+
+print("FIRST SET:")
+for non_terminal in cfg.keys():
     print(f"First({non_terminal}) = {first_sets[non_terminal]}")
+
+print("\n\nFOLLOW SET:")
+for non_terminal in cfg.keys():
+    print(f"Follow({non_terminal}) = {follow_sets[non_terminal]}")
+
+print("\n\nPREDICT SET:")
+for (lhs, prod), predict_set in predict_sets.items():
+    print(f"Predict({lhs} → {' '.join(prod)}) = {predict_set}")
+
