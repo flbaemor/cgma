@@ -1,3 +1,45 @@
+from collections import defaultdict
+
+def compute_first(cfg):
+    first = defaultdict(set)  # Stores First sets
+    epsilon = "λ"  # Represents epsilon (empty string)
+    
+    # Step 1: Initialize FIRST for terminals
+    for lhs, productions in cfg.items():
+        for prod in productions:
+            if prod[0] not in cfg:  # If the first symbol is a terminal
+                first[lhs].add(prod[0])
+            if prod[0] == epsilon:  # If epsilon is a production
+                first[lhs].add(epsilon)
+    
+    # Step 2: Compute FIRST iteratively until no changes occur
+    changed = True
+    while changed:
+        changed = False
+        for lhs, productions in cfg.items():
+            for prod in productions:
+                before = len(first[lhs])  # Track changes
+                
+                for symbol in prod:
+                    if symbol in cfg:  # If non-terminal
+                        first[lhs] |= (first[symbol] - {epsilon})  # Add FIRST(symbol) excluding ε
+                        
+                        if epsilon not in first[symbol]:  
+                            break  # Stop if ε is not in FIRST(symbol)
+                    else:  # If terminal, add it and stop
+                        first[lhs].add(symbol)
+                        break
+                    
+                else:  # If all symbols had ε, add ε to FIRST(lhs)
+                    first[lhs].add(epsilon)
+
+                if len(first[lhs]) > before:
+                    changed = True  # Continue loop if changes occurred
+    
+    return first
+
+
+
 cfg = {
     "<program>": [["<global>", "<user_defined_function>", "chungus", "skibidi", "(", ")", "{", "<body>", "back", "0", "}"]],
     "<global>": [["<global_statement>", "<global>"],
@@ -125,3 +167,7 @@ cfg = {
     "<type_conversion>": [["(", "<convert_type>", ")"], ["λ"]],
     "<convert_type>": [["chungus"], ["chudeluxe"]]
 }
+
+first_sets = compute_first(cfg)
+for non_terminal in cfg.keys():  # Preserve original CFG order
+    print(f"First({non_terminal}) = {first_sets[non_terminal]}")
