@@ -1489,6 +1489,7 @@ class Lexer:
                 if self.current_char == '"':
                     string += self.current_char
                     self.advance()
+
                 else:
                     pos_end = self.pos.copy()
                     errors.append(IllegalCharError(pos_start, pos_end, f"Missing closing '\"' after '{string}'"))
@@ -1498,11 +1499,11 @@ class Lexer:
                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after string literal '{string}'"))
                     self.advance()
                     continue
-
+            
+                string = string.replace('\n', '\\n')
                 tokens.append(Token(TT_FORSENCD, string))
                 continue
     
-
             elif self.current_char == "'":
                 string = ''
                 char = ''
@@ -1525,6 +1526,7 @@ class Lexer:
                 if self.current_char == "'":
                     string += self.current_char
                     self.advance()
+                    
                 else:
                     pos_end = self.pos.copy()
                     errors.append(IllegalCharError(pos_start, pos_end, f"Missing closing '\'' after '{string}'"))
@@ -1569,7 +1571,7 @@ class Lexer:
                             self.advance()
                     ident_str = ident_str.replace('\n', ' ')
                     tokens.append(Token(TT_COMMENT, ident_str))
-                    continue
+                    continue    
                 elif self.current_char is not None and self.current_char in operator_dlm:
                     tokens.append(Token(TT_DIV, ident_str))
                     continue
