@@ -1,42 +1,87 @@
 from collections import defaultdict
 
 def compute_first(cfg):
-    first = defaultdict(set)  # Stores First sets
-    epsilon = "λ"  # Represents epsilon (empty string)
+    first = defaultdict(set)
+    epsilon = "\u03BB"  # Represents epsilon (empty string)
     
-    # Step 1: Initialize FIRST for terminals
     for lhs, productions in cfg.items():
         for prod in productions:
-            if prod[0] not in cfg:  # If the first symbol is a terminal
+            if prod[0] not in cfg:
                 first[lhs].add(prod[0])
-            if prod[0] == epsilon:  # If epsilon is a production
+            if prod[0] == epsilon:
                 first[lhs].add(epsilon)
     
-    # Step 2: Compute FIRST iteratively until no changes occur
     changed = True
     while changed:
         changed = False
         for lhs, productions in cfg.items():
             for prod in productions:
-                before = len(first[lhs])  # Track changes
+                before = len(first[lhs])
                 
                 for symbol in prod:
-                    if symbol in cfg:  # If non-terminal
-                        first[lhs] |= (first[symbol] - {epsilon})  # Add FIRST(symbol) excluding ε
-                        
-                        if epsilon not in first[symbol]:  
-                            break  # Stop if ε is not in FIRST(symbol)
-                    else:  # If terminal, add it and stop
+                    if symbol in cfg:
+                        first[lhs] |= (first[symbol] - {epsilon})
+                        if epsilon not in first[symbol]:
+                            break
+                    else:
                         first[lhs].add(symbol)
                         break
-                    
-                else:  # If all symbols had ε, add ε to FIRST(lhs)
+                else:
                     first[lhs].add(epsilon)
-
+                
                 if len(first[lhs]) > before:
-                    changed = True  # Continue loop if changes occurred
+                    changed = True
     
     return first
+
+def compute_follow(cfg, first):
+    follow = defaultdict(set)
+    start_symbol = list(cfg.keys())[0]
+    follow[start_symbol].add("$")  # Start symbol gets EOF symbol
+    
+    changed = True
+    while changed:
+        changed = False
+        for lhs, productions in cfg.items():
+            for prod in productions:
+                for i in range(len(prod)):
+                    symbol = prod[i]
+                    if symbol in cfg:
+                        before = len(follow[symbol])
+                        
+                        # Check the next symbols in production
+                        for j in range(i + 1, len(prod)):
+                            next_symbol = prod[j]
+                            follow[symbol] |= (first[next_symbol] - {"\u03BB"})
+                            if "\u03BB" not in first[next_symbol]:
+                                break
+                        else:
+                            follow[symbol] |= follow[lhs]
+                        
+                        if len(follow[symbol]) > before:
+                            changed = True
+    
+    return follow
+
+def compute_predict(cfg, first, follow):
+    predict = defaultdict(set)
+    for lhs, productions in cfg.items():
+        for prod in productions:
+            prod_first = set()
+            for symbol in prod:
+                if symbol in cfg:
+                    prod_first |= (first[symbol] - {"\u03BB"})
+                    if "\u03BB" not in first[symbol]:
+                        break
+                else:
+                    prod_first.add(symbol)
+                    break
+            else:
+                prod_first.add("\u03BB")
+            
+            predict[(lhs, tuple(prod))] = prod_first | (follow[lhs] if "\u03BB" in prod_first else set())
+    
+    return predict
 
 
 
@@ -169,5 +214,17 @@ cfg = {
 }
 
 first_sets = compute_first(cfg)
-for non_terminal in cfg.keys():  # Preserve original CFG order
-    print(f"First({non_terminal}) = {first_sets[non_terminal]}")
+follow_sets = compute_follow(cfg, first_sets)
+predict_sets = compute_predict(cfg, first_sets, follow_sets)
+
+print("FIRST SETS:")
+for nt in cfg.keys():
+    print(f"First({nt}) = {first_sets[nt]}")
+
+print("\nFOLLOW SETS:")
+for nt in cfg.keys():
+    print(f"Follow({nt}) = {follow_sets[nt]}")
+
+print("\nPREDICT SETS:")
+for key, value in predict_sets.items():
+    print(f"Predict{key} = {value}")
