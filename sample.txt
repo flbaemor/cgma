@@ -1,0 +1,7 @@
+chungus skibidi(){
+	chungus i = 0
+	plug(i=1; i>5; i++){
+		yap("\n")
+	}
+	back 0
+}
