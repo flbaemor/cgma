@@ -177,7 +177,7 @@ cfg = {
         ["<type_conversion>", "<identifier>", "<taper_function>"],
         ["<type_conversion>", "<expression>"],
         ["<userdeffunc_call>", "<taper_function>"]],
-    "<var_dec_tail>": [[" , IDENTIFIER = <predefined_value>", "<var_dec_tail>"], ["λ"]],
+    "<var_dec_tail>": [[",", "IDENTIFIER", "=", "<predefined_value>", "<var_dec_tail>"], ["λ"]],
     "<list_value_tail>": [[",", "<predefined_value>", "<list_value_tail>"], ["λ"]],
     "<print_arg>": [["<print_arg1>", "<print_argN>"]],
     "<print_arg1>": [["FORSEN_LIT", "<stringCC>"], ["<predefined_value>"]],
@@ -192,7 +192,7 @@ cfg = {
     "<enum_property>": [["IDENTIFIER", "<enum_value>", "<enum_property_tail>"]],
     "<enum_property_tail>": [[",", "IDENTIFIER", "<enum_value>", "<enum_property_tail>"], ["λ"]],
     "<enum_value>": [["=", "CHUNGUS_LIT"], ["λ"]],
-    "<list_value>": [["[", "<predefined_value>", "<list_value_tail>", "]"], ["[]"]],
+    "<list_value>": [["[", "<predefined_value>", "<list_value_tail>", "]"]],
     "<list_assignment>": [
         ["<list_value>"],
         ["append", "(<arg>", "<next_arg>", ")"],
