@@ -1,89 +1,102 @@
 from collections import defaultdict
 
 def compute_first(cfg):
-    first = defaultdict(set)
-    epsilon = "\u03BB"  # Represents epsilon (empty string)
+    first = defaultdict(set)  # Stores First sets
+    epsilon = "λ"  # Represents epsilon (empty string)
     
+    # Step 1: Initialize FIRST for terminals
     for lhs, productions in cfg.items():
         for prod in productions:
-            if prod[0] not in cfg:
+            if prod[0] not in cfg:  # If the first symbol is a terminal
                 first[lhs].add(prod[0])
-            if prod[0] == epsilon:
+            if prod[0] == epsilon:  # If epsilon is a production
                 first[lhs].add(epsilon)
     
+    # Step 2: Compute FIRST iteratively until no changes occur
     changed = True
     while changed:
         changed = False
         for lhs, productions in cfg.items():
             for prod in productions:
-                before = len(first[lhs])
+                before = len(first[lhs])  # Track changes
                 
                 for symbol in prod:
-                    if symbol in cfg:
-                        first[lhs] |= (first[symbol] - {epsilon})
-                        if epsilon not in first[symbol]:
-                            break
-                    else:
+                    if symbol in cfg:  # If non-terminal
+                        first[lhs] |= (first[symbol] - {epsilon})  # Add FIRST(symbol) excluding ε
+                        
+                        if epsilon not in first[symbol]:  
+                            break  # Stop if ε is not in FIRST(symbol)
+                    else:  # If terminal, add it and stop
                         first[lhs].add(symbol)
                         break
-                else:
+                    
+                else:  # If all symbols had ε, add ε to FIRST(lhs)
                     first[lhs].add(epsilon)
-                
+
                 if len(first[lhs]) > before:
-                    changed = True
+                    changed = True  # Continue loop if changes occurred
     
     return first
 
 def compute_follow(cfg, first):
     follow = defaultdict(set)
-    start_symbol = list(cfg.keys())[0]
-    follow[start_symbol].add("$")  # Start symbol gets EOF symbol
-    
+    epsilon = "λ"
+    start_symbol = next(iter(cfg))  # Get the start symbol
+    follow[start_symbol].add("$")  # Rule 1: Add $ to start symbol's Follow set
+
     changed = True
     while changed:
         changed = False
         for lhs, productions in cfg.items():
             for prod in productions:
-                for i in range(len(prod)):
-                    symbol = prod[i]
-                    if symbol in cfg:
+                for i, symbol in enumerate(prod):
+                    if symbol in cfg:  # Only compute Follow for non-terminals
                         before = len(follow[symbol])
+
+                        # Rule 2: Everything in First(B) except ε is added to Follow(A)
+                        if i + 1 < len(prod):  # Check next symbol
+                            next_symbol = prod[i + 1]
+                            if next_symbol in cfg:
+                                follow[symbol] |= (first[next_symbol] - {epsilon})
+                            else:
+                                follow[symbol].add(next_symbol)
                         
-                        # Check the next symbols in production
-                        for j in range(i + 1, len(prod)):
-                            next_symbol = prod[j]
-                            follow[symbol] |= (first[next_symbol] - {"\u03BB"})
-                            if "\u03BB" not in first[next_symbol]:
-                                break
-                        else:
+                        # Rule 3: If ε is in First(B) or A → αA (A is at the end)
+                        if i + 1 == len(prod) or (next_symbol in cfg and epsilon in first[next_symbol]):
                             follow[symbol] |= follow[lhs]
-                        
+
                         if len(follow[symbol]) > before:
                             changed = True
-    
+
     return follow
 
 def compute_predict(cfg, first, follow):
-    predict = defaultdict(set)
+    predict = {}
+    epsilon = "λ"
+    
     for lhs, productions in cfg.items():
         for prod in productions:
-            prod_first = set()
+            predict_key = (lhs, tuple(prod))
+            predict[predict_key] = set()
+            
+            first_set = set()
             for symbol in prod:
                 if symbol in cfg:
-                    prod_first |= (first[symbol] - {"\u03BB"})
-                    if "\u03BB" not in first[symbol]:
+                    first_set |= (first[symbol] - {epsilon})
+                    if epsilon not in first[symbol]:
                         break
                 else:
-                    prod_first.add(symbol)
+                    first_set.add(symbol)
                     break
             else:
-                prod_first.add("\u03BB")
+                first_set.add(epsilon)
             
-            predict[(lhs, tuple(prod))] = prod_first | (follow[lhs] if "\u03BB" in prod_first else set())
+            predict[predict_key] = first_set
+            if epsilon in first_set:
+                predict[predict_key] |= follow[lhs]
     
     return predict
-
-
+    
 
 cfg = {
     "<program>": [["<global>", "<user_defined_function>", "chungus", "skibidi", "(", ")", "{", "<body>", "back", "0", "}"]],
@@ -98,14 +111,14 @@ cfg = {
                    ["λ"]],
     "<data_id>": [["<data_type>", "<identifier>"]],
     "<identifier>": [["IDENTIFIER", "<list_index>", "<struct_mem>"]],
-    "<data_type>": [["chungus"], ["chudeluxe"], ["forsen"], ["forsencd"], ["lwk"], ["aura"], ["gng"]],
+    "<data_type>": [["chungus"],["chudeluxe"], ["forsen"], ["forsencd"], ["lwk"], ["aura"], ["gng"]],
     "<list_index>": [["[", "<indexer>", "]"],
                      ["λ"]],
-    "<indexer>": [["CHU_LIT"], ["<identifier>"], ["<num_expression>"], ["<userdeffunc_call>"]],
+    "<indexer>": [["CHUNGUS_LIT"], ["<identifier>"], ["<num_expression>"], ["<userdeffunc_call>"]],
     "<struct_mem>": [[".", "<identifier>", "<struct_mem>"],
                       ["λ"]],
     "<literal>": [["<num_literal>"], ["FORSEN_LIT"], ["FORSENCD_LIT", "<stringCC>"], ["LWK_LIT"]],
-    "<num_literal>": [["CHU_LIT"], ["CHUDEL_LIT"]],
+    "<num_literal>": [["CHUNGUS_LIT"], ["CHUDELUXE_LIT"]],
     "<stringCC>": [["+", "FORSENCD_LIT", "<stringCC>"],
                    ["λ"]],
     "<user_defined_function>": [["<return_type>", "IDENTIFIER", "(", "<parameter>", "<next_param>", ")", "{", "<statement>", "}", "<global>", "<user_defined_function>"],
@@ -128,18 +141,19 @@ cfg = {
     "<_unary_op>": [["-"], ["<_prepost_op>"], ["λ"]],
     "<_prepost_op>": [["++"], ["--"], ["λ"]],
     "<_arith_op>": [["+"], ["-"], ["/"], ["%"], ["*"]],
-    "<bool_expression>": [["<relational_expression>"],
-                          ["<log_open>", "<_log_op>", "<log_open>", "<log_expression_tail>"]],
+    "<bool_expression>": [["<relational_expression>"], ["<log_open>", "<_log_op>", "<bool_expression>"]],
+    "<log_expression>": [["<log_open>", "<_log_op>", "<log_open>"]],
     "<relational_expression>": [["<rel_operand>", "<_rel_op>", "<rel_operand>", "<rel_expression_tail>"]],
     "<rel_operand>": [["<type_conversion>", "<rel_operand_content>"]],
     "<rel_operand_content>": [["<num_literal>"], ["<identifier>", "<ts_function>", "<num_expression>", "<relational_expression>", "(", "<rel_operand_content>" ")"]],
     "<rel_expression_tail>": [["<_rel_op>", "<rel_operand>", "<rel_expression_tail>"],
                               ["λ"]],
-    "<forsen_operand>": [["FORSEN_LIT"], ["FORSENCD_LIT"], ["<identifier>"], ["(<relational_expression>)"]],
-    "<lwk_operand>": [["<_not_op>", "LWK_LIT"], ["<_not_op>", "<identifier>"], ["<_not_op>", "<userdeffunc_call>"], ["(<relational_expression>)"]],
-    "<log_open>": [["<_not_op>", "<log_operand>"]],
-    "<log_operand>": [["LWK_LIT"], ["<userdeffunc_call>"], ["<bool_expression>"]],
-    "<log_expression_tail>": [["<_log_op>", "<log_open>", "<log_expression_tail>"], ["λ"]],
+    "<forsen_operand>": [["FORSEN_LIT"], ["FORSENCD_LIT"], ["<identifier>"], ["(", "relational_expression", ")"]],
+    "<lwk_operand>": [["<_not_op>", "<lwk_operand_val>"]],
+    "<lwk_operand>": [["<identifier>"], ["LWK_LIT"], ["<userdeffunc_call>"]],
+    "<log_open>": [["<_not_op>", "<log_operand>"], ["<log_operand>"]],
+    "<log_operand>": [["LWK_LIT"], ["<userdeffunc_call>"], ["<relational_expression>"]],
+    "<log_expression_tail>": [["<_log_op>", "<log_open>"], ["λ"]],
     "<_rel_op>": [[">"], ["<"], [">="], ["<="], ["<_rel_eq_op>"]],
     "<_rel_eq_op>": [["=="], ["!="]],
     "<_log_op>": [["&&"], ["||"]],
@@ -147,15 +161,15 @@ cfg = {
     "<body>": [["<statement>", "<body>"],
                ["λ"]],
     "<statement>": [["<var_dec>"],
-                    ["yap", "(<print_arg>)"],
+                    ["yap", "(", "<print_arg>", ")"],
                     ["<if_statement>"],
-                    ["lethimcook", "(<switch_expression>)", "{<case_statement>}"],
-                    ["plug", "(<var_dec>;", "<condition>;", "<update>)", "{<body>}"],
-                    ["jit", "(<condition>)", "{<body>}"],
+                    ["lethimcook", "(", "<switch_expression>", ")", "{", "<case_statement>", "}"],
+                    ["plug", "(", "<var_dec>", ";", "<condition>", ";", "<update>", ")", "{", "<body>", "}"],
+                    ["jit", "(", "<condition", ")", "{", "<body>", "}"],
                     ["<d_structure>"],
                     ["back", "<predefined_value>"]],
-    "<if_statement>": [["tuah", "(<condition>)", "{<body>}", "<_if_tail>"]],
-    "<_if_tail>": [["<if_statement>"], ["hawk", "tuah", "(<condition>)", "{<body>}", "<_if_tail>"], ["hawk", "{<body>}"], ["λ"]],
+    "<if_statement>": [["tuah", "(", "<condition", ")", "{", "<body>", "}", "<_if_tail>"]],
+    "<_if_tail>": [["<if_statement>"], ["hawk", "tuah", "(", "condition", ")", "{", "<body>", "}", "<_if_tail>"], ["hawk", "{", "<body>", "}"], ["λ"]],
     "<condition>": [["<lwk_operand>"], ["<bool_expression>"]],
     "<switch_expression>": [["<userdeffunc_call>"], ["<identifier>"]],
     "<case_statement>": [["caseoh", "<literal>", ":", "<body>", "getout", "<case_statement>"], ["npc:", "<body>", "getout"], ["λ"]],
@@ -165,18 +179,14 @@ cfg = {
     "<var_dec>": [
         ["<var_data_type>", "<identifier>", "=", "<local_value>", "<var_dec_tail>"],
         ["<const_dec>", "<var_data_type>", "<identifier>", "=", "<value>"],
-        ["<const_dec>", "<var_data_type>", "<identifier>", "=", "<list_value>"],
         ["<struct_var_dec>", "<struct_init>"],
         ["gng", "IDENTIFIER", "IDENTIFIER", "<gng_var_value>"]],
-    "<gng_var_value>": [["=", "CHU_LIT"], ["λ"]],
+    "<gng_var_value>": [["=", "CHUNGUS_LIT"], ["λ"]],
     "<struct_var_dec>": [["<struct_var_dec_head>", "<identifier>"]],
     "<var_data_type>": [["<data_type>"], ["λ"]],
-    "<value>": [["<predefined_value>"], ["chat()"]],
-    "<predefined_value>": [
-        ["<type_conversion>", "<literal>"],
-        ["<type_conversion>", "<identifier>", "<taper_function>"],
-        ["<type_conversion>", "<expression>"],
-        ["<userdeffunc_call>", "<taper_function>"]],
+    "<value>": [["<predefined_value>"], ["chat()"], ["<list_value>"]],
+    "<predefined_value>": [["<type_conversion>","<predefined_value_val>"],],
+    "<predefined_value_val>": [["<identifier>","<taper_function>"], ["<literal>"], ["<expression"]],
     "<var_dec_tail>": [[",", "IDENTIFIER", "=", "<predefined_value>", "<var_dec_tail>"], ["λ"]],
     "<list_value_tail>": [[",", "<predefined_value>", "<list_value_tail>"], ["λ"]],
     "<print_arg>": [["<print_arg1>", "<print_argN>"]],
@@ -192,15 +202,16 @@ cfg = {
     "<enum_property>": [["IDENTIFIER", "<enum_value>", "<enum_property_tail>"]],
     "<enum_property_tail>": [[",", "IDENTIFIER", "<enum_value>", "<enum_property_tail>"], ["λ"]],
     "<enum_value>": [["=", "CHUNGUS_LIT"], ["λ"]],
-    "<list_value>": [["[", "<predefined_value>", "<list_value_tail>", "]"]],
+    "<list_value>": [["[", "]"]],
+    "<list_value_in>":[["<predefined_value>", "<list_value_tail>"], ["λ"]],
     "<list_assignment>": [
         ["<list_value>"],
-        ["append", "(<arg>", "<next_arg>", ")"],
-        ["insert", "(CHUNGUS_LIT,", "<arg>", "<next_arg>", ")"],
-        ["remove", "(CHUNGUS_LIT)"]],
+        ["append", "(", "arg>", "<next_arg>", ")"],
+        ["insert", "(", "CHUNGUS_LIT,", "<arg>", "<next_arg>", ")"],
+        ["remove", "(", "CHUNGUS_LIT", ")"]],
     "<dstruct_id>": [["IDENTIFIER"], ["λ"]],
-    "<ts_function>": [[".ts()"], ["λ"]],
-    "<taper_function>": [[".taper()"], ["λ"]],
+    "<ts_function>": [[".", "ts", "(", ")"], ["λ"]],
+    "<taper_function>": [[".", "taper", "(", ")"], ["λ"]],
     "<struct_init>": [["=", "<struct_var_value>"], ["λ"]],
     "<struct_var_value>": [["<struct_value_content>"], ["{", "IDENTIFIER", "=", "<struct_value_content>", "<struct_value_tail>", "}"]],
     "<struct_value_tail>": [[",", "IDENTIFIER", "=", "<struct_value_content>", "<struct_value_tail>"], ["λ"]],
@@ -217,14 +228,16 @@ first_sets = compute_first(cfg)
 follow_sets = compute_follow(cfg, first_sets)
 predict_sets = compute_predict(cfg, first_sets, follow_sets)
 
-print("FIRST SETS:")
-for nt in cfg.keys():
-    print(f"First({nt}) = {first_sets[nt]}")
+'''
+print("FIRST SET:")
+for non_terminal in cfg.keys():
+    print(f"First({non_terminal}) = {first_sets[non_terminal]}")
 
-print("\nFOLLOW SETS:")
-for nt in cfg.keys():
-    print(f"Follow({nt}) = {follow_sets[nt]}")
+print("\n\nFOLLOW SET:")
+for non_terminal in cfg.keys():
+    print(f"Follow({non_terminal}) = {follow_sets[non_terminal]}")
 
-print("\nPREDICT SETS:")
-for key, value in predict_sets.items():
-    print(f"Predict{key} = {value}")
+print("\n\nPREDICT SET:")
+for (lhs, prod), predict_set in predict_sets.items():
+    print(f"Predict({lhs} → {' '.join(prod)}) = {predict_set}")'''
+

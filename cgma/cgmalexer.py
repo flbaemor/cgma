@@ -44,10 +44,11 @@ unary_dlm = ' _)\t' + ALPHANUM
 
 #TOKENS
 
-TT_CHUNGUS      = 'CHUNGUS'     # Whole Numbers '3'
-TT_CHUDELUXE    = 'CHUDELUXE'   # Decimal Numbers '3.14'
-TT_FORSEN       = 'FORSEN'  # Strings 
-TT_FORSENCD     = 'FORSENCD' #Char
+TT_CHUNGUS      = 'CHUNGUS_LIT'     # Whole Numbers '3'
+TT_CHUDELUXE    = 'CHUDELUXE_LIT'   # Decimal Numbers '3.14'
+TT_FORSEN       = 'FORSEN_LIT'  # Strings 
+TT_FORSENCD     = 'FORSENCD_LIT' #Char
+TT_LWK          = 'LWK_LIT'     # Boolean 'true' or 'false'
 
 TT_PLUS         = 'PLUS'    # '+'
 TT_MINUS        = 'MINUS'   # '-'
