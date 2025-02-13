@@ -55,16 +55,21 @@ body {
     border-radius: 8px;
     padding: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
 }
 
 .line-num {
-    width: 10px;
-    padding: 10px;
+    width: 20px;  /* Adjust width for better alignment */
+    padding: 10px 5px;  /* Reduce right padding */
     text-align: right;
-    font-size: 14px;
+    font-size: 16px;  /* Match .codeEditor font size */
     color: #ffffff;
     background: #3c043c;
     border-radius: 2px;
+    font-family: monospace;
+    line-height: 1.5;  /* Adjust to match textarea */
+    user-select: none;  /* Prevent text selection */
+    overflow: hidden;
 }
 
 .codeEditor {
@@ -76,7 +81,15 @@ body {
     padding: 10px;
     outline: none;
     resize: none;
+    font-family: monospace;
+    line-height: 1.5;  /* Match line number spacing */
+    caret-color: white;
 }
+
+.line-num div {
+    height: 24px; /* Adjust height to align numbers */
+}
+
 
 /* Token Table Section */
 .outputCont {
@@ -101,6 +114,7 @@ body {
     color: white;
     text-align: center;
     padding: 10px;
+    border-radius: 5px;
 }
 
 .tokenTable td {
@@ -145,13 +159,14 @@ body {
     background: #4f134e;
     border-radius: 5px;
     color: white;
-    margin: 10px;
+    margin-left: 10px;
+    margin-bottom: 10px;
     padding: 10px;
 }
 
 #error {
     width: auto;
-    height: 30px;
+    height: 60px;
     background: #3c043c;
     color: #ffffff;
     padding: 10px;
