@@ -70,6 +70,7 @@ def compute_follow(cfg, first):
 
     return follow
 
+
 def compute_predict(cfg, first, follow):
     predict = {}
     epsilon = "λ"

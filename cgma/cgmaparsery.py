@@ -1,8 +1,6 @@
 from cgmalexer import Lexer
 from cfg import cfg, predict_sets
 
-import re
-
 class LL1Parser:
     def __init__(self, cfg, predict_sets):
         self.cfg = cfg
@@ -110,7 +108,7 @@ class LL1Parser:
 
 if __name__ == "__main__":
     try:
-        with open("E:\Git\cgma\cgma\sample.txt", "r") as file:
+        with open("E:\Git\cgma\cgma\sample.txt", encoding='cp437') as file:
             source_code = file.read()
 
         lexer = Lexer("E:\Git\cgma\cgma\sample.txt", source_code)
