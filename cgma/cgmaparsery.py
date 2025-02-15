@@ -38,8 +38,6 @@ class LL1Parser:
         tokens.append(('EOF', 'EOF'))  # Append end marker
         index = 0
         
-        
-
         while self.stack:
             top = self.stack.pop()
             token = tokens[index]
@@ -53,22 +51,18 @@ class LL1Parser:
                 token_type = token.type
                 token_value = token.value
 
-           
-            
-            # Normalize identifiers
-            if token_type == "IDENTIFIER":
-                token_type = "IDENTIFIER"  # Keep it as IDENTIFIER
-            elif token_type == "CHUNGUS_LIT":
-                token_type = "CHUNGUS_LIT"
-            elif token_type == "CHUDELUXE_LIT":
-                token_type = "CHUDELUXE_LIT"
-            elif token_type == "FORSEN_LIT":
-                token_type = "FORSEN_LIT"
-            elif token_type == "FORSENCD_LIT":
-                token_type = "FORSENCD_LIT"
-            else:
-                token_type = token_value  # Use actual value for other tokens
 
+            if token_value == 'chungus' and index + 1 < len(tokens) and tokens[index + 1].value == 'skibidi':
+                token_value = 'chungus skibidi'
+                token_type = 'chungus skibidi'
+
+            # Normalize identifiers
+            if token_type in {"IDENTIFIER", "CHUNGUS_LIT", "CHUDELUXE_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
+                pass  # Keep their token_type
+            elif token_value in self.parsing_table.get(top, {}):  
+                token_type = token_value  # Match literal tokens directly
+            
+                
 
             print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
@@ -78,7 +72,10 @@ class LL1Parser:
             # If top of stack matches the current token (terminal match)
             if top == token_type or top == token_value:
                 print(f"Matched: {top}")
-                index += 1  # Move to the next token
+                if top == 'chungus skibidi':
+                    index += 2
+                else:
+                    index += 1  # Move to the next token
             
             # If top of stack is a non-terminal and exists in the parsing table
             elif top in self.parsing_table:
@@ -136,3 +133,4 @@ if __name__ == "__main__":
                 
     except FileNotFoundError:
         print("Error: 'sample.txt' not found. Please make sure the file exists.")
+
