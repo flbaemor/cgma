@@ -1,0 +1,177 @@
+/* General Styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    align-items: center;
+    background-color: #4f134e;
+    padding: 15px 30px;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links li {
+    display: inline;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    transition: 0.3s;
+}
+
+.nav-links a:hover {
+    color: #90037b;
+}
+
+/* Main Content */
+.mainCont {
+    display: flex;
+    flex-grow: 1;
+    padding: 10px;
+    gap: 15px;
+}
+
+/* Code Editor Section */
+.textFieldCont {
+    display: flex;
+    width: 70%;
+    background: #4f134e;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.line-num {
+    width: 20px;  /* Adjust width for better alignment */
+    padding: 10px 5px;  /* Reduce right padding */
+    text-align: right;
+    font-size: 16px;  /* Match .codeEditor font size */
+    color: #ffffff;
+    background: #3c043c;
+    border-radius: 2px;
+    font-family: monospace;
+    line-height: 1.5;  /* Adjust to match textarea */
+    user-select: none;  /* Prevent text selection */
+    overflow: hidden;
+}
+
+.codeEditor {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 16px;
+    padding: 10px;
+    outline: none;
+    resize: none;
+    font-family: monospace;
+    line-height: 1.5;  /* Match line number spacing */
+    caret-color: white;
+}
+
+.line-num div {
+    height: 24px; /* Adjust height to align numbers */
+}
+
+
+/* Token Table Section */
+.outputCont {
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.tokenTable {
+    border-collapse: collapse;
+    width: 100%;
+    background: #282c34;
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tokenTable th {
+    background-color: #4f134e;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.tokenTable td {
+    text-align: left;
+    padding: 8px;
+    font-size: 14px;
+    word-break: break-word;
+}
+
+.tokenTable tr:nth-child(even) {
+    background: #890b89;
+}
+
+.tokenTable tr:nth-child(odd) {
+    background: #bf4ca6;
+}
+
+/* Run Button */
+.run {
+    width: 10%;
+    padding: 10px;
+    font-size: 14px;
+    background-color: #4f134e;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.3s;
+    position: absolute;
+    top: 25px;
+    right: 10px;
+}
+
+.run:hover {
+    background-color: #008ba3;
+}
+
+/* Error Box */
+.error {
+    width: 97%;
+    background: #4f134e;
+    border-radius: 5px;
+    color: white;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+}
+
+#error {
+    width: auto;
+    height: 60px;
+    background: #3c043c;
+    color: #ffffff;
+    padding: 10px;
+    resize: none;
+    border: none;
+    border-radius: 5px;
+    outline: none;
+}

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexer, Syntax, Semantic</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="main.js" defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <img src="logo.png" width="50" height="50" alt="Logo">
+        </div>
+        <ul class="nav-links">
+            <li><a href="lexerpg.html">LEXER</a></li>
+            <li><a href="syntaxpg.html">SYNTAX</a></li>
+            <li><a href="semanticpg.html">SEMANTIC</a></li>
+        </ul>
+        <button class="run">RUN ▷</button>
+    </nav>
+
+    <div class="mainCont">
+        <div class="textFieldCont">
+            <div class="line-num" id="lineNumbers"></div>
+            <textarea class="codeEditor" id="editor"></textarea>
+        </div>        
+        <div class="outputCont">
+            <table class="tokenTable">
+                <thead>
+                    <tr>
+                        <th>TOKEN TYPE</th>
+                        <th>TOKENS</th>
+                    </tr>
+                </thead>
+                <tbody id="tokenBody">
+                    <!-- Dynamic content will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="error">
+        <h4>OUTPUT/ERROR</h4>
+        <textarea id="error" readonly></textarea>
+    </div>
+</body>
+</html>
