@@ -105,7 +105,6 @@ class LL1Parser:
 
 
 
-
 if __name__ == "__main__":
     try:
         with open("E:\Git\cgma\cgma\sample.txt", encoding='cp437') as file:
