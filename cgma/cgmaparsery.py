@@ -107,10 +107,10 @@ class LL1Parser:
 
 if __name__ == "__main__":
     try:
-        with open("E:\Git\cgma\cgma\sample.txt", encoding='cp437') as file:
+        with open(r"C:\Users\rmnxq\OneDrive\Desktop\csyr3\1st sem\o2eye\cgma-1\cgma\sample.txt", encoding='cp437') as file:
             source_code = file.read()
 
-        lexer = Lexer("E:\Git\cgma\cgma\sample.txt", source_code)
+        lexer = Lexer(r"C:\Users\rmnxq\OneDrive\Desktop\csyr3\1st sem\o2eye\cgma-1\cgma\sample.txt", source_code)
         tokens, errors = lexer.make_tokens()
 
         if errors:
