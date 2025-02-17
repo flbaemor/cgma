@@ -80,4 +80,8 @@ async function runParser() {
     }
 }
 
-document.querySelector('.run').addEventListener('click', runLexer);
+function runSemantic() {
+    // Placeholder for semantic analysis functionality
+    console.log("Semantic analysis not implemented yet.");
+    document.getElementById('error').textContent = "Semantic analysis not implemented yet.";
+}
