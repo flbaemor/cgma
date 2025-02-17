@@ -175,3 +175,7 @@ body {
     border-radius: 5px;
     outline: none;
 }
+
+.token-value {
+    white-space: pre;
+}
