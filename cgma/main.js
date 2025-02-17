@@ -1,3 +1,23 @@
+document.addEventListener('DOMContentLoaded', (event) => {
+    const editor = document.getElementById('editor');
+    const lineNumbers = document.getElementById('lineNumbers');
+
+    // Function to update line numbers
+    function updateLineNumbers() {
+        const lines = editor.value.split('\n').length;
+        lineNumbers.innerHTML = ''; // Clear existing line numbers
+        for (let i = 1; i <= lines; i++) {
+            lineNumbers.innerHTML += `<div>${i}</div>`;
+        }
+    }
+
+    // Update line numbers on input
+    editor.addEventListener('input', updateLineNumbers);
+
+    // Initial update of line numbers
+    updateLineNumbers();
+});
+
 async function runLexer() {
     const sourceCode = document.getElementById('editor').value;
     console.log("Running lexer with source code:", sourceCode);

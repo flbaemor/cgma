@@ -240,4 +240,3 @@ for non_terminal in cfg.keys():
 print("\n\nPREDICT SET:")
 for (lhs, prod), predict_set in predict_sets.items():
     print(f"Predict({lhs} → {' '.join(prod)}) = {predict_set}")
-

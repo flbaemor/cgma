@@ -79,7 +79,7 @@ class LL1Parser:
             elif top in self.parsing_table:
                 if token_type in self.parsing_table[top]:
                     production = self.parsing_table[top][token_type]
-                    print(f"Expand: {top} {'->'} {' '.join(production)}")
+                    print(f"Expand: {top} → {' '.join(production)}")
                     
                     if production != ['λ']:  # Ignore epsilon (λ)
                         self.stack.extend(reversed(production))  # Push in reverse order
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         with open("E:\Git\cgma\cgma\sample.txt", encoding='cp437') as file:
             source_code = file.read()
 
-        lexer = Lexer(r"C:\Users\rmnxq\OneDrive\Desktop\csyr3\1st sem\o2eye\cgma-1\cgma\sample.txt", source_code)
+        lexer = Lexer("E:\Git\cgma\cgma\sample.txt", source_code)
         tokens, errors = lexer.make_tokens()
 
         if errors:
@@ -130,4 +130,3 @@ if __name__ == "__main__":
                 
     except FileNotFoundError:
         print("Error: 'sample.txt' not found. Please make sure the file exists.")
-
