@@ -70,6 +70,8 @@ def compute_follow(cfg, first):
 
     return follow
 
+
+
 def compute_predict(cfg, first, follow):
     predict = {}
     epsilon = "λ"
@@ -225,4 +227,17 @@ first_sets = compute_first(cfg)
 follow_sets = compute_follow(cfg, first_sets)
 predict_sets = compute_predict(cfg, first_sets, follow_sets)
 
+
+'''
+print("FIRST SET:")
+for non_terminal in cfg.keys():
+    print(f"First({non_terminal}) = {first_sets[non_terminal]}")
+
+print("\n\nFOLLOW SET:")
+for non_terminal in cfg.keys():
+    print(f"Follow({non_terminal}) = {follow_sets[non_terminal]}")
+'''
+print("\n\nPREDICT SET:")
+for (lhs, prod), predict_set in predict_sets.items():
+    print(f"Predict({lhs} → {' '.join(prod)}) = {predict_set}")
 

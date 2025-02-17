@@ -137,7 +137,9 @@ class Position:
         return Position(self.idx, self.ln, self.col, self.fn, self.ftxt)
         
 
+
 #ERROR
+
 
 class Error:
     def __init__(self, pos_start, pos_end, error_name, details):

@@ -1,0 +1,47 @@
+chungus num(chungus tite){
+	back 1
+}
+
+chungus skibidi(){
+	chudeluxe num1 = (0+1)+(2+3).chudeluxe, num2 = 0
+	chungus choice = 0
+
+	yap("Enter the first number: ")
+	num1 = chat()
+	yap("Enter the second number: ")
+	num2 = chat()
+	hello = (num(asd)).chungus
+	yap("1.) Addition \n2.) Subtraction")
+	yap("Choose an operation to be done: ")
+	choice = chat()
+
+	lethimcook(choice){
+		caseoh 1:
+			yap("Result: {}", num1 + num2)
+			getout
+		caseoh 2:
+			yap("Result: {}", num1 - num2)
+			getout
+		npc:
+			yap("Invalid Choice.")
+			getout
+		}
+
+	jit(x==y && y==x || y<=3){
+		x = 0
+	}
+	total = (price * quantity) + tax // This is a comment
+	/* This is a comment
+	Too*/
+	chungus sum = a + b // sum of a and b
+	tuah(a > b)
+	{
+		a = b
+	}
+	total = (price * quantity) + tax
+	forsen letter = 'A'
+
+
+
+    back 0
+	}
