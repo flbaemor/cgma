@@ -111,7 +111,7 @@ cfg = {
     "<global_val>": [["<list_assignment>"],
                      ["<predefined_value>"]],
     "<global_statement_val>": [["=", "<global_val>", "<var_dec_tail>"],
-                                ["<dstruct_id>", "(", "<parameter>", "<next_param>", ")", "{", "<statement>", "}", "<global>"]],
+                                ["<dstruct_id>", "(", "<parameter>", "<next_param>", ")", "{", "<statement>", "}"]],
     "<data_id>": [["<data_type>", "<identifier>"]],
     "<identifier>": [["IDENTIFIER", "<list_index>", "<struct_mem>"]],
     "<data_type>": [["chungus"],["chudeluxe"], ["forsen"], ["forsencd"], ["lwk"], ["aura"], ["gng"]],
@@ -123,33 +123,35 @@ cfg = {
     "<num_literal>": [["CHUNGUS_LIT"], ["CHUDELUXE_LIT"]],
     "<stringCC>": [["+", "FORSENCD_LIT", "<stringCC>"],
                    ["λ"]],
-    "<return_type>": [["nocap"], ["<data_type>", "<dstruct_id>"]],
     "<parameter>": [["λ"], ["<data_id>"], ],
     "<next_param>": [["λ"], [",", "<parameter>", "<next_param>"]],
     "<userdeffunc_call>": [["(", "<arg>", "<next_arg>", ")"], ["λ"]],
     "<arg>": [["λ"], ["<predefined_value>"]],
     "<next_arg>": [[",", "<arg>", "<next_arg>"],
                     ["λ"]],
-    "<expression>": [["<expression_val>", "<_prepost_op>", "<expression_tail>"], ["<_prepost_op>","<expression_val>", "<expression_tail>"], ["(", "<expression_val>", "<expression_tail>",")", "<type_conversion>", "<expression_tail>"]],
+    "<expression>": [["<expression_val>", "<_prepost_op>", "<expression_tail>"], 
+                     ["<_prepost_op>","<expression_val>", "<expression_tail>"], 
+                     ["(", "<expression_val>", "<expression_tail>",")", "<type_conversion>", "<expression_tail>"]],
     "<expression_val>": [["<literal>"], ["<identifier>", "<userdeffunc_call>", "<ts_function>"], ["(", "<expression>", ")", "<type_conversion>"]],
     "<expression_tail>": [["λ"], ["<rel_expression_tail>", "<log_expression_tail>"], ["<num_expression_tail>"]],
     "<num_expression>": [["<num_operand>", "<_arith_op>", "<num_operand>", "<num_expression_tail>"],
                          ["(", "<num_expression>", ")", "<type_conversion>", "<num_expression_tail>"]],
-    "<num_operand>": [["<_unary_op>", "<num_val>"],["<num_val>", "<_prepost_op>"],["(", "<num_expression>", ")","<type_conversion>"]],
+    "<num_operand>": [["<_unary_op>", "<num_val>"],["<num_val>", "<_prepost_op>"],["(", "<num_operand>", ")","<type_conversion>"]],
     "<num_val>": [["<num_literal>"], ["<identifier>","<userdeffunc_call>", "<ts_function>"],["(", "<num_val>", ")", "<type_conversion>", "<num_expression_tail>"]],
     "<num_expression_tail>": [["λ"],["<_arith_op>","<num_operand>", "<num_expression_tail>"]],
-    "<_unary_op>": [["-"], ["<_prepost_op>"], ["λ"]],
-    "<_prepost_op>": [["++"], ["--"], ["λ"]],
+    "<_unary_op>": [["<_neg_op>"], ["<_prepost_op>"], ["λ"]],
+    "<_neg_op>": [["λ"],["-"]],
+    "<_prepost_op>": [["++"], ["--"]],
     "<_arith_op>": [["+"], ["-"], ["/"], ["%"], ["*"]],
     "<bool_expression>": [["<relational_expression>", "<log_expression_tail>"], ["<log_expression>", "<log_expression_tail>"]],
     "<log_expression>": [["<log_open>", "<_log_op>", "<log_open>"]],
     "<relational_expression>": [["<rel_operand>", "<_rel_op>", "<rel_operand>", "<rel_expression_tail>", "<log_expression_tail>"], ["<_not_op>","(", "<relational_expression>", ")", "<rel_expression_tail>"]],
     "<rel_operand>": [["<rel_operand_content>"], ["(","<rel_operand_content>",")" , "<type_conversion>"]],
-    "<rel_operand_content>": [["<num_literal>"], ["<identifier>", "<ts_function>"], ["<_not_op>", "(", "<bool_expression>", ")"]],
+    "<rel_operand_content>": [["<literal>"], ["<identifier>", "<ts_function>"], ["<_not_op>", "(", "<bool_expression>", ")"]],
     "<rel_expression_tail>": [["<_rel_op>", "<rel_operand>", "<log_expression_tail>"],["λ"]],
-    "<forsen_operand>": [["FORSEN_LIT"], ["FORSENCD_LIT"], ["<identifier>"], ["(", "<relational_expression>", ")"]],
-    "<lwk_operand>": [["<_not_op>", "<lwk_operand_val>"]],
-    "<lwk_operand>": [["<identifier>"], ["LWK_LIT"], ["<userdeffunc_call>"]],
+    
+    "<lwk_operand>": [["<_not_op>", "<lwk_operand_val>"],["<relational_expression>"]],
+    "<lwk_operand_val>": [["<identifier>","<userdeffunc_call>"], ["LWK_LIT"]],
     "<log_open>": [["<_not_op>", "<log_operand>"]],
     "<log_operand>": [["LWK_LIT"], ["<identifier>", "<userdeffunc_call>", "<ts_function>"], ["<relational_expression>"]],
     "<log_expression_tail>": [["λ"],["<_log_op>", "<log_open>"]],
@@ -228,7 +230,7 @@ follow_sets = compute_follow(cfg, first_sets)
 predict_sets = compute_predict(cfg, first_sets, follow_sets)
 
 
-'''
+
 print("FIRST SET:")
 for non_terminal in cfg.keys():
     print(f"First({non_terminal}) = {first_sets[non_terminal]}")
@@ -236,7 +238,7 @@ for non_terminal in cfg.keys():
 print("\n\nFOLLOW SET:")
 for non_terminal in cfg.keys():
     print(f"Follow({non_terminal}) = {follow_sets[non_terminal]}")
-'''
+
 print("\n\nPREDICT SET:")
 for (lhs, prod), predict_set in predict_sets.items():
     print(f"Predict({lhs} → {' '.join(prod)}) = {predict_set}")
