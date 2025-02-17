@@ -14,6 +14,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // Update line numbers on input
     editor.addEventListener('input', updateLineNumbers);
 
+    // Synchronize scrolling of line numbers with textarea
+    editor.addEventListener('scroll', () => {
+        lineNumbers.scrollTop = editor.scrollTop;
+    });
+
     // Initial update of line numbers
     updateLineNumbers();
 });
@@ -42,6 +47,7 @@ async function runLexer() {
             const cellValue = row.insertCell(1);
             cellType.textContent = token.type;
             cellValue.textContent = token.value;
+            cellValue.style.whiteSpace = 'pre'; // Ensure whitespace characters are displayed correctly
         });
         document.getElementById('error').textContent = data.errors.join('\n');
     } catch (error) {
@@ -74,4 +80,8 @@ async function runParser() {
     }
 }
 
-document.querySelector('.run').addEventListener('click', runLexer);
+function runSemantic() {
+    // Placeholder for semantic analysis functionality
+    console.log("Semantic analysis not implemented yet.");
+    document.getElementById('error').textContent = "Semantic analysis not implemented yet.";
+}
