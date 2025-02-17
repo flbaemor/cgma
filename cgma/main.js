@@ -14,6 +14,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // Update line numbers on input
     editor.addEventListener('input', updateLineNumbers);
 
+    // Synchronize scrolling of line numbers with textarea
+    editor.addEventListener('scroll', () => {
+        lineNumbers.scrollTop = editor.scrollTop;
+    });
+
     // Initial update of line numbers
     updateLineNumbers();
 });
@@ -42,6 +47,7 @@ async function runLexer() {
             const cellValue = row.insertCell(1);
             cellType.textContent = token.type;
             cellValue.textContent = token.value;
+            cellValue.style.whiteSpace = 'pre'; // Ensure whitespace characters are displayed correctly
         });
         document.getElementById('error').textContent = data.errors.join('\n');
     } catch (error) {
