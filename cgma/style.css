@@ -94,6 +94,10 @@ body {
     overflow-y: auto;
 }
 
+.codeEditor::-webkit-scrollbar {
+    display: none;
+}
+
 .line-num div {
     height: 24px; 
 }
@@ -104,6 +108,10 @@ body {
     flex-direction: column;
     overflow-y: auto;
     max-height: 438px;
+}
+
+.outputCont::-webkit-scrollbar {
+    display: none;
 }
 
 .tokenTable {
@@ -140,7 +148,7 @@ body {
 
 
 .error {
-    width: 97%;
+    width: 1496px;
     background: #4f134e;
     border-radius: 5px;
     color: white;
@@ -150,7 +158,7 @@ body {
 }
 
 #error {
-    width: 98%;
+    width: 1476px;
     height: 100px;
     background: #3c043c;
     color: #ffffff;
