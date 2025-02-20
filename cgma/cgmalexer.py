@@ -1574,7 +1574,6 @@ class Lexer:
                         else:
                             ident_str += self.current_char
                             self.advance()
-                    ident_str = ident_str.replace('\n', ' ')
                     #tokens.append(Token(TT_COMMENT, ident_str))
                     continue    
                 elif self.current_char is not None and self.current_char in operator_dlm:

@@ -22,6 +22,20 @@ document.addEventListener('DOMContentLoaded', (event) => {
     // Initial update of line numbers
     updateLineNumbers();
 
+    document.getElementById('editor').addEventListener('keydown', function(event) {
+        if (event.key === 'Tab') {
+            event.preventDefault(); // Prevent moving to the next element
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+    
+            // Insert tab character at cursor position
+            this.value = this.value.substring(0, start) + '\t' + this.value.substring(end);
+    
+            // Move cursor position after inserted tab
+            this.selectionStart = this.selectionEnd = start + 1;
+        }
+    });
+
     // Add event listeners for navigation links
     document.getElementById('lexerLink').addEventListener('click', (e) => {
         e.preventDefault();
