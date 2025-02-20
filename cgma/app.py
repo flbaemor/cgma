@@ -30,7 +30,13 @@ def lex():
 @app.route('/api/parse', methods=['POST'])
 def parse():
     data = request.json
-    tokens = data.get('tokens', [])
+    source_code = data.get('source_code', '')
+    lexer = lexer('<stdin>', source_code)
+    tokens, errors = lexer.make_tokens()
+
+    if errors:
+        return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
+
     parser = LL1Parser(cfg, predict_sets)
     success = parser.parse(tokens)
     return jsonify({'success': success})

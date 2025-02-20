@@ -109,13 +109,10 @@ body {
 .tokenTable {
     border-collapse: collapse;
     width: 100%;
-    background: #3c043c;
+    background: #282c34;
     color: white;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    flex-grow: 1;
-    overflow-y: auto; 
-    max-height: 400px; 
 }
 
 .tokenTable th {

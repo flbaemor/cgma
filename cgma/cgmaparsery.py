@@ -1,5 +1,10 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from cgmalexer import Lexer
 from cfg import cfg, predict_sets
+
+app = Flask(__name__)
+CORS(app)
 
 class LL1Parser:
     def __init__(self, cfg, predict_sets):
@@ -21,7 +26,6 @@ class LL1Parser:
                     for terminal in self.predict_sets[predict_key]:
                         parsing_table[non_terminal][terminal] = production
         return parsing_table
-        
 
     def get_next_token(self):
         """Advances to the next token."""
@@ -49,7 +53,6 @@ class LL1Parser:
                 token_type = token.type
                 token_value = token.value
 
-
             if token_value == 'chungus' and index + 1 < len(tokens) and tokens[index + 1].value == 'skibidi':
                 token_value = 'chungus skibidi'
                 token_type = 'chungus skibidi'
@@ -59,13 +62,10 @@ class LL1Parser:
                 pass  # Keep their token_type
             elif token_value in self.parsing_table.get(top, {}):  
                 token_type = token_value  # Match literal tokens directly
-            
-                
 
             print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
             # Debug: Print current stack and remaining tokens
-            
             
             # If top of stack matches the current token (terminal match)
             if top == token_type or top == token_value:
@@ -103,30 +103,19 @@ class LL1Parser:
             print("Error: Tokens remaining after parsing")
             return False
 
+@app.route('/api/parse', methods=['POST'])
+def parse():
+    data = request.json
+    source_code = data.get('source_code', '')
+    lexer = Lexer('<stdin>', source_code)
+    tokens, errors = lexer.make_tokens()
 
+    if errors:
+        return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
-if __name__ == "__main__":
-    try:
-        with open(r"C:\Users\rmnxq\OneDrive\Desktop\csyr3\1st sem\o2eye\cgma-1\cgma\sample.txt", encoding='cp437') as file:
-            source_code = file.read()
+    parser = LL1Parser(cfg, predict_sets)
+    success = parser.parse(tokens)
+    return jsonify({'success': success})
 
-        lexer = Lexer(r"C:\Users\rmnxq\OneDrive\Desktop\csyr3\1st sem\o2eye\cgma-1\cgma\sample.txt", source_code)
-        tokens, errors = lexer.make_tokens()
-
-        if errors:
-            print("Lexer Errors:")
-            for error in errors:
-                print(error.as_string())
-        else:
-            print("Tokens:")
-            for token in tokens:
-                print(token)
-
-            parser = LL1Parser(cfg, predict_sets)
-            if parser.parse(tokens):
-                print("Parsing successful!")
-            else:
-                print("Parsing failed.")
-                
-    except FileNotFoundError:
-        print("Error: 'sample.txt' not found. Please make sure the file exists.")
+if __name__ == '__main__':
+    app.run(debug=True)

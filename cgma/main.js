@@ -21,6 +21,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     // Initial update of line numbers
     updateLineNumbers();
+
+    // Add event listeners for navigation links
+    document.getElementById('lexerLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        runLexer();
+    });
+
+    document.getElementById('syntaxLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        runSyntax();
+    });
+
+    document.getElementById('semanticLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        runSemantic();
+    });
+
+    document.querySelector('.run').addEventListener('click', runLexer);
 });
 
 async function runLexer() {
@@ -55,33 +73,39 @@ async function runLexer() {
     }
 }
 
-async function runParser() {
-    const tokens = Array.from(document.getElementById('tokenBody').rows).map(row => ({
-        type: row.cells[0].textContent,
-        value: row.cells[1].textContent
-    }));
-    console.log("Running parser with tokens:", tokens);
+async function runSyntax() {
+    const sourceCode = document.getElementById('editor').value;
+    console.log("Running syntax with source code:", sourceCode);
+    
     try {
         const response = await fetch('/api/parse', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ tokens: tokens })
+            body: JSON.stringify({ source_code: sourceCode })
         });
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const data = await response.json();
-        console.log("Parser response:", data);
-        document.getElementById('error').textContent = data.success ? 'Parsing successful!' : 'Parsing failed.';
+        console.log("Syntax response:", data);
+        
+        const errorBox = document.getElementById('error');
+        errorBox.value = data.success ? 'Parsing successful!' : 'Parsing failed.'; // Use `.value` for textarea
+        errorBox.style.color = data.success ? 'green' : 'red'; // Color feedback for success/failure
     } catch (error) {
-        console.error("Error running parser:", error);
+        console.error("Error running syntax:", error);
+        document.getElementById('error').value = 'Error running syntax analysis.';
     }
 }
 
-function runSemantic() {
-    // Placeholder for semantic analysis functionality
-    console.log("Semantic analysis not implemented yet.");
-    document.getElementById('error').textContent = "Semantic analysis not implemented yet.";
+
+async function runSemantic() {
+    const sourceCode = document.getElementById('editor').value;
+    console.log("Running semantic analysis with source code:", sourceCode);
+    // Placeholder for semantic analysis logic
+    document.getElementById('error').textContent = 'Semantic analysis not implemented yet.';
 }
