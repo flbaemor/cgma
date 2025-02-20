@@ -139,11 +139,11 @@ body {
 }
 
 .tokenTable tr:nth-child(even) {
-    background: #890b89;
+    background: #4f134e;
 }
 
 .tokenTable tr:nth-child(odd) {
-    background: #bf4ca6;
+    background: #3c043c;
 }
 
 
