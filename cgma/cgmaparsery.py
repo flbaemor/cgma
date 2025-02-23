@@ -39,6 +39,7 @@ class LL1Parser:
         self.stack = ['EOF', list(self.cfg.keys())[0]]  # Start symbol on stack
         tokens.append(('EOF', 'EOF'))  # Append end marker
         index = 0
+        error_messages = []
         
         while self.stack:
             top = self.stack.pop()
@@ -86,22 +87,25 @@ class LL1Parser:
                     print(f"Updated Stack: {self.stack}")
                 else:
                     expected_tokens = list(self.parsing_table[top].keys())
-                    print(f"Error: Unexpected token '{token_value}' at position {index}")
-                    print(f"Expected one of: {expected_tokens}")
-                    return False
+                    error_message = f"Error: Unexpected token '{token_value}' at position {index}. Expected one of: {expected_tokens}"
+                    print(error_message)
+                    error_messages.append(error_message)
+                    return False, error_messages
             
             # If stack top is a terminal but does not match token, error
             else:
-                print(f"Error: Unexpected symbol '{top}' on stack")
-                return False
+                error_message = f"Error: Unexpected symbol '{top}' on stack"
+                print(error_message)
+                error_messages.append(error_message)
+                return False, error_messages
         
         # Ensure successful parsing if EOF is reached and stack is empty
         if token_type == 'EOF' and not self.stack:
             print("Parsing successful!")
-            return True
+            return True, []
         else:
             print("Error: Tokens remaining after parsing")
-            return False
+            return False, ["Error: Tokens remaining after parsing"]
 
 @app.route('/api/parse', methods=['POST'])
 def parse():
@@ -114,8 +118,10 @@ def parse():
         return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
     parser = LL1Parser(cfg, predict_sets)
-    success = parser.parse(tokens)
-    return jsonify({'success': success})
+    success, parse_errors = parser.parse(tokens)
+
+    return jsonify({'success': success, 'errors': parse_errors})
+
 
 if __name__ == '__main__':
     app.run(debug=True)

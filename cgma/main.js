@@ -81,27 +81,16 @@ async function runLexer() {
             cellValue.textContent = token.value;
             cellValue.style.whiteSpace = 'pre'; // Ensure whitespace characters are displayed correctly
         });
-
-        const errorBox = document.getElementById('error');
-        errorBox.value = '';
-        if (data.errors.length > 0) {
-            errorBox.style.color = 'red'
-            data.errors.forEach(error => {
-                errorBox.value += error + "\n";
-            });
-        } else {
-            errorBox.style.color = 'green'
-            errorBox.value = "No errors found.";
-        }
+        document.getElementById('error').textContent = data.errors.join('\n');
     } catch (error) {
         console.error("Error running lexer:", error);
-        document.getElementById('error').value = 'Error running lexer analysis.';
     }
 }
 
 async function runSyntax() {
     const sourceCode = document.getElementById('editor').value;
-    console.log("Running parser with source code:", sourceCode);
+    console.log("Running syntax with source code:", sourceCode);
+    
     try {
         const response = await fetch('/api/parse', {
             method: 'POST',
@@ -110,24 +99,26 @@ async function runSyntax() {
             },
             body: JSON.stringify({ source_code: sourceCode })
         });
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const data = await response.json();
-        console.log("Parser response:", data);
+        console.log("Syntax response:", data);
+        
         const errorBox = document.getElementById('error');
-        errorBox.value = ''; // Clear previous errors
-        if (data.errors && data.errors.length > 0) {
-            data.errors.forEach(error => {
-                errorBox.value += error + "\n";
-            });
+        
+        if (data.success) {
+            errorBox.value = 'Parsing successful!';
+            errorBox.style.color = 'green';
         } else {
-            errorBox.value = data.success ? 'Parsing successful!' : 'Parsing failed.';
+            errorBox.value = data.errors.join('\n'); // Show error messages
+            errorBox.style.color = 'red';
         }
-        errorBox.style.color = data.success ? 'green' : 'red'; // Color feedback for success/failure
     } catch (error) {
-        console.error("Error running parser:", error);
-        document.getElementById('error').value = 'Error running parser analysis.';
+        console.error("Error running syntax:", error);
+        document.getElementById('error').value = 'Error running syntax analysis.';
     }
 }
 

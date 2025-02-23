@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from cgmalexer import Lexer
 from cgmalexer import run as lexer_run
 from cgmaparsery import LL1Parser
 from cfg import cfg, predict_sets
@@ -32,15 +31,24 @@ def lex():
 def parse():
     data = request.json
     source_code = data.get('source_code', '')
-    lexer = Lexer('<stdin>', source_code)
-    tokens, errors = lexer.make_tokens()
 
+    # Run Lexer
+    tokens, errors = lexer_run('<stdin>', source_code)
+
+    # If lexer found errors, return them immediately
     if errors:
         return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
+    # Run Parser
     parser = LL1Parser(cfg, predict_sets)
-    success = parser.parse(tokens)
-    return jsonify({'success': success})
+    success, parse_errors = parser.parse(tokens)
+
+    # Return parsing errors if any
+    if not success:
+        return jsonify({'success': False, 'errors': parse_errors})
+
+    return jsonify({'success': True, 'errors': []})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
