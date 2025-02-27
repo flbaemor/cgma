@@ -2,7 +2,7 @@
     "version": 2,
     "builds": [
       {
-        "src": "cgma/api/**/*.py",
+        "src": "/api/**/*.py",
         "use": "@vercel/python"
       },
       {
@@ -12,7 +12,7 @@
     ],
     "routes": [
       {
-        "src": "cgma/api/(.*)",
+        "src": "/api/(.*)",
         "dest": "/api/$1"
       },
       {
