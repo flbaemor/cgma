@@ -3,11 +3,11 @@ from cfg import cfg, predict_sets
 from cgmalexer import run as lexer_run
 import json
 
-def lambda_handler(event, context): 
+def handler(event, context): 
     body = json.loads(event['body'])
-    source_code = body['source_code']
-
+    source_code = body.get('source_code', '')
     tokens, errors = lexer_run('<stdin>', source_code)
+
     if errors:
         return {
             'statusCode': 200,
