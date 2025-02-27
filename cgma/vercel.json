@@ -1,27 +1,27 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/*.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/config",
-      "dest": "/api/cfg.py"
-    },
-    {
-      "src": "/api/lexer",
-      "dest": "/api/cgmalexer.py"
-    },
-    {
-      "src": "/api/parser",
-      "dest": "/api/cgmaparser.py"
-    },
-    {
-      "src": "/",
-      "dest": "/index.html"
-    }
-  ]
-}
+    "version": 2,
+    "builds": [
+      {
+        "src": "api/**/*.py",
+        "use": "@vercel/python"
+      },
+      {
+        "src": "public/**/*",
+        "use": "@vercel/static"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/api/lexer",
+        "dest": "/api/lexer.py"
+      },
+      {
+        "src": "/api/parser",
+        "dest": "/api/parser.py"
+      },
+      {
+        "src": "/(.*)",
+        "dest": "/public/$1"
+      }
+    ]
+  }
