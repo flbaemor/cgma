@@ -44,7 +44,7 @@ plus_dlm =  ' _("+)\t' + ALPHANUM
 relat_dlm = ' _("\t!' + ALPHANUM
 scolon_dlm = ' _+-\t' + ALPHANUM
 spc_dlm =   ' \t'
-unary_dlm = ' _)\t' + ALPHANUM
+unary_dlm = ' _)\t\n' + ALPHANUM
 
 #TOKENS
 
@@ -160,7 +160,7 @@ class IllegalCharError(Error):
     def __init__(self, pos_start, pos_end, details):
         super().__init__(pos_start, pos_end, 'Illegal Character', details)
     def as_string(self):
-        return f"Ln {self.pos_start.ln + 1} Col {self.pos_start.col + 1} Lexical Error: {self.details}"
+        return f"Ln {self.pos_start.ln + 1} Lexical Error: {self.details}"
 
 #TOKEN
 
@@ -1400,8 +1400,8 @@ class Lexer:
             elif self.current_char == '\n':
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
-                while self.current_char == '\n':
-                    self.advance()
+                tokens.append(Token(TT_NL, "\\n"))
+                self.advance()
                 
 
             elif self.current_char == '\t':
@@ -1560,7 +1560,7 @@ class Lexer:
                     while self.current_char is not None and self.current_char != "\n":
                         ident_str += self.current_char
                         self.advance()
-                    #tokens.append(Token(TT_COMMENT, ident_str))
+                    tokens.append(Token(TT_COMMENT, ident_str))
                     continue
                 elif self.current_char == "*":
                     ident_str += self.current_char
@@ -1574,7 +1574,7 @@ class Lexer:
                         else:
                             ident_str += self.current_char
                             self.advance()
-                    #tokens.append(Token(TT_COMMENT, ident_str))
+                    tokens.append(Token(TT_COMMENT, ident_str))
                     continue    
                 elif self.current_char is not None and self.current_char in operator_dlm:
                     tokens.append(Token(TT_DIV, ident_str))

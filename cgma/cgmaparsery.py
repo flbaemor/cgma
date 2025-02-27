@@ -37,8 +37,8 @@ class LL1Parser:
 
     def parse(self, tokens):
         self.stack = ['EOF', list(self.cfg.keys())[0]]  # Start symbol on stack
-        tokens.append(('EOF', 'EOF'))  # Append end marker
         index = 0
+        line = 1
         error_messages = []
         
         while self.stack:
@@ -48,7 +48,11 @@ class LL1Parser:
             token_value = token.value  # Token value from lexer
 
             # Skip whitespace and newlines
-            while token_type in {'SPC', 'NL', 'TAB'}:
+            while token_type in {'SPC', 'NL', 'TAB', 'COMMENT'}:
+                if token_type == 'NL':
+                    line += 1
+                elif token_type == 'COMMENT' and '\n' in token_value:
+                    line += 1
                 index += 1
                 token = tokens[index]
                 token_type = token.type
@@ -61,12 +65,15 @@ class LL1Parser:
             # Normalize identifiers
             if token_type in {"IDENTIFIER", "CHUNGUS_LIT", "CHUDELUXE_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
                 pass  # Keep their token_type
+            elif token_value in {'true', 'false'}:
+                token_type = 'LWK_LIT'
             elif token_value in self.parsing_table.get(top, {}):  
                 token_type = token_value  # Match literal tokens directly
 
             print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
-            # Debug: Print current stack and remaining tokens
+            if token_type == 'TT_NL':
+                line += 1
             
             # If top of stack matches the current token (terminal match)
             if top == token_type or top == token_value:
@@ -87,14 +94,14 @@ class LL1Parser:
                     print(f"Updated Stack: {self.stack}")
                 else:
                     expected_tokens = list(self.parsing_table[top].keys())
-                    error_message = f"Error: Unexpected token '{token_value}' at position {index}. Expected one of: {expected_tokens}"
+                    error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected one of: {expected_tokens}"
                     print(error_message)
                     error_messages.append(error_message)
                     return False, error_messages
             
             # If stack top is a terminal but does not match token, error
             else:
-                error_message = f"Error: Unexpected symbol '{top}' on stack"
+                error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: '{top}'"
                 print(error_message)
                 error_messages.append(error_message)
                 return False, error_messages
