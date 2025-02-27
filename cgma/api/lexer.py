@@ -1,8 +1,11 @@
+from flask import Flask, request, jsonify
 from cgmalexer import run as lexer_run
-import json
 
-def handler(event, context):
-    body = json.loads(event['body'])
+app = Flask(__name__)
+
+@app.route('/api/lexer', methods=['POST'])
+def lexer_handler():
+    body = request.get_json()
     source_code = body.get('source_code', '')
 
     tokens, errors = lexer_run('<stdin>', source_code)
@@ -12,7 +15,7 @@ def handler(event, context):
         'errors': [error.as_string() for error in errors]
     }
 
-    return {
-        'statusCode': 200,
-        'body': json.dumps(response)
-    }
+    return jsonify(response)
+
+# Vercel expects 'app' as the entry point
+handler = app

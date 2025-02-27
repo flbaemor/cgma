@@ -1,6 +1,10 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from cgmalexer import Lexer
 from cfg import cfg, predict_sets
-import json
+
+app = Flask(__name__)
+CORS(app)
 
 class LL1Parser:
     def __init__(self, cfg, predict_sets):
@@ -110,22 +114,21 @@ class LL1Parser:
             print("Error: Tokens remaining after parsing")
             return False, ["Error: Tokens remaining after parsing"]
 
-def handler(event, context):
-    body = json.loads(event['body'])
-    source_code = body['source_code']
+@app.route('/api/parse', methods=['POST'])
+def parse():
+    data = request.json
+    source_code = data.get('source_code', '')
     lexer = Lexer('<stdin>', source_code)
     tokens, errors = lexer.make_tokens()
 
     if errors:
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'success': False, 'errors': [error.as_string() for error in errors]})
-        }
+        return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
     parser = LL1Parser(cfg, predict_sets)
     success, parse_errors = parser.parse(tokens)
 
-    return {
-        'statusCode': 200,
-        'body': json.dumps({'success': success, 'errors': parse_errors})
-    }
+    return jsonify({'success': success, 'errors': parse_errors})
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
