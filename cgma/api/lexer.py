@@ -1,7 +1,7 @@
 from cgmalexer import run as lexer_run
 import json
 
-def handler(event, context):
+def lambda_handler(event, context):
     body = json.loads(event['body'])
     source_code = body['source_code']
     tokens, errors = lexer_run('<stdin>', source_code)

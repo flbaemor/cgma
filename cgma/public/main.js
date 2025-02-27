@@ -59,7 +59,7 @@ async function runLexer() {
     const sourceCode = document.getElementById('editor').value;
     console.log("Running lexer with source code:", sourceCode);
     try {
-        const response = await fetch('https://cgma-pi.vercel.app/api/lexer', {
+        const response = await fetch('/api/lexer', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -92,7 +92,7 @@ async function runSyntax() {
     console.log("Running syntax with source code:", sourceCode);
     
     try {
-        const response = await fetch('https://cgma-pi.vercel.app/api/parser', {
+        const response = await fetch('/api/parser', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
