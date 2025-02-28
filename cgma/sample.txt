@@ -2,3 +2,4 @@ chungus skibidi(){
     chungus num = 1
     back 0
 }
+hello
