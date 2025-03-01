@@ -3,14 +3,14 @@ chungus num(chungus tite){
 }
 
 chungus skibidi(){
-	chudeluxe num1 = (0+1)+(2+3).chudeluxe, num2 = 0
+	chudeluxe num1 = (chungus)(0+1)+(2+3), num2 = 0
 	chungus choice = 0
 
 	yap("Enter the first number: ")
 	num1 = chat()
 	yap("Enter the second number: ")
 	num2 = chat()
-	hello = (num(asd)).chungus
+	hello = (chudeluxe)num(asd)
 	yap("1.) Addition \n2.) Subtraction")
 	yap("Choose an operation to be done: ")
 	choice = chat()

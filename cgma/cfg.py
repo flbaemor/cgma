@@ -2,7 +2,7 @@ from collections import defaultdict
 
 def compute_first(cfg):
     first = defaultdict(set)  # Stores First sets
-    epsilon = "λ"  # Represents epsilon (empty string)
+    epsilon = "ε"  # Represents epsilon (empty string)
     
     # Step 1: Initialize FIRST for terminals
     for lhs, productions in cfg.items():
@@ -40,7 +40,7 @@ def compute_first(cfg):
 
 def compute_follow(cfg, first):
     follow = defaultdict(set)
-    epsilon = "λ"
+    epsilon = "ε"
     start_symbol = next(iter(cfg))  # Get the start symbol
     follow[start_symbol].add("$")  # Rule 1: Add $ to start symbol's Follow set
 
@@ -74,7 +74,7 @@ def compute_follow(cfg, first):
 
 def compute_predict(cfg, first, follow):
     predict = {}
-    epsilon = "λ"
+    epsilon = "ε"
     
     for lhs, productions in cfg.items():
         for prod in productions:
@@ -101,125 +101,53 @@ def compute_predict(cfg, first, follow):
     
 
 cfg = {
-    "<program>": [["<global>", "chungus skibidi", "(", ")", "{", "<body>", "back", "0", "}"]],
-    "<global>": [["λ"], ["<global_statement>"]],
-    "<global_statement>": [["<data_type>", "<identifier>", "<global_statement_val>","<global>"],
-                           ["<identifier>", "=", "<global_val>", "<var_dec_tail>","<global>"],
-                           ["sturdy", "<var_data_type>", "<identifier>", "=", "<global_val>", "<var_dec_tail>","<global>"],
-                           ["nocap", "<dstruct_id>", "IDENTIFIER", "(", "<parameter>", "<next_param>", ")", "{", "<statement>", "}","<global>"],
-                           ["<d_structure>","<global>"]],
-    "<global_val>": [["<list_assignment>"],
-                     ["<predefined_value>"]],
-    "<global_statement_val>": [["=", "<global_val>", "<var_dec_tail>"],
-                                ["<dstruct_id>", "(", "<parameter>", "<next_param>", ")", "{", "<statement>", "}"]],
+    "<program>": [["<global>", "chungus skibidi", "(", ")", "{", "<body_main>", "back", "0", "}"]],
+    "<global>": [["ε"], ["<declaration>", "<global>"]],
+    "<body_main>": [["ε"], ["<declaration>", "<body_main>"], ["<statement>", "<body_main>"]],
+    "<body>": [["ε"], ["<declaration>", "<body>"], ["<statement>", "<body>"], ["back", "<return_value>"]],
+    "<declaration>": [["<data_id>", "<declaration_tail>"], ["<expression>"]],
+    "<declaration_tail>": [["ε"], ["<var_initialization>"], ["{", "<definition>", "}"]],
+    "<var_initialization>": [["=", "<value>", "<var_init_tail>"]],
+    "<var_init_tail>": [["ε"], [",", "<identifier>", "<var_initialization>"]],
+    "<definition>": [["ε"], ["<body>"]],
+    "<expression>": [["<operand>", "<expression_tail>"]],
+    "<operand>": [["<pre_operand>", "<operand_content>", "<post_operand>"], ["(", "<oppar>"]],
+    "<pre_operand>": [["ε"], ["-"], ["<prepost_operator>"], ["!"]],
+    "<operand_content>": [["FORSEN_LIT"], ["FORSENCD_LIT"], ["CHU_LIT"], ["CHUDEL_LIT"], ["LWK_LIT"], ["<identifier>"]],
+    "<post_operand>": [["ε"], ["<prepost_operator>"]],
+    "<concat>": [["ε"], ["+","<concat_value>"]],
+    "<concat_value>": [["<identifier>","<concat>"], ["FORSENCD_LIT","<concat>"], ["FORSEN_LIT","<concat>"]],
+    "<prepost_operator>": [["--"], ["++"]],
+    "<expression_tail>": [["ε"], ["<dot_suffix>"], ["<operator>", "<operand>", "<expression_tail>"], ["=", "<value>"]],
+    "<value>": [["<list_value>"], ["<expression>"], ["chat", "(", ")"]],
+    "<list_value>": [["append", "(", "<arg>", ")"], ["insert", "(", "CHUNGUS_LIT", ",", "<arg>", ")"], ["remove", "(", "CHUNGUS_LIT", ")"]],
+    "<oppar>": [["<dtype1>", ")", "<expression>"], ["<expression>", ")"]],
+    "<dtype1>": [["chungus"], ["chudeluxe"]],
+    "<operator>": [["+"], ["-"], ["*"], ["/"], ["%"], ["=="], ["!="], [">"], ["<"], [">="], ["<="], ["&&"], ["||"]],
+    "<identifier>": [["IDENTIFIER", "<struct_id>", "<identifier_postfix>"]],
+    "<identifier_postfix>": [["ε"], ["<dot_suffix>"], ["(", "<postfix_content>", ")"]],
+    "<struct_id>": [["ε"], ["IDENTIFIER"]],
+    "<dot_suffix>": [["<index>"], [".", "<dot_suffix_content>"]],
+    "<dot_suffix_content>": [["ts", "(", ")"], ["taper", "(", ")"], ["IDENTIFIER", "<dot_suffix>"]],
+    "<postfix_content>": [["ε"], ["<parameter>"], ["<arg>"]],
+    "<index>": [["ε"], ["[", "<expression>", "]"]],
+    "<arg>": [["<expression>", "<arg_tail>"]],
+    "<arg_tail>": [["ε"], [",", "<expression>", "<arg_tail>"]],
+    "<parameter>": [["<data_id>", "<parameter_tail>"]],
+    "<parameter_tail>": [["ε"], [",", "<data_id>", "<parameter_tail>"]],
     "<data_id>": [["<data_type>", "<identifier>"]],
-    "<identifier>": [["IDENTIFIER", "<list_index>", "<struct_mem>"]],
-    "<data_type>": [["chungus"],["chudeluxe"], ["forsen"], ["forsencd"], ["lwk"], ["aura"], ["gng"]],
-    "<list_index>": [["λ"],["[", "<indexer>","]"]],
-    "<indexer>": [["λ"], ["CHUNGUS_LIT"], ["<identifier>","<userdeffunc_call>"], ["<num_expression>"],["(", "<indexer>", ")", "<type_conversion>"]],
-    "<struct_mem>": [["λ"],[".", "<identifier>", "<struct_mem>"],
-                      ],
-    "<literal>": [["<num_literal>"], ["FORSEN_LIT"], ["FORSENCD_LIT", "<stringCC>"], ["LWK_LIT", "<log_expression_tail>"]],
-    "<num_literal>": [["CHUNGUS_LIT"], ["CHUDELUXE_LIT"]],
-    "<stringCC>": [["λ"],["+", "FORSENCD_LIT", "<stringCC>"]],
-    "<parameter>": [["λ"], ["<data_id>"], ],
-    "<next_param>": [["λ"], [",", "<parameter>", "<next_param>"]],
-    "<userdeffunc_call>": [["λ"], ["(", "<arg>", "<next_arg>", ")"]],
-    "<arg>": [["λ"], ["<predefined_value>"]],
-    "<next_arg>": [["λ"], [",", "<arg>", "<next_arg>"]],
-    "<expression>": [["<expression_val>", "<_prepost_op>", "<expression_tail>"], 
-                     ["<_prepost_op>","<expression_val>", "<expression_tail>"], 
-                     ["(", "<expression_val>", "<expression_tail>",")", "<type_conversion>", "<expression_tail>"]],
-    "<expression_val>": [["<literal>"], ["<identifier>", "<userdeffunc_call>", "<ts_function>"], ["(", "<expression>", ")", "<type_conversion>"]],
-    "<expression_tail>": [["λ"], ["<rel_expression_tail>", "<log_expression_tail>"], ["<num_expression_tail>"]],
-    "<num_expression>": [["<num_operand>", "<_arith_op>", "<num_operand>", "<num_expression_tail>"],
-                         ["(", "<num_expression>", ")", "<type_conversion>", "<num_expression_tail>"]],
-    "<num_operand>": [["<_unary_op>", "<num_val>"],["<num_val>", "<_prepost_op>"],["(", "<num_expression>", ")","<type_conversion>"]],
-    "<num_val>": [["<num_literal>"], ["<identifier>","<userdeffunc_call>", "<ts_function>"],["(", "<num_val>", ")", "<type_conversion>", "<num_expression_tail>"]],
-    "<num_expression_tail>": [["λ"],["<_arith_op>","<num_operand>", "<num_expression_tail>"]],
-    "<_unary_op>": [["λ"], ["<_neg_op>"], ["<_prepost_op>"]],
-    "<_neg_op>": [["λ"],["-"]],
-    "<_prepost_op>": [["λ"],["++"], ["--"]],
-    "<_arith_op>": [["+"], ["-"], ["/"], ["%"], ["*"]],
-    "<bool_expression>": [["<relational_expression>", "<log_expression_tail>"], ["<log_expression>", "<log_expression_tail>"]],
-    "<log_expression>": [["<log_open>", "<_log_op>", "<log_open>"]],
-    "<relational_expression>": [["<rel_operand>", "<rel_expression_tail>", "<log_expression_tail>"], ["<_not_op>","(", "<relational_expression>", ")", "<rel_expression_tail>"]],
-    "<rel_operand>": [["<rel_operand_content>"], ["(","<rel_operand_content>",")" , "<type_conversion>"]],
-    "<rel_operand_content>": [["<literal>"], ["<identifier>", "<ts_function>"], ["<_not_op>", "(", "<bool_expression>", ")"]],
-    "<rel_expression_tail>": [["λ"], ["<_rel_op>", "<rel_operand>", "<log_expression_tail>"],],
-    "<lwk_operand>": [["<_not_op>", "<lwk_operand_val>"],["<relational_expression>"]],
-    "<lwk_operand_val>": [["<identifier>","<userdeffunc_call>"], ["LWK_LIT", "<log_expression_tail>"]],
-    "<log_open>": [["<_not_op>", "<log_operand>"]],
-    "<log_operand>": [["LWK_LIT", "<log_expression_tail>"], ["<identifier>", "<userdeffunc_call>", "<ts_function>"], ["<relational_expression>"]],
-    "<log_expression_tail>": [["λ"],["<_log_op>", "<log_open>"]],
-    "<_rel_op>": [[">"], ["<"], [">="], ["<="], ["<_rel_eq_op>"]],
-    "<_rel_eq_op>": [["=="], ["!="]],
-    "<_log_op>": [["&&"], ["||"]],
-    "<_not_op>": [["λ"], ["!"]],
-    "<body>": [["<statement>", "<body>"],
-               ["λ"]],
-    "<statement>": [["<var_dec>"],
-                    ["yap", "(", "<print_arg>", ")"],
-                    ["<if_statement>"],
-                    ["lethimcook", "(", "<switch_expression>", ")", "{", "<case_statement>", "}"],
-                    ["plug", "(", "<var_dec>", ";", "<condition>", ";", "<update>", ")", "{", "<body>", "}"],
-                    ["jit", "(", "<condition>", ")", "{", "<body>", "}"],
-                    ["<d_structure>"],
-                    ["back", "<predefined_value>"]],
-    "<if_statement>": [["tuah", "(", "<condition>", ")", "{", "<body>", "}", "<_if_tail>"]],
-    "<_if_tail>": [["λ"], ["<if_statement>"], ["hawk", "tuah", "(", "<condition>", ")", "{", "<body>", "}", "<_if_tail>"], ["hawk", "{", "<body>", "}"]],
-    "<condition>": [["<lwk_operand>"], ["<_not_op>", "<relational_expression>"]],
-    "<switch_expression>": [["<userdeffunc_call>"], ["<identifier>"]],
-    "<case_statement>": [["λ"], ["caseoh", "<literal>", ":", "<body>", "getout", "<case_statement>"], ["npc", ":", "<body>", "getout"]],
-    "<update>": [["<_prepost_op_update>", "<_update_op>"], ["<update_value>",  "<_prepost_op_update>"]],
-    "<update_value>": [["<identifier>"], ["<literal>"]],
-    "<_prepost_op_update>": [["++"], ["--"]],
-    "<_update_op>": [["<_prepost_op_update>"]],
-    "<var_dec>": [["aura", "IDENTIFIER", "IDENTIFIER", "<struct_init>"],
-        ["sturdy", "<var_data_type>", "<identifier>", "=", "<local_value>", "<var_dec_tail>"],
-        ["<var_data_type>", "<identifier>", "=", "<local_value>", "<var_dec_tail>"],
-        ["gng", "IDENTIFIER", "IDENTIFIER", "<gng_var_value>"]],
-    "<gng_var_value>": [["λ"], ["=", "CHUNGUS_LIT"]],
-    "<struct_var_dec>": [["<struct_var_dec_head>", "<identifier>"]],
-    "<var_data_type>": [["λ"], ["<data_type>"]],
-    "<value>": [["<predefined_value>"], ["chat", "(", ")"], ["<list_value>"]],
-    "<predefined_value>": [["<predefined_value_val>"]],
-    "<predefined_value_val>": [["<expression>"]],
-    "<var_dec_tail>": [["λ"], [",", "IDENTIFIER", "=", "<predefined_value>", "<var_dec_tail>"]],
-    "<list_value_tail>": [["λ"], [",", "<predefined_value>", "<list_value_tail>"]],
-    "<print_arg>": [["<print_arg1>", "<print_argN>"]],
-    "<print_arg1>": [["FORSENCD_LIT", "<stringCC>"], ["<predefined_value>"]],
-    "<print_argN>": [["λ"], [",", "<predefined_value>", "<print_argN>"]],
-    "<d_structure>": [["<struct_def>"], ["<enum_def>"]],
-    "<struct_def>": [["aura", "<identifier>", "{", "<struct_member_dec>", "}"]],
-    "<enum_def>": [["gng", "<identifier>", "{", "<enum_property>", "}"]],
-    "<struct_member_dec>": [
-        ["<data_id>", "<struct_member_val>", "<struct_member_dec>"],
-        ["<struct_var_dec>", "<struct_member_dec>"],
-        ["λ"]],
-    "<enum_property>": [["IDENTIFIER", "<enum_value>", "<enum_property_tail>"]],
-    "<enum_property_tail>": [["λ"], [",", "IDENTIFIER", "<enum_value>", "<enum_property_tail>"]],
-    "<enum_value>": [["λ"], ["=", "CHUNGUS_LIT"]],
-    "<list_value>": [["[", "<list_value_in>", "]"]],
-    "<list_value_in>":[["λ"], ["<predefined_value>", "<list_value_tail>"]],
-    "<list_assignment>": [
-        ["<list_value>"],
-        ["append", "(", "arg>", "<next_arg>", ")"],
-        ["insert", "(", "CHUNGUS_LIT,", "<arg>", "<next_arg>", ")"],
-        ["remove", "(", "CHUNGUS_LIT", ")"]],
-    "<dstruct_id>": [["λ"], ["IDENTIFIER"]],
-    "<ts_function>": [["λ"], [".", "ts", "(", ")"]],
-    "<taper_function>": [["λ"], [".", "taper", "(", ")"]],
-    "<struct_init>": [["λ"], ["=", "<struct_var_value>"]],
-    "<struct_var_value>": [["<struct_value_content>"], ["{", "IDENTIFIER", "=", "<struct_value_content>", "<struct_value_tail>", "}"]],
-    "<struct_value_tail>": [[",", "IDENTIFIER", "=", "<struct_value_content>", "<struct_value_tail>"], ["λ"]],
-    "<struct_value_content>": [["<predefined_value>"], ["<list_value>"]],
-    "<local_value>": [["<value>"], ["<list_value>"]],
-    "<struct_var_dec_head>": [["λ"], ["aura", "IDENTIFIER"]],
-    "<struct_member_val>": [["λ"], ["=", "<struct_value_content>", "<struct_member_val_tail>"]],
-    "<struct_member_val_tail>": [["λ"], [",", "IDENTIFIER", "=", "<struct_value_content>", "<struct_member_val_tail>"]],
-    "<type_conversion>": [["λ"], [".", "<convert_type>"]],
-    "<convert_type>": [["chungus"], ["chudeluxe"]]
+    "<data_type>": [["forsen"], ["forsencd"], ["chungus"], ["chudeluxe"], ["lwk"], ["aura"], ["gng"], ["nocap"]],
+    "<statement>": [["yap", "(", "<print_arg>", ")"], ["lethimcook", "(", "<identifier>", ")", "{", "<case_statement>", "}"], ["plug", "(", "<for_initialization>", ";", "<expression>", ";", "<expression>", ")", "{", "<body>", "}"], ["lil", "{", "<body>", "}", "jit", "(", "<expression>", ")"], ["jit", "(", "<expression>", ")", "{", "<body>", "}"], ["<if_statement>"]],
+    "<if_statement>": [["tuah", "(", "<expression>", ")", "{", "<body>", "}", "<if_tail>"]],
+    "<if_tail>": [["ε"], ["hawk", "<hawk_follow>"]],
+    "<hawk_follow>": [["{", "<body>", "}"]],
+    "<print_arg>": [["<expression>", "<print_argN>"]],
+    "<print_argN>": [["ε"], [",", "<expression>", "<print_argN>"]],
+    "<case_statement>": [["caseoh", "<constant>", ":", "<case_line>", "getout", "<case_statement>"], ["npc", ":", "<case_line>", "getout"]],
+    "<for_initialization>": [["<data_id>", "<var_initialization>"]],
+    "<constant>": [["CHU_LIT"], ["FORSEN_LIT"], ["LWK_LIT"]],
+    "<return_value>": [["ε"], ["<expression>"]],
+    "<case_line>": [["ε"], ["<data_id>", "<var_initialization>", "<case_line>"], ["<expression>", "<case_line>"], ["<statement>", "<case_line>"]]
 }
 
 first_sets = compute_first(cfg)
@@ -235,7 +163,7 @@ for non_terminal in cfg.keys():
 print("\n\nFOLLOW SET:")
 for non_terminal in cfg.keys():
     print(f"Follow({non_terminal}) = {follow_sets[non_terminal]}")
-
+'''
 print("\n\nPREDICT SET:")
 for (lhs, prod), predict_set in predict_sets.items():
-    print(f"Predict({lhs} → {' '.join(prod)}) = {predict_set}")'''
+    print(f"Predict({lhs} → {' '.join(prod)}) = {predict_set}\n")

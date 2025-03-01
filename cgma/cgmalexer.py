@@ -21,7 +21,7 @@ OPER = ARITH_OPER + RELAT_OPER
 
 clbra_dlm = ' =\n)\t'
 clcur_dlm = ' \n)}\t'
-clpar_dlm = ' \n}{)&|}\t.' + ARITH_OPER + ALPHANUM
+clpar_dlm = ' \n}{)&|}\t.,(' + ARITH_OPER + ALPHANUM
 com_dlm   =   '('
 comma_dlm = ' _"\t' + ALPHANUM
 convert_dlm = ' )\t,\n' + OPER
@@ -48,8 +48,8 @@ unary_dlm = ' _)\t\n' + ALPHANUM
 
 #TOKENS
 
-TT_CHUNGUS      = 'CHUNGUS_LIT'     # Whole Numbers '3'
-TT_CHUDELUXE    = 'CHUDELUXE_LIT'   # Decimal Numbers '3.14'
+TT_CHUNGUS      = 'CHU_LIT'     # Whole Numbers '3'
+TT_CHUDELUXE    = 'CHUDEL_LIT'   # Decimal Numbers '3.14'
 TT_FORSEN       = 'FORSEN_LIT'  # Strings 
 TT_FORSENCD     = 'FORSENCD_LIT' #Char
 TT_LWK          = 'LWK_LIT'     # Boolean 'true' or 'false'

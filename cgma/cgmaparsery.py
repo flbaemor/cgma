@@ -63,7 +63,7 @@ class LL1Parser:
                 token_type = 'chungus skibidi'
 
             # Normalize identifiers
-            if token_type in {"IDENTIFIER", "CHUNGUS_LIT", "CHUDELUXE_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
+            if token_type in {"IDENTIFIER", "CHU_LIT", "CHUDEL_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
                 pass  # Keep their token_type
             elif token_value in {'true', 'false'}:
                 token_type = 'LWK_LIT'
@@ -89,7 +89,7 @@ class LL1Parser:
                     production = self.parsing_table[top][token_type]
                     print(f"Expand: {top} → {' '.join(production)}")
                     
-                    if production != ['λ']:  # Ignore epsilon (λ)
+                    if production != ['ε']:  # Ignore epsilon (λ)
                         self.stack.extend(reversed(production))  # Push in reverse order
                     print(f"Updated Stack: {self.stack}")
                 else:
