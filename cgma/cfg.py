@@ -107,6 +107,8 @@ cfg = {
     "<global_declaration>": [["<constant_var>"], ["<gldata_type>", "<identifier>", "<declaration_tail>"], ["<expression>"]],
     "<gldata_type>": [["aura"], ["gng"], ["nocap"], ["forsen"], ["forsencd"], ["chudeluxe"], ["lwk"]],
     "<data_type>": [["chungus"], ["<gldata_type>"]],
+    "<body>": [["ε"], ["<declaration>", "<body>"], ["<statement>", "<body>"], ["back", "<return_value>"]],
+    "<body_main>": [["ε"], ["<declaration>", "<body_main>"], ["<statement>", "<body_main>"]],
     "<expression>": [["<operand>", "<expression_tail>"]],
     "<operand>": [["<pre_operand>", "<operand_content>", "<post_operand>"], ["(", "<oppar>"]],
     "<pre_operand>": [["ε"], ["-"], ["<prepost_operator>"], ["!"]],
@@ -114,7 +116,9 @@ cfg = {
     "<post_operand>": [["ε"], ["<prepost_operator>"]],
     "<prepost_operator>": [["--"], ["++"]],
     "<expression_tail>": [["ε"], ["<dot_suffix>"], ["<operator>", "<operand>", "<expression_tail>"], ["=", "<value>"]],
-    "<value>": [["<list_value>"], ["<expression>"], ["chat", "(", ")"]],
+    "<value>": [["<list_value>"], ["<expression>"], ["chat", "(", ")"], ["<multi_struct_val>"]],
+    "<multi_struct_val>": [["{",  "<identifier>", "=", "<expression>", "<struct_init_tail>", "}"]],
+    "<struct_init_tail>": [["ε"], [",", "<identifier>", "=", "<expression>", "<struct_init_tail>"]],
     "<dtype1>": [["chungus"], ["chudeluxe"]],
     "<oppar>": [["<dtype1>", ")", "<expression>"], ["<expression>", ")"]],
     "<operator>": [["+"], ["-"], ["*"], ["/"], ["%"], ["=="], ["!="], [">"], ["<"], [">="], ["<="], ["&&"], ["||"]],
@@ -132,14 +136,13 @@ cfg = {
     "<data_id>": [["<data_type>", "<identifier>"]],
     "<constant_var>": [["sturdy", "<data_id>", "<var_initialization>"]],
     "<declaration>": [["<data_id>", "<declaration_tail>"], ["<expression>"], ["<constant_var>"]],
-    "<declaration_tail>": [["ε"], ["<var_initialization>"], ["{", "<definition>", "}"]],
+    "<declaration_tail>": [["ε"], ["<var_initialization>"], ["{", "<body>", "}"]],
     "<var_initialization>": [["=", "<value>", "<var_init_tail>"]],
     "<var_init_tail>": [["ε"], [",", "<identifier>", "<var_initialization>"]],
-    "<definition>": [["ε"], ["<body>"]],
-    "<statement>": [["yap", "(", "<print_arg>", ")"], ["lethimcook", "(", "<identifier>", ")", "{", "<case_statement>", "}"], ["plug", "(", "<for_initialization>", ";", "<expression>", ";", "<expression>", ")", "{", "<body>", "}"], ["lil", "{", "<body>", "}", "jit", "(", "<expression>", ")"], ["jit", "(", "<expression>", ")", "{", "<body>", "}"], ["<if_statement>"]],
+    "<statement>": [["yap", "(", "<print_arg>", ")"], ["lethimcook", "(", "<identifier>", ")", "{", "<case_statement>", "}"], ["plug", "(", "<for_initialization>", ";", "<expression>", ";", "<expression>", ")", "{", "<body>", "}"], ["lil", "{", "<body>", "}", "jit", "(", "<expression>", ")"], ["jit", "(", "<expression>", ")", "{", "<body>", "}"], ["<if_statement>"], ["pause"]],
     "<if_statement>": [["tuah", "(", "<expression>", ")", "{", "<body>", "}", "<if_tail>"]],
     "<if_tail>": [["ε"], ["hawk", "<hawk_follow>"]],
-    "<hawk_follow>": [["{", "<body>", "}"]],
+    "<hawk_follow>": [["{", "<body>", "}"],["<if_statement>"]],
     "<print_arg>": [["<expression>", "<print_argN>"]],
     "<print_argN>": [["ε"], [",", "<expression>", "<print_argN>"]],
     "<case_statement>": [["caseoh", "<constant>", ":", "<case_line>", "getout", "<case_statement>"], ["npc", ":", "<case_line>", "getout"]],
@@ -147,10 +150,7 @@ cfg = {
     "<constant>": [["CHU_LIT"], ["FORSEN_LIT"], ["LWK_LIT"]],
     "<return_value>": [["ε"], ["<expression>"]],
     "<case_line>": [["ε"], ["<data_id>", "<var_initialization>", "<case_line>"], ["<expression>", "<case_line>"], ["<statement>", "<case_line>"]],
-    "<list_value>": [["append", "(", "<arg>", ")"], ["insert", "(", "CHUNGUS_LIT", ",", "<arg>", ")"], ["remove", "(", "CHUNGUS_LIT", ")"]],
-    "<body_main>": [["ε"], ["<declaration>", "<body_main>"], ["<statement>", "<body_main>"]],
-    "<body>": [["ε"], ["<declaration>", "<body>"], ["<statement>", "<body>"], ["back", "<return_value>"]]
-    
+    "<list_value>": [["append", "(", "<arg>", ")"], ["insert", "(", "CHU_LIT", ",", "<arg>", ")"], ["remove", "(", "CHU_LIT", ")"]]
 }
 
 first_sets = compute_first(cfg)
@@ -159,18 +159,16 @@ predict_sets = compute_predict(cfg, first_sets, follow_sets)
 
 print("Context-Free Grammar (CFG):\n")
 for non_terminal, productions in cfg.items():
-    non_terminal = non_terminal.strip("<>").upper()  # Remove < > and convert to uppercase
+    non_terminal = non_terminal.strip("<>").upper() 
     for production in productions:
-        # Convert each symbol, removing < > from non-terminals
         production_str = " ".join([symbol.strip("<>").upper() if symbol.startswith("<") else symbol for symbol in production])
-        production_str = "''" if production_str == "ε" else production_str  # Replace epsilon with ''
+        production_str = "''" if production_str == "ε" else production_str
         print(f"{non_terminal} ::= {production_str}")
-
 
 
 print("FIRST SET:")
 for non_terminal in first_sets.keys():
-    first_set_str = ", ".join(first_sets[non_terminal]).replace("''", "")  # Remove '' and format set
+    first_set_str = ", ".join(first_sets[non_terminal]).replace("''", "")
     print(f"First({non_terminal}) -> {{ {first_set_str} }}")
 
 print("\n\nFOLLOW SET:")
