@@ -16,7 +16,7 @@ class LL1Parser:
         self.current_token_index = 0
 
     def construct_parsing_table(self):
-        """Builds the LL(1) parsing table based on predict sets."""
+        #Builds the LL(1) parsing table based on predict sets
         parsing_table = {}
         for non_terminal, productions in self.cfg.items():
             parsing_table[non_terminal] = {}
@@ -28,7 +28,7 @@ class LL1Parser:
         return parsing_table
 
     def get_next_token(self):
-        """Advances to the next token."""
+        #Advance to the next token
         if self.current_token_index < len(self.tokens):
             token = self.tokens[self.current_token_index]
             self.current_token_index += 1
@@ -36,7 +36,7 @@ class LL1Parser:
         return None
 
     def parse(self, tokens):
-        self.stack = ['EOF', list(self.cfg.keys())[0]]  # Start symbol on stack
+        self.stack = ['EOF', list(self.cfg.keys())[0]]  # stack
         index = 0
         line = 1
         error_messages = []
@@ -44,10 +44,9 @@ class LL1Parser:
         while self.stack:
             top = self.stack.pop()
             token = tokens[index]
-            token_type = token.type  # Token type from lexer
-            token_value = token.value  # Token value from lexer
+            token_type = token.type  
+            token_value = token.value  
 
-            # Skip whitespace and newlines
             while token_type in {'SPC', 'NL', 'TAB', 'COMMENT'}:
                 if token_type == 'NL':
                     line += 1
@@ -62,35 +61,34 @@ class LL1Parser:
                 token_value = 'chungus skibidi'
                 token_type = 'chungus skibidi'''
 
-            # Normalize identifiers
             if token_type in {"IDENTIFIER", "CHU_LIT", "CHUDEL_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
-                pass  # Keep their token_type
+                pass
             elif token_value in {'true', 'false'}:
                 token_type = 'LWK_LIT'
             elif token_value in self.parsing_table.get(top, {}):  
-                token_type = token_value  # Match literal tokens directly
+                token_type = token_value 
 
             print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
             if token_type == 'TT_NL':
                 line += 1
             
-            # If top of stack matches the current token (terminal match)
+            # top of stack matches a terminal token
             if top == token_type or top == token_value:
                 print(f"Matched: {top}")
                 '''if top == 'chungus skibidi':
                     index += 2
                 else:'''
-                index += 1  # Move to the next token
+                index += 1 
             
-            # If top of stack is a non-terminal and exists in the parsing table
+            # top of stack matches a non terminal token and in parsing table
             elif top in self.parsing_table:
                 if token_type in self.parsing_table[top]:
                     production = self.parsing_table[top][token_type]
                     print(f"Expand: {top} → {' '.join(production)}")
                     
-                    if production != ['ε']:  # Ignore epsilon (λ)
-                        self.stack.extend(reversed(production))  # Push in reverse order
+                    if production != ['ε']:
+                        self.stack.extend(reversed(production))
                     print(f"Updated Stack: {self.stack}")
                 else:
                     expected_tokens = list(self.parsing_table[top].keys())
@@ -99,14 +97,13 @@ class LL1Parser:
                     error_messages.append(error_message)
                     return False, error_messages
             
-            # If stack top is a terminal but does not match token, error
+            # top of stock does not match token
             else:
                 error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: '{top}'"
                 print(error_message)
                 error_messages.append(error_message)
                 return False, error_messages
         
-        # Ensure successful parsing if EOF is reached and stack is empty
         if token_type == 'EOF' and not self.stack:
             print("Parsing successful!")
             return True, []

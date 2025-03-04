@@ -124,7 +124,7 @@ cfg = {
     "<dot_suffix>": [["<index>"], [".", "<dot_suffix_content>"]],
     "<dot_suffix_content>": [["ts", "(", ")"], ["taper", "(", ")"], ["IDENTIFIER", "<dot_suffix>"]],
     "<postfix_content>": [["ε"], ["<parameter>"], ["<arg>"]],
-    "<index>": [["ε"], ["[", "<expression>", "]"]],
+    "<index>": [["[", "<expression>", "]"]],
     "<arg>": [["<expression>", "<arg_tail>"]],
     "<arg_tail>": [["ε"], [",", "<expression>", "<arg_tail>"]],
     "<parameter>": [["<data_id>", "<parameter_tail>"]],
@@ -148,10 +148,8 @@ cfg = {
     "<return_value>": [["ε"], ["<expression>"]],
     "<case_line>": [["ε"], ["<data_id>", "<var_initialization>", "<case_line>"], ["<expression>", "<case_line>"], ["<statement>", "<case_line>"]],
     "<list_value>": [["append", "(", "<arg>", ")"], ["insert", "(", "CHUNGUS_LIT", ",", "<arg>", ")"], ["remove", "(", "CHUNGUS_LIT", ")"]],
-
     "<body_main>": [["ε"], ["<declaration>", "<body_main>"], ["<statement>", "<body_main>"]],
     "<body>": [["ε"], ["<declaration>", "<body>"], ["<statement>", "<body>"], ["back", "<return_value>"]]
-    
     
 }
 
