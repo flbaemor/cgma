@@ -101,28 +101,22 @@ def compute_predict(cfg, first, follow):
     
 
 cfg = {
-    "<program>": [["<global>", "chungus skibidi", "(", ")", "{", "<body_main>", "back", "0", "}"]],
-    "<global>": [["ε"], ["<declaration>", "<global>"]],
-    "<body_main>": [["ε"], ["<declaration>", "<body_main>"], ["<statement>", "<body_main>"]],
-    "<body>": [["ε"], ["<declaration>", "<body>"], ["<statement>", "<body>"], ["back", "<return_value>"]],
-    "<declaration>": [["<data_id>", "<declaration_tail>"], ["<expression>"]],
-    "<declaration_tail>": [["ε"], ["<var_initialization>"], ["{", "<definition>", "}"]],
-    "<var_initialization>": [["=", "<value>", "<var_init_tail>"]],
-    "<var_init_tail>": [["ε"], [",", "<identifier>", "<var_initialization>"]],
-    "<definition>": [["ε"], ["<body>"]],
+    "<program>": [["<start>"]],
+    "<start>":[["<global_declaration>", "<start>"],["chungus", "<chungus_follow>"]],
+    "<chungus_follow>":[["<identifier>", "<declaration_tail>", "<start>"], ["skibidi", "(", ")", "{", "<body_main>", "back", "0", "}"]],
+    "<global_declaration>": [["ε"], ["<constant_var>"], ["<gldata_type>", "<identifier>", "<declaration_tail>"], ["<expression>"]],
+    "<gldata_type>": [["aura"], ["gng"], ["nocap"], ["forsen"], ["forsencd"], ["chudeluxe"], ["lwk"]],
+    "<data_type>": [["chungus"], ["<gldata_type>"]],
     "<expression>": [["<operand>", "<expression_tail>"]],
     "<operand>": [["<pre_operand>", "<operand_content>", "<post_operand>"], ["(", "<oppar>"]],
     "<pre_operand>": [["ε"], ["-"], ["<prepost_operator>"], ["!"]],
     "<operand_content>": [["FORSEN_LIT"], ["FORSENCD_LIT"], ["CHU_LIT"], ["CHUDEL_LIT"], ["LWK_LIT"], ["<identifier>"]],
     "<post_operand>": [["ε"], ["<prepost_operator>"]],
-    "<concat>": [["ε"], ["+","<concat_value>"]],
-    "<concat_value>": [["<identifier>","<concat>"], ["FORSENCD_LIT","<concat>"], ["FORSEN_LIT","<concat>"]],
     "<prepost_operator>": [["--"], ["++"]],
     "<expression_tail>": [["ε"], ["<dot_suffix>"], ["<operator>", "<operand>", "<expression_tail>"], ["=", "<value>"]],
     "<value>": [["<list_value>"], ["<expression>"], ["chat", "(", ")"]],
-    "<list_value>": [["append", "(", "<arg>", ")"], ["insert", "(", "CHUNGUS_LIT", ",", "<arg>", ")"], ["remove", "(", "CHUNGUS_LIT", ")"]],
-    "<oppar>": [["<dtype1>", ")", "<expression>"], ["<expression>", ")"]],
     "<dtype1>": [["chungus"], ["chudeluxe"]],
+    "<oppar>": [["<dtype1>", ")", "<expression>"], ["<expression>", ")"]],
     "<operator>": [["+"], ["-"], ["*"], ["/"], ["%"], ["=="], ["!="], [">"], ["<"], [">="], ["<="], ["&&"], ["||"]],
     "<identifier>": [["IDENTIFIER", "<struct_id>", "<identifier_postfix>"]],
     "<identifier_postfix>": [["ε"], ["<dot_suffix>"], ["(", "<postfix_content>", ")"]],
@@ -136,7 +130,12 @@ cfg = {
     "<parameter>": [["<data_id>", "<parameter_tail>"]],
     "<parameter_tail>": [["ε"], [",", "<data_id>", "<parameter_tail>"]],
     "<data_id>": [["<data_type>", "<identifier>"]],
-    "<data_type>": [["forsen"], ["forsencd"], ["chungus"], ["chudeluxe"], ["lwk"], ["aura"], ["gng"], ["nocap"]],
+    "<constant_var>": [["sturdy", "<data_id>", "<var_initialization>"]],
+    "<declaration>": [["<data_id>", "<declaration_tail>"], ["<expression>"], ["<constant_var>"]],
+    "<declaration_tail>": [["ε"], ["<var_initialization>"], ["{", "<definition>", "}"]],
+    "<var_initialization>": [["=", "<value>", "<var_init_tail>"]],
+    "<var_init_tail>": [["ε"], [",", "<identifier>", "<var_initialization>"]],
+    "<definition>": [["ε"], ["<body>"]],
     "<statement>": [["yap", "(", "<print_arg>", ")"], ["lethimcook", "(", "<identifier>", ")", "{", "<case_statement>", "}"], ["plug", "(", "<for_initialization>", ";", "<expression>", ";", "<expression>", ")", "{", "<body>", "}"], ["lil", "{", "<body>", "}", "jit", "(", "<expression>", ")"], ["jit", "(", "<expression>", ")", "{", "<body>", "}"], ["<if_statement>"]],
     "<if_statement>": [["tuah", "(", "<expression>", ")", "{", "<body>", "}", "<if_tail>"]],
     "<if_tail>": [["ε"], ["hawk", "<hawk_follow>"]],
@@ -147,23 +146,42 @@ cfg = {
     "<for_initialization>": [["<data_id>", "<var_initialization>"]],
     "<constant>": [["CHU_LIT"], ["FORSEN_LIT"], ["LWK_LIT"]],
     "<return_value>": [["ε"], ["<expression>"]],
-    "<case_line>": [["ε"], ["<data_id>", "<var_initialization>", "<case_line>"], ["<expression>", "<case_line>"], ["<statement>", "<case_line>"]]
+    "<case_line>": [["ε"], ["<data_id>", "<var_initialization>", "<case_line>"], ["<expression>", "<case_line>"], ["<statement>", "<case_line>"]],
+    "<list_value>": [["append", "(", "<arg>", ")"], ["insert", "(", "CHUNGUS_LIT", ",", "<arg>", ")"], ["remove", "(", "CHUNGUS_LIT", ")"]],
+
+    "<body_main>": [["ε"], ["<declaration>", "<body_main>"], ["<statement>", "<body_main>"]],
+    "<body>": [["ε"], ["<declaration>", "<body>"], ["<statement>", "<body>"], ["back", "<return_value>"]]
+    
+    
 }
 
 first_sets = compute_first(cfg)
 follow_sets = compute_follow(cfg, first_sets)
 predict_sets = compute_predict(cfg, first_sets, follow_sets)
 
+print("Context-Free Grammar (CFG):\n")
+for non_terminal, productions in cfg.items():
+    non_terminal = non_terminal.strip("<>").upper()  # Remove < > and convert to uppercase
+    for production in productions:
+        # Convert each symbol, removing < > from non-terminals
+        production_str = " ".join([symbol.strip("<>").upper() if symbol.startswith("<") else symbol for symbol in production])
+        production_str = "''" if production_str == "ε" else production_str  # Replace epsilon with ''
+        print(f"{non_terminal} ::= {production_str}")
 
 
-'''print("FIRST SET:")
-for non_terminal in cfg.keys():
-    print(f"First({non_terminal}) = {first_sets[non_terminal]}")
+
+print("FIRST SET:")
+for non_terminal in first_sets.keys():
+    first_set_str = ", ".join(first_sets[non_terminal]).replace("''", "")  # Remove '' and format set
+    print(f"First({non_terminal}) -> {{ {first_set_str} }}")
 
 print("\n\nFOLLOW SET:")
-for non_terminal in cfg.keys():
-    print(f"Follow({non_terminal}) = {follow_sets[non_terminal]}")
-'''
+for non_terminal in follow_sets.keys():
+    follow_set_str = ", ".join(follow_sets[non_terminal]).replace("''", "")  # Remove '' and format set
+    print(f"Follow({non_terminal}) -> {{{follow_set_str}}}")
+
 print("\n\nPREDICT SET:")
 for (lhs, prod), predict_set in predict_sets.items():
-    print(f"Predict({lhs} → {' '.join(prod)}) = {predict_set}\n")
+    prod_str = " ".join(prod).replace("''", "")  # Remove '' in productions
+    predict_set_str = ", ".join(predict_set).replace("''", "")  # Remove '' in predict set
+    print(f"Predict({lhs} → {prod_str}) -> {{{predict_set_str}}}")

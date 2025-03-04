@@ -58,9 +58,9 @@ class LL1Parser:
                 token_type = token.type
                 token_value = token.value
 
-            if token_value == 'chungus' and index + 1 < len(tokens) and tokens[index + 1].value == 'skibidi':
+            '''if token_value == 'chungus' and index + 1 < len(tokens) and tokens[index + 1].value == 'skibidi':
                 token_value = 'chungus skibidi'
-                token_type = 'chungus skibidi'
+                token_type = 'chungus skibidi'''
 
             # Normalize identifiers
             if token_type in {"IDENTIFIER", "CHU_LIT", "CHUDEL_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
@@ -78,10 +78,10 @@ class LL1Parser:
             # If top of stack matches the current token (terminal match)
             if top == token_type or top == token_value:
                 print(f"Matched: {top}")
-                if top == 'chungus skibidi':
+                '''if top == 'chungus skibidi':
                     index += 2
-                else:
-                    index += 1  # Move to the next token
+                else:'''
+                index += 1  # Move to the next token
             
             # If top of stack is a non-terminal and exists in the parsing table
             elif top in self.parsing_table:
