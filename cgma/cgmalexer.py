@@ -31,7 +31,7 @@ esc_dlm =   ' "\t'+ ASCII
 equal_dlm = ' _[(-"+\t!' + ALPHANUM
 hawk_dlm =  ' \n{\t'
 identif_dlm = ' \n)(&|;[],.\t' + OPER
-lit_dlm =   ' ,):\n;\t/+-%*' + OPER
+lit_dlm =   ' ,):\n;\t/+-%*]' + OPER
 lwk_dlm =   ' \n&|=)\t' 
 minus_dlm = ' -()\t' + ALPHANUM
 npc_dlm =   ' :\t' + ALPHANUM
