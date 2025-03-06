@@ -9,6 +9,19 @@ body {
     height: 100vh;
 }
 
+::-webkit-scrollbar{
+    width: 10px;
+    background-color: none;
+    height: 10px;
+}
+::-webkit-scrollbar-thumb{
+    background-color: #3c043c;
+    border-radius: 50px;
+}
+
+::-webkit-scrollbar-corner {
+    display: none;
+}
 .navbar {
     display: flex;
     align-items: center;
@@ -42,21 +55,35 @@ body {
 
 .mainCont {
     display: flex;
-    flex-grow: 1;
-    padding: 10px;
-    gap: 15px;
+    height: 70%;
+    padding-right: 10px;
+    padding-left: 10px;
+    padding-top: 10px;
+    gap: 5px;
+    position: relative;
 }
 
 .textFieldCont {
     display: flex;
     width: 70%;
+    min-width: 50%;
     background: #4f134e;
     border-radius: 8px;
     padding: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     position: relative;
-    height: 420px;
+    height: auto;
     tab-size: 1.5em;
+}
+
+.widthResizer {
+    width: 3px;
+    background: #4a2949;
+    cursor: ew-resize;
+    position: relative;
+    height: 10%;
+    top: 45%;
+    border-radius: 5px;
 }
 
 .line-num {
@@ -66,12 +93,13 @@ body {
     font-size: 16px;  
     color: #ffffff;
     background: #3c043c;
-    border-radius: 2px;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
     font-family: monospace;
     line-height: 1.5;  
     user-select: none;  
     overflow: hidden;
-    height: 400px;
+    height: inherit;
     overflow-y: auto; 
 }
 
@@ -91,30 +119,27 @@ body {
     font-family: monospace;
     line-height: 1.5;
     caret-color: white;
-    height: 400px; 
+    height: inherit; 
     overflow-y: auto;
+    position:relative;
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
-.codeEditor::-webkit-scrollbar {
-    display: none;
-}
 
 .line-num div {
     height: 24px; 
 }
 
 .outputCont {
-    width: 30%;
+    flex: 1;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    max-height: 438px;
     border-radius: 8px;
+    overflow-x: hidden;
 }
 
-.outputCont::-webkit-scrollbar {
-    display: none;
-}
 
 .tokenTable {
     border-collapse: collapse;
@@ -146,27 +171,48 @@ body {
     background: #3c043c;
 }
 
+.heightResizer {
+    height: 3px;
+    background: #4a2949;
+    cursor: ns-resize;
+    position: relative;
+    width: 5%;
+    margin: 5px;
+    left: 50%;
+    border-radius: 20px;
+}
 
-.error {
-    width: 1496px;
+.errorBox {
+    width: inherit;
+    flex-grow: 1;
     background: #4f134e;
     border-radius: 5px;
     color: white;
     margin-left: 10px;
+    margin-right: 10px;
     margin-bottom: 10px;
-    padding: 10px;
+    position: relative;
+    padding-top: 20px;
 }
 
-#error {
-    width: 1476px;
-    height: 100px;
+#errorTitle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    margin: 0;
+}
+
+#errorText {
+    width: calc(100% - 30px);
+    height: calc(100% - 30px);
     background: #3c043c;
     color: #ffffff;
-    padding: 10px;
+    margin: 10px;
     resize: none;
     border: none;
     border-radius: 5px;
     outline: none;
+    padding: 5px;
 }
 
 .token-value {

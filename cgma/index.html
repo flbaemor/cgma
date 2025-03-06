@@ -13,7 +13,7 @@
             <b>CGMA</b>
         </div>
         <ul class="nav-links">
-            <li><a href="#" onclick="runLexer()">LEXER</a></li>
+            <li><a href="#" onclick="runLexer()">LEXICAL</a></li>
             <li><a href="#" onclick="runSyntax()">SYNTAX</a></li>
             <li><a href="#" onclick="runSemantic()">SEMANTIC</a></li>
         </ul>
@@ -23,7 +23,8 @@
         <div class="textFieldCont">
             <div class="line-num" id="lineNumbers"></div>
             <textarea class="codeEditor" id="editor">chungus skibidi(){&NewLine;&Tab;//your code here&NewLine;&Tab;&NewLine;&Tab;back 0&NewLine;}</textarea>
-        </div>        
+        </div>
+        <div class="widthResizer"></div>        
         <div class="outputCont">
             <table class="tokenTable">
                 <thead>
@@ -37,10 +38,10 @@
             </table>
         </div>
     </div>
-    
-    <div class="error">
-        <h4>OUTPUT/ERROR</h4>
-        <textarea id="error" readonly></textarea>
+    <div class="heightResizer"></div>
+    <div class="errorBox">
+        <h4 id="errorTitle">OUTPUT</h4>
+        <textarea id="errorText" readonly></textarea>
     </div>
 </body>
 </html>

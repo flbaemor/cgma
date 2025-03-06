@@ -55,6 +55,38 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.querySelector('.run').addEventListener('click', runLexer);
 });
 
+
+const widthResizer = document.querySelector(".widthResizer");
+const textFieldCont = document.querySelector(".textFieldCont");
+const heightResizer = document.querySelector(".heightResizer");
+const mainCont = document.querySelector(".mainCont");
+
+widthResizer.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    document.addEventListener("mousemove", widthResize);
+    document.addEventListener("mouseup", () => {
+        document.removeEventListener("mousemove", widthResize);
+    }, { once: true });
+});
+
+function widthResize(e) {
+    let newWidth = e.clientX - textFieldCont.getBoundingClientRect().left;
+    textFieldCont.style.width = `${newWidth}px`;
+};
+
+heightResizer.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    document.addEventListener("mousemove", heightResize);
+    document.addEventListener("mouseup", () => {
+        document.removeEventListener("mousemove", heightResize);
+    }, { once: true });
+});
+
+function heightResize(e) {
+    let newHeight = e.clientY - mainCont.getBoundingClientRect().top;
+    mainCont.style.height = `${newHeight}px`;
+};
+
 async function runLexer() {
     const sourceCode = document.getElementById('editor').value;
     console.log("Running lexer with source code:", sourceCode);
@@ -79,18 +111,27 @@ async function runLexer() {
             const cellValue = row.insertCell(1);
             cellType.textContent = token.type;
             cellValue.textContent = token.value;
-            cellValue.style.whiteSpace = 'pre'; // Ensure whitespace characters are displayed correctly
+            cellValue.style.whiteSpace = 'pre';
         });
-        document.getElementById('error').textContent = data.errors.join('\n');
+        
+        const errorBox = document.getElementById('errorText');
+        if (data.errors.length > 0) {
+            errorBox.value = data.errors.join('\n');
+            //errorBox.style.color = 'red';
+        } else {
+            errorBox.value = 'Lexical analysis successful!';
+            //errorBox.style.color = 'green';
+        }
     } catch (error) {
         console.error("Error running lexer:", error);
+        document.getElementById('errorText').value = 'Error running lexical analysis.';
     }
 }
 
 async function runSyntax() {
     const sourceCode = document.getElementById('editor').value;
     console.log("Running syntax with source code:", sourceCode);
-    
+    runLexer();
     try {
         const response = await fetch('/api/parse', {
             method: 'POST',
@@ -107,18 +148,18 @@ async function runSyntax() {
         const data = await response.json();
         console.log("Syntax response:", data);
         
-        const errorBox = document.getElementById('error');
+        const errorBox = document.getElementById('errorText');
         
         if (data.success) {
-            errorBox.value = 'Parsing successful!';
-            errorBox.style.color = 'green';
+            errorBox.value = 'Syntax analysis successful!';
+            //errorBox.style.color = 'green';
         } else {
-            errorBox.value = data.errors.join('\n'); // Show error messages
-            errorBox.style.color = 'red';
+            errorBox.value = data.errors.join('\n');
+            //errorBox.style.color = 'red';
         }
     } catch (error) {
         console.error("Error running syntax:", error);
-        document.getElementById('error').value = 'Error running syntax analysis.';
+        document.getElementById('errorText').value = 'Error running syntax analysis.';
     }
 }
 

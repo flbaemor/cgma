@@ -105,7 +105,7 @@ class LL1Parser:
                 return False, error_messages
         
         if token_type == 'EOF' and not self.stack:
-            print("Parsing successful!")
+            print("Syntax analysis successful!")
             return True, []
         else:
             print("Error: Tokens remaining after parsing")
