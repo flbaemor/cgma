@@ -24,30 +24,28 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     document.getElementById('editor').addEventListener('keydown', function(event) {
         if (event.key === 'Tab') {
-            event.preventDefault(); // Prevent moving to the next element
+            event.preventDefault();
             const start = this.selectionStart;
             const end = this.selectionEnd;
     
-            // Insert tab character at cursor position
             this.value = this.value.substring(0, start) + '\t' + this.value.substring(end);
-    
-            // Move cursor position after inserted tab
             this.selectionStart = this.selectionEnd = start + 1;
         } else if (event.key === 'Enter') {
-            event.preventDefault(); // Prevent default new line behavior
+            event.preventDefault();
             const start = this.selectionStart;
             const textBeforeCursor = this.value.substring(0, start);
             const textAfterCursor = this.value.substring(start);
             
             // Get the previous line's indentation
             const previousLine = textBeforeCursor.split('\n').pop();
-            const indentation = previousLine.match(/^\s*/)[0]; // Capture leading spaces/tabs
+            const indentation = previousLine.match(/^\s*/)[0];
     
             // Insert newline with the same indentation
             this.value = textBeforeCursor + '\n' + indentation + textAfterCursor;
-    
-            // Move cursor to the correct position
             this.selectionStart = this.selectionEnd = start + indentation.length + 1;
+    
+            // **Trigger line number update**
+            updateLineNumbers();
         }
     });
     
@@ -180,35 +178,8 @@ async function runSyntax() {
 }
 
 async function runSemantic() {
-    const errorBox = document.getElementById('errorText');
-    await runSyntax();
-    if (errorBox.value != 'Syntax analysis successful!') {
-        return; // Stop execution if syntax errors exist
-    }
-
     const sourceCode = document.getElementById('editor').value;
     console.log("Running semantic analysis with source code:", sourceCode);
-    try {
-        const response = await fetch('/api/semantic', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source_code: sourceCode })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Semantic HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Semantic response:", data);
-
-        if (!data.success) {
-            errorBox.value = data.errors.join('\n');
-        } else {
-            errorBox.value = 'Semantic analysis successful!';
-        }
-    } catch (error) {
-        console.error("Error running semantic analysis:", error);
-        errorBox.value = 'Error running semantic analysis.';
-    }
+    // Placeholder for semantic analysis logic
+    document.getElementById('error').textContent = 'Semantic analysis not implemented yet.';
 }
