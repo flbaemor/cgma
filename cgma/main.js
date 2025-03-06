@@ -33,8 +33,24 @@ document.addEventListener('DOMContentLoaded', (event) => {
     
             // Move cursor position after inserted tab
             this.selectionStart = this.selectionEnd = start + 1;
+        } else if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent default new line behavior
+            const start = this.selectionStart;
+            const textBeforeCursor = this.value.substring(0, start);
+            const textAfterCursor = this.value.substring(start);
+            
+            // Get the previous line's indentation
+            const previousLine = textBeforeCursor.split('\n').pop();
+            const indentation = previousLine.match(/^\s*/)[0]; // Capture leading spaces/tabs
+    
+            // Insert newline with the same indentation
+            this.value = textBeforeCursor + '\n' + indentation + textAfterCursor;
+    
+            // Move cursor to the correct position
+            this.selectionStart = this.selectionEnd = start + indentation.length + 1;
         }
     });
+    
 
     // Add event listeners for navigation links
     document.getElementById('lexerLink').addEventListener('click', (e) => {
