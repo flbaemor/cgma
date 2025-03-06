@@ -6,6 +6,7 @@ from cfg import cfg, predict_sets
 app = Flask(__name__)
 CORS(app)
 
+# LL(1) Parser Class
 class LL1Parser:
     def __init__(self, cfg, predict_sets):
         self.cfg = cfg
@@ -16,7 +17,6 @@ class LL1Parser:
         self.current_token_index = 0
 
     def construct_parsing_table(self):
-        #Builds the LL(1) parsing table based on predict sets
         parsing_table = {}
         for non_terminal, productions in self.cfg.items():
             parsing_table[non_terminal] = {}
@@ -27,20 +27,12 @@ class LL1Parser:
                         parsing_table[non_terminal][terminal] = production
         return parsing_table
 
-    def get_next_token(self):
-        #Advance to the next token
-        if self.current_token_index < len(self.tokens):
-            token = self.tokens[self.current_token_index]
-            self.current_token_index += 1
-            return token
-        return None
-
     def parse(self, tokens):
-        self.stack = ['EOF', list(self.cfg.keys())[0]]  # stack
+        self.stack = ['EOF', list(self.cfg.keys())[0]]  # Initialize stack
         index = 0
         line = 1
         error_messages = []
-        
+
         while self.stack:
             top = self.stack.pop()
             token = tokens[index]
@@ -57,36 +49,25 @@ class LL1Parser:
                 token_type = token.type
                 token_value = token.value
 
-            '''if token_value == 'chungus' and index + 1 < len(tokens) and tokens[index + 1].value == 'skibidi':
-                token_value = 'chungus skibidi'
-                token_type = 'chungus skibidi'''
-
             if token_type in {"IDENTIFIER", "CHU_LIT", "CHUDEL_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
                 pass
             elif token_value in {'true', 'false'}:
                 token_type = 'LWK_LIT'
-            elif token_value in self.parsing_table.get(top, {}):  
+            elif token_value in self.parsing_table.get(top, {}):
                 token_type = token_value 
 
             print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
             if token_type == 'TT_NL':
                 line += 1
-            
-            # top of stack matches a terminal token
+
             if top == token_type or top == token_value:
                 print(f"Matched: {top}")
-                '''if top == 'chungus skibidi':
-                    index += 2
-                else:'''
-                index += 1 
-            
-            # top of stack matches a non terminal token and in parsing table
+                index += 1  
             elif top in self.parsing_table:
                 if token_type in self.parsing_table[top]:
                     production = self.parsing_table[top][token_type]
                     print(f"Expand: {top} → {' '.join(production)}")
-                    
                     if production != ['ε']:
                         self.stack.extend(reversed(production))
                     print(f"Updated Stack: {self.stack}")
@@ -96,14 +77,12 @@ class LL1Parser:
                     print(error_message)
                     error_messages.append(error_message)
                     return False, error_messages
-            
-            # top of stock does not match token
             else:
                 error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: '{top}'"
                 print(error_message)
                 error_messages.append(error_message)
                 return False, error_messages
-        
+
         if token_type == 'EOF' and not self.stack:
             print("Syntax analysis successful!")
             return True, []
@@ -111,10 +90,55 @@ class LL1Parser:
             print("Error: Tokens remaining after parsing")
             return False, ["Error: Tokens remaining after parsing"]
 
+# Symbol Table for Semantic Analysis
+class SymbolTable:
+    def __init__(self):
+        self.table = {}
+
+    def define(self, name, value=None, type_=None):
+        self.table[name] = {'value': value, 'type': type_}
+
+    def lookup(self, name):
+        return self.table.get(name, None)
+
+    def assign(self, name, value):
+        if name in self.table:
+            self.table[name]['value'] = value
+        else:
+            raise Exception(f"Semantic Error: '{name}' is not declared.")
+
+# Semantic Analyzer
+class SemanticAnalyzer:
+    def __init__(self):
+        self.symbol_table = SymbolTable()
+        self.errors = []
+
+    def analyze(self, tokens):
+        declared_vars = set()
+        last_token = None
+
+        for token in tokens:
+            if token.type == "TT_IDENTIFIER":
+                if last_token and last_token.value in {"chungus", "chudeluxe", "forsencd", "forsen", "lwk"}:
+                    self.symbol_table.define(token.value, type_=last_token.value)
+                    declared_vars.add(token.value)
+                elif token.value not in declared_vars:
+                    self.errors.append(f"Semantic Error: Variable '{token.value}' is not declared.")
+
+            elif token.type == "TT_IS":
+                if last_token and last_token.type == "TT_IDENTIFIER":
+                    if last_token.value not in declared_vars:
+                        self.errors.append(f"Semantic Error: Cannot assign to undeclared variable '{last_token.value}'.")
+                        
+            last_token = token
+
+        return len(self.errors) == 0, self.errors
+
 @app.route('/api/parse', methods=['POST'])
 def parse():
     data = request.json
     source_code = data.get('source_code', '')
+
     lexer = Lexer('<stdin>', source_code)
     tokens, errors = lexer.make_tokens()
 
@@ -124,8 +148,13 @@ def parse():
     parser = LL1Parser(cfg, predict_sets)
     success, parse_errors = parser.parse(tokens)
 
-    return jsonify({'success': success, 'errors': parse_errors})
+    if not success:
+        return jsonify({'success': False, 'errors': parse_errors})
 
+    semantic_analyzer = SemanticAnalyzer()
+    semantic_success, semantic_errors = semantic_analyzer.analyze(tokens)
+
+    return jsonify({'success': semantic_success, 'errors': semantic_errors})
 
 if __name__ == '__main__':
     app.run(debug=True)
