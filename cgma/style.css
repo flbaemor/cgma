@@ -28,6 +28,7 @@ body {
     justify-content: space-between; 
     background-color: #4f134e;
     padding: 15px 30px;
+    max-height: 5%;
 }
 
 .nav-links {
@@ -40,6 +41,13 @@ body {
 
 .nav-links li {
     display: inline;
+}
+
+.logoName {
+    position:absolute;
+    left: 10%;
+    transform: translateX(-100%);
+    
 }
 
 .nav-links a {
@@ -218,3 +226,4 @@ body {
 .token-value {
     white-space: pre;
 }
+
