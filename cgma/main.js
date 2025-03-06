@@ -131,10 +131,7 @@ async function runLexer() {
 async function runSyntax() {
     const sourceCode = document.getElementById('editor').value;
     console.log("Running syntax with source code:", sourceCode);
-    await  runLexer();
-    if (errorBox.value !== 'Lexical analysis successful!') {
-        return;
-    }
+    runLexer();
     try {
         const response = await fetch('/api/parse', {
             method: 'POST',
@@ -168,13 +165,8 @@ async function runSyntax() {
 
 async function runSemantic() {
     const errorBox = document.getElementById('errorText');
-    await runLexer();
-    if (errorBox.value !== 'Lexical analysis successful!') {
-        return; // Stop execution if lexical errors exist
-    }
-
     await runSyntax();
-    if (errorBox.value !== 'Syntax analysis successful!') {
+    if (errorBox.value != 'Syntax analysis successful!') {
         return; // Stop execution if syntax errors exist
     }
 
