@@ -49,23 +49,31 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     });
     
+    const navLinks = document.querySelectorAll('.nav-links a');
 
     // Add event listeners for navigation links
-    document.getElementById('lexerLink').addEventListener('click', (e) => {
-        e.preventDefault();
-        runLexer();
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Remove active class from all links
+            navLinks.forEach(l => l.classList.remove('active'));
+
+            // Add active class to the clicked link
+            this.classList.add('active');
+
+            // Run the corresponding function based on the link's ID
+            if (this.id === 'lexerLink') {
+                runLexer();
+            } else if (this.id === 'syntaxLink') {
+                runSyntax();
+            } else if (this.id === 'semanticLink') {
+                runSemantic();
+            }
+        });
     });
 
-    document.getElementById('syntaxLink').addEventListener('click', (e) => {
-        e.preventDefault();
-        runSyntax();
-    });
-
-    document.getElementById('semanticLink').addEventListener('click', (e) => {
-        e.preventDefault();
-        runSemantic();
-    });
-
+    // Add event listener for the run button
     document.querySelector('.run').addEventListener('click', runLexer);
 });
 
