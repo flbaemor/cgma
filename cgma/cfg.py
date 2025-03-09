@@ -104,8 +104,9 @@ cfg = {
     "<program>": [["<start>"]],
     "<start>":[["<global_declaration>", "<start>"],["chungus", "<chungus_follow>"]],
     "<chungus_follow>":[["<identifier>", "<declaration_tail>", "<start>"], ["skibidi", "(", ")", "{", "<body_main>", "back", "0", "}"]],
-    "<global_declaration>": [["<constant_var>"], ["<gldata_type>", "<identifier>", "<declaration_tail>"], ["<expression>"]],
-    "<gldata_type>": [["aura"], ["gng"], ["nocap"], ["forsen"], ["forsencd"], ["chudeluxe"], ["lwk"]],
+    "<global_declaration>": [["<constant_var>"], ["<data_type_struct>", "<identifier>", "<declaration_tail_struct>"], ["<gldata_type>", "<identifier>", "<declaration_tail>"], ["<expression>"]],
+    "<gldata_type>": [["nocap"], ["forsen"], ["forsencd"], ["chudeluxe"], ["lwk"]],
+    "<data_type_struct>": [["aura"], ["gng"]],
     "<data_type>": [["chungus"], ["<gldata_type>"]],
     "<body>": [["ε"], ["<declaration>", "<body>"], ["<statement>", "<body>"], ["back", "<return_value>"]],
     "<body_main>": [["ε"], ["<declaration>", "<body_main>"], ["<statement>", "<body_main>"]],
@@ -133,10 +134,11 @@ cfg = {
     "<arg_tail>": [["ε"], [",", "<expression>", "<arg_tail>"]],
     "<parameter>": [["<data_id>", "<parameter_tail>"]],
     "<parameter_tail>": [["ε"], [",", "<data_id>", "<parameter_tail>"]],
-    "<data_id>": [["<data_type>", "<identifier>"]],
+    "<data_id>": [["<data_type>", "<identifier>"], ["<data_type_struct>", "<identifier>"]],
     "<constant_var>": [["sturdy", "<data_id>", "<var_initialization>"]],
-    "<declaration>": [["<data_id>", "<declaration_tail>"], ["<expression>"], ["<constant_var>"]],
-    "<declaration_tail>": [["ε"], ["<var_initialization>"], ["{", "<body>", "}"]],
+    "<declaration>": [["<data_type>", "<identifier>", "<declaration_tail>"],["<data_type_struct>", "<identifier>", "<declaration_tail_struct>"], ["<constant_var>"], ["<identifier>", "<declaration_tail>"]],
+    "<declaration_tail>": [["<var_initialization>"], ["{", "<body>", "}"]],
+    "<declaration_tail_struct>": [["ε"], ["{", "<body>", "}"]],
     "<var_initialization>": [["=", "<value>", "<var_init_tail>"]],
     "<var_init_tail>": [["ε"], [",", "<identifier>", "<var_initialization>"]],
     "<statement>": [["yap", "(", "<print_arg>", ")"], ["lethimcook", "(", "<identifier>", ")", "{", "<case_statement>", "}"], ["plug", "(", "<for_initialization>", ";", "<expression>", ";", "<expression>", ")", "{", "<body>", "}"], ["lil", "{", "<body>", "}", "jit", "(", "<expression>", ")"], ["jit", "(", "<expression>", ")", "{", "<body>", "}"], ["<if_statement>"], ["pause"]],
@@ -158,7 +160,7 @@ first_sets = compute_first(cfg)
 follow_sets = compute_follow(cfg, first_sets)
 predict_sets = compute_predict(cfg, first_sets, follow_sets)
 
-print("Context-Free Grammar (CFG):\n")
+'''print("Context-Free Grammar (CFG):\n")
 for non_terminal, productions in cfg.items():
     non_terminal = non_terminal.strip("<>").upper() 
     for production in productions:
@@ -181,4 +183,4 @@ print("\n\nPREDICT SET:")
 for (lhs, prod), predict_set in predict_sets.items():
     prod_str = " ".join(prod).replace("''", "")  # Remove '' in productions
     predict_set_str = ", ".join(predict_set).replace("''", "")  # Remove '' in predict set
-    print(f"Predict({lhs} → {prod_str}) -> {{{predict_set_str}}}")
+    print(f"Predict({lhs} → {prod_str}) -> {{{predict_set_str}}}")'''

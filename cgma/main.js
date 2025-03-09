@@ -178,8 +178,35 @@ async function runSyntax() {
 }
 
 async function runSemantic() {
+    const errorBox = document.getElementById('errorText');
+    await runSyntax();
+    if (errorBox.value != 'Syntax analysis successful!') {
+        return; // Stop execution if syntax errors exist
+    }
+
     const sourceCode = document.getElementById('editor').value;
     console.log("Running semantic analysis with source code:", sourceCode);
-    // Placeholder for semantic analysis logic
-    document.getElementById('error').textContent = 'Semantic analysis not implemented yet.';
+    try {
+        const response = await fetch('/api/semantic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source_code: sourceCode })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Semantic HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Semantic response:", data);
+
+        if (!data.success) {
+            errorBox.value = data.errors.join('\n');
+        } else {
+            errorBox.value = 'Semantic analysis successful!';
+        }
+    } catch (error) {
+        console.error("Error running semantic analysis:", error);
+        errorBox.value = 'Error running semantic analysis.';
+    }
 }

@@ -406,7 +406,7 @@ class Lexer:
                                     ident_count+=1
                                     self.advance()
                                     if self.current_char is None or self.current_char in lwk_dlm:
-                                        tokens.append(Token(TT_KEYWORD, ident_str))
+                                        tokens.append(Token(TT_LWK, ident_str))
                                         continue
                                     elif self.current_char is not None and self.current_char not in lwk_dlm and self.current_char not in ALPHANUM:
                                         errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
@@ -923,7 +923,7 @@ class Lexer:
                                 ident_count+=1
                                 self.advance()
                                 if self.current_char is None or self.current_char in lwk_dlm:
-                                    tokens.append(Token(TT_KEYWORD, ident_str))
+                                    tokens.append(Token(TT_LWK, ident_str))
                                     continue
                                 elif self.current_char is not None and self.current_char not in lwk_dlm and self.current_char not in ALPHANUM:
                                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))

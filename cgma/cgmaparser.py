@@ -90,49 +90,7 @@ class LL1Parser:
             print("Error: Tokens remaining after parsing")
             return False, ["Error: Tokens remaining after parsing"]
 
-# Symbol Table for Semantic Analysis
-class SymbolTable:
-    def __init__(self):
-        self.table = {}
 
-    def define(self, name, value=None, type_=None):
-        self.table[name] = {'value': value, 'type': type_}
-
-    def lookup(self, name):
-        return self.table.get(name, None)
-
-    def assign(self, name, value):
-        if name in self.table:
-            self.table[name]['value'] = value
-        else:
-            raise Exception(f"Semantic Error: '{name}' is not declared.")
-
-# Semantic Analyzer
-class SemanticAnalyzer:
-    def __init__(self):
-        self.symbol_table = SymbolTable()
-        self.errors = []
-
-    def analyze(self, tokens):
-        declared_vars = set()
-        last_token = None
-
-        for token in tokens:
-            if token.type == "TT_IDENTIFIER":
-                if last_token and last_token.value in {"chungus", "chudeluxe", "forsencd", "forsen", "lwk"}:
-                    self.symbol_table.define(token.value, type_=last_token.value)
-                    declared_vars.add(token.value)
-                elif token.value not in declared_vars:
-                    self.errors.append(f"Semantic Error: Variable '{token.value}' is not declared.")
-
-            elif token.type == "TT_IS":
-                if last_token and last_token.type == "TT_IDENTIFIER":
-                    if last_token.value not in declared_vars:
-                        self.errors.append(f"Semantic Error: Cannot assign to undeclared variable '{last_token.value}'.")
-                        
-            last_token = token
-
-        return len(self.errors) == 0, self.errors
 
 @app.route('/api/parse', methods=['POST'])
 def parse():
