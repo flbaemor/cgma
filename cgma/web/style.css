@@ -50,6 +50,11 @@ body {
     
 }
 
+.nav-links a.active {
+    color: #ff61e7;
+    font-weight: bold;
+}
+
 .nav-links a {
     text-decoration: none;
     color: white;
