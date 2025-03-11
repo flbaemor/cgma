@@ -181,7 +181,7 @@ async function runSemantic() {
     const errorBox = document.getElementById('errorText');
     await runSyntax();
     if (errorBox.value != 'Syntax analysis successful!') {
-        return; // Stop execution if syntax errors exist
+        return;
     }
 
     const sourceCode = document.getElementById('editor').value;

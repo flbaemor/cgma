@@ -51,8 +51,7 @@ class LL1Parser:
 
             if token_type in {"IDENTIFIER", "CHU_LIT", "CHUDEL_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
                 pass
-            elif token_value in {'true', 'false'}:
-                token_type = 'LWK_LIT'
+
             elif token_value in self.parsing_table.get(top, {}):
                 token_type = token_value 
 
@@ -84,12 +83,11 @@ class LL1Parser:
                 return False, error_messages
 
         if token_type == 'EOF' and not self.stack:
-            print("Syntax analysis successful!")
+            print("\nSyntax analysis successful!")
             return True, []
         else:
             print("Error: Tokens remaining after parsing")
             return False, ["Error: Tokens remaining after parsing"]
-
 
 
 @app.route('/api/parse', methods=['POST'])
@@ -109,10 +107,6 @@ def parse():
     if not success:
         return jsonify({'success': False, 'errors': parse_errors})
 
-    semantic_analyzer = SemanticAnalyzer()
-    semantic_success, semantic_errors = semantic_analyzer.analyze(tokens)
-
-    return jsonify({'success': semantic_success, 'errors': semantic_errors})
 
 if __name__ == '__main__':
     app.run(debug=True)
