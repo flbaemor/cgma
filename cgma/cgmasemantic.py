@@ -442,11 +442,7 @@ def parse_expression_type(tokens, index, var_type):
         return parse_expression_forsencd(tokens, index)
 
     elif var_type == "forsen":
-        if tokens[index].type not in {"FORSEN_LIT", "IDENTIFIER"}:
-            error = f"Type Error: forsen can only be assigned a FORSEN_LIT."
-            raise SemanticError(error, line)
-        node = ASTNode("Value", tokens[index].value)
-        return node, index + 1  
+        return parse_expression_forsen(tokens, index)
     
     elif var_type == "lwk":
         return parse_expression_lwk(tokens, index)
@@ -467,6 +463,41 @@ def parse_expression_lwk(tokens, index):
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)  # Build AST node
     
     return left_node, index
+
+def parse_expression_forsen(tokens, index):
+    line = tokens[index].line
+    if tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
+        func_name = tokens[index].value
+        func_info = symbol_table.lookup_function(func_name)
+        func_return_type = func_info["return_type"]
+        func_params = func_info["params"]
+
+        if func_return_type not in {"forsen"}:
+            error = f"Type Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
+            raise SemanticError(error, line)
+        
+        return parse_function_call(tokens, index, func_name, func_return_type, func_params)
+    
+    elif tokens[index].type == "IDENTIFIER":
+        variable_info = symbol_table.lookup_variable(tokens[index].value)
+        if isinstance(variable_info, str):
+            error = f"Semantic Error: Variable '{tokens[index].value}' used before declaration."
+            raise SemanticError(error, line)
+        
+        if variable_info["type"] != "forsen":
+            error = f"Type Error: Cannot use '{tokens[index].value}' of type {variable_info['type']} in forsen expression.", line
+            raise SemanticError(error, line)
+    
+    elif tokens[index].type == "FORSEN_LIT":
+        node = ASTNode("Value", tokens[index].value)
+        return node, index
+
+    else:
+        error = f"Type Error: forsen can only be assigned with identifier of type forsen or a forsen literal."
+        raise SemanticError(error, line)
+    
+    node = ASTNode("Value", tokens[index].value)
+    return node, index  
 
 def parse_relational(tokens, index):
     line = tokens[index].line
@@ -595,9 +626,8 @@ def parse_expression_forsencd(tokens, index):
     left_node = ASTNode("Value", tokens[index].value)
     index += 1
 
-    if tokens[index].type not in {"PLUS"}:
-        error = f"Syntax Error: Invalid operator in forsencd expression."
-        raise SemanticError(error, line)
+    if index >= len(tokens) or tokens[index].type != "PLUS":
+        return left_node, index
 
     while tokens[index].type in {"PLUS"}:
         op = tokens[index].value
@@ -680,7 +710,7 @@ def parse_factor(tokens, index):
             error = f"Type Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
             raise SemanticError(error, token.line)
 
-        node = parse_function_call(tokens, index, func_name, func_return_type, func_params)
+        node, index = parse_function_call(tokens, index, func_name, func_return_type, func_params)
 
         while tokens[index].type in {"INC", "DEC"}:
             op = tokens[index].value
@@ -756,7 +786,7 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
                 raise SemanticError(f"Semantic Error: Variable '{arg_name}' used before declaration.", line)
             
             arg_type = var_info["type"]
-            arg_node = ASTNode("Value", arg_name, line=line)
+            arg_node = ASTNode("Argument", arg_name, line=line)
 
             args_node.add_child(arg_node)
             provided_args.append((arg_node, arg_type))
