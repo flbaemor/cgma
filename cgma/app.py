@@ -69,14 +69,9 @@ def semantic_analysis():
 
     try:
         ast_root = build_ast(tokens)  
-        print("\n🚀 DEBUG: build_ast() finished!\n")  # ✅ AST completed
         ast_root.print_tree()
-
         semantic_analyzer = SemanticAnalyzer(symbol_table)  
-        print("\n🚀 DEBUG: Running analyze()...\n")  # ✅ Check when analyze() starts
         semantic_analyzer.analyze(ast_root)  
-
-        print("\n🚀 DEBUG: analyze() FINISHED!\n")  # ✅ Should print once
         return jsonify({'success': True, 'message': 'Semantic analysis completed successfully'})
 
     except SemanticError as e:

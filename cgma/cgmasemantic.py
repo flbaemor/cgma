@@ -32,6 +32,7 @@ class ASTNode:
         print(f"{indent}╚═{self.node_type}: {self.value if self.value else ''}")
         for child in self.children:
             child.print_tree(level + 1)
+        
 
 class ProgramNode(ASTNode):
     def __init__(self, line=None):
@@ -145,7 +146,6 @@ class SymbolTable:
         else:
             scope[name] = {"type": type_, "value": value}
 
-        self.debug_scopes()
 
     def lookup_variable(self, name):
         # Search from innermost scope to global
@@ -176,6 +176,7 @@ class SymbolTable:
         print("🔹 Entering new scope.")
         self.scopes.append({})
         print("🔹 Current scope:", self.scopes[-1])
+        
 
     def exit_scope(self):
         print("🔹 Exiting scope.")
@@ -189,6 +190,7 @@ class SymbolTable:
         for i, scope in enumerate(self.scopes):
             print(f"  Scope {i}: {scope}")
         print("================================\n")
+        
 
     
 ##### SEMANTIC ANALYZER #####
@@ -216,7 +218,7 @@ class SemanticAnalyzer:
             var_name = node.children[0].value
             error = self.symbol_table.lookup_variable(var_name)
             line = node.line
-            if isinstance(error, str):  # Only raise error if lookup_variable() returns an error string
+            if isinstance(error, str):
                 raise SemanticError(error, line)
 
         elif node.node_type == "FunctionDeclaration":
@@ -238,7 +240,10 @@ class SemanticAnalyzer:
 symbol_table = SymbolTable()
 semantic_analyzer = SemanticAnalyzer(symbol_table)
 
+#######################
 ###### BUILD AST ######
+#######################
+
 def build_ast(tokens):
     """Constructs an AST from the token list after LL(1) parsing."""
     root = ProgramNode()
@@ -303,29 +308,29 @@ def parse_function(tokens, index, func_name, func_type):
         if tokens[index].value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
             param_type = tokens[index].value
             index += 1
-
             if tokens[index].type == "IDENTIFIER":
                 param_name = tokens[index].value
-                error = symbol_table.declare_variable(param_name, param_type)
-                if isinstance(error, str):
-                    raise SemanticError(error, line)
                 param_node = ASTNode("Parameter")
                 param_node.add_child(ASTNode("Type", param_type))
                 param_node.add_child(ASTNode("Identifier", param_name))
                 params_node.add_child(param_node)
+                error = symbol_table.declare_variable(param_name, param_type)
+                if error:
+                    raise SemanticError(error, line)
                 index += 1
-                
+ 
             else:
                 error = f"Syntax Error: Invalid parameter declaration."
                 raise SemanticError(error, line)
-        else:
-            error = f"Syntax Error: Invalid parameter type."
+            
+        elif tokens[index].type != "COMMA":
+            error = f"Syntax Error: Expected ',' in parameter list."
             raise SemanticError(error, line)
-        if tokens[index].type == "COMMA":
+        
+        else:
             index += 1
-
+    symbol_table.declare_function(func_name, func_type, params_node.children)
     index += 1
-
     func_node = FunctionDeclarationNode(func_type, func_name, params_node)
 
     if tokens[index].type == "OPCUR":
@@ -336,9 +341,9 @@ def parse_function(tokens, index, func_name, func_type):
             if stmt:
                 block_node.add_child(stmt)
             index += 1
-        symbol_table.exit_scope()
         index += 1
         func_node.add_child(block_node)
+        symbol_table.exit_scope()
     else:
         error = f"Syntax Error: Function body must be enclosed in curly braces."
         raise SemanticError(error, line)
@@ -351,6 +356,7 @@ def parse_variable(tokens, index, var_name, var_type):
     while True:
         var_node = VariableDeclarationNode(var_type, var_name, line=line)
         error = symbol_table.declare_variable(var_name, var_type)
+
         if error:
             raise SemanticError(error, line)
 
@@ -366,10 +372,11 @@ def parse_variable(tokens, index, var_name, var_type):
                     index += 1
                     value_node = ASTNode("Input", "chat()", line=line)
                 else:
-                    error = f"Syntax Error: Expected() after chat."
+                    error = f"Syntax Error: Expected () after chat."
                     raise SemanticError(error, line)
             else:
                 value_node, index = parse_expression_type(tokens, index, var_type)
+
             var_node.add_child(value_node)
 
         else:
@@ -398,40 +405,36 @@ def parse_statement(tokens, index):
         node, index = parse_variable(tokens, index, var_name, var_type)
         return node, index
     
-    elif token.type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
-        func_name = token.value
-        index += 2
-        args_node = ASTNode("Arguments")
+    elif token.type == "IDENTIFIER":
+        if tokens[index + 1].type == "OPPAR":
+            func_name = token.value
+            error = symbol_table.lookup_function(func_name)
+            if isinstance(error, str):
+                error = symbol_table.lookup_function(func_name)
+                raise SemanticError(error, token.line)
+            func_type = symbol_table.lookup_function(func_name)["return_type"]
+            func_params = symbol_table.lookup_function(func_name)["params"]
+            func_call_node, index = parse_function_call(tokens, index, func_name, func_type, func_params)
+            return func_call_node, index
 
-        while tokens[index].type != "CLPAR":
-            arg_node, index = parse_expression(tokens, index)
-            args_node.add_child(arg_node)
-
-            if tokens[index].type == "COMMA":
-                index += 1  
-        
-        index += 1
-
-        func_call_node = FunctionCallNode(func_name, args_node.children)
-        return func_call_node, index
-    
-    elif token.type == "IDENTIFIER" and tokens[index + 1].type == "IS":
-        var_name = token.value
-
-        if isinstance(symbol_table.lookup_variable(var_name), str):
-            error = symbol_table.lookup_variable(var_name)
+        elif tokens[index + 1].type == "IS":
+            var_name = token.value
+            if isinstance(symbol_table.lookup_variable(var_name), str):
+                error = symbol_table.lookup_variable(var_name)
+                raise SemanticError(error, token.line)
+            
+            var_type = symbol_table.lookup_variable(var_name)["type"]
+            index += 2
+            node, index = parse_assignment(tokens, index, var_name, var_type)
+            return node, index    
+        else:
+            error = f"Syntax Error: Invalid statement."
             raise SemanticError(error, token.line)
-        
-        var_type = symbol_table.lookup_variable(var_name)["type"]
-        index += 2
-        node, index = parse_assignment(tokens, index, var_name, var_type)
-        return node, index
-
-    return None, index
+    else:
+        return None, index
 
 def parse_expression_type(tokens, index, var_type):
     line = tokens[index].line
-    print(f"🔍 Parsing expression for type {var_type} at index {index}")
     if var_type in {"chungus", "chudeluxe"}:
         return parse_expression(tokens, index)
 
@@ -561,7 +564,6 @@ def parse_relational(tokens, index):
 
         return BinaryOpNode(left_node, operator, right_node, line=line), index
 
-
 def parse_expression_forsencd(tokens, index):
     line = tokens[index].line
 
@@ -569,7 +571,17 @@ def parse_expression_forsencd(tokens, index):
         error = f"Type Error: forsencd can only be assigned a FORSENCD_LIT or an identifier of type forsen/forsencd."
         raise SemanticError(error, line)
     
-    if tokens[index].type == "IDENTIFIER":
+    elif tokens[index].type in {"IDENTIFIER"} and tokens[index + 1].type == "OPPAR":
+        func_name = tokens[index].value
+        func_info = symbol_table.lookup_function(func_name)
+        func_return_type = func_info["return_type"]
+        func_params = func_info["params"]
+        if func_return_type not in {"forsen", "forsencd"}:
+            error = f"Type Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
+            raise SemanticError(error, line)
+        return parse_function_call(tokens, index, func_name, func_return_type, func_params)
+
+    elif tokens[index].type == "IDENTIFIER":
         variable_info = symbol_table.lookup_variable(tokens[index].value)
 
         if isinstance(variable_info, str):
@@ -659,6 +671,24 @@ def parse_factor(tokens, index):
 
         return node, index
     
+    elif token.type in {"IDENTIFIER"} and tokens[index + 1].type == "OPPAR":
+        func_name = token.value
+        func_info = symbol_table.lookup_function(func_name)
+        func_return_type = func_info["return_type"]
+        func_params = func_info["params"]
+        if func_return_type not in {"chungus", "chudeluxe"}:
+            error = f"Type Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
+            raise SemanticError(error, token.line)
+
+        node = parse_function_call(tokens, index, func_name, func_return_type, func_params)
+
+        while tokens[index].type in {"INC", "DEC"}:
+            op = tokens[index].value
+            index += 1
+            node = UnaryOpNode(op, node)
+
+        return node, index
+
     elif token.type in {"IDENTIFIER"}:
         variable_info = symbol_table.lookup_variable(token.value)
         if isinstance(variable_info, str):
@@ -708,3 +738,69 @@ def parse_assignment(tokens, index, var_name, var_type):
                 value_node, index = parse_expression_type(tokens, index, var_type)
     assign_node = AssignmentNode(var_name, value_node, line=line)
     return assign_node, index
+
+def parse_function_call(tokens, index, func_name, func_type, func_params):
+    line = tokens[index].line
+    index += 2  # Move past function name and '('
+
+    args_node = ASTNode("Arguments")
+    provided_args = []  # Store parsed argument nodes
+
+    expected_params = func_params
+
+    while tokens[index].type != "CLPAR":
+        if tokens[index].type == "IDENTIFIER":
+            arg_name = tokens[index].value
+            var_info = symbol_table.lookup_variable(arg_name)
+            if isinstance(var_info, str):
+                raise SemanticError(f"Semantic Error: Variable '{arg_name}' used before declaration.", line)
+            
+            arg_type = var_info["type"]
+            arg_node = ASTNode("Value", arg_name, line=line)
+
+            args_node.add_child(arg_node)
+            provided_args.append((arg_node, arg_type))
+            index += 1
+
+        else:
+            raise SemanticError(f"Syntax Error: Invalid argument in function call.", line)
+        
+        if tokens[index].type == "COMMA":
+            index += 1
+
+    index += 1  # skip ')'
+
+    #  correct number of arguments
+    if len(provided_args) != len(expected_params):
+        raise SemanticError(f"Type Error: Function '{func_name}' expects {len(expected_params)} arguments, but {len(provided_args)} were provided.", line)
+
+    # ✅ Ensure argument types match expected parameter types
+    for i, (arg_node, arg_type) in enumerate(provided_args):
+        expected_type = expected_params[i].children[0].value
+
+        if arg_type != expected_type:
+            raise SemanticError(f"Type Error: Argument {i+1} of '{func_name}' should be '{expected_type}', but got '{arg_type}'.", line)
+        
+    #  argument types match expected parameter types
+
+    return FunctionCallNode(func_name, args_node.children, line=line), index
+
+def parse_argument(tokens, index):
+    line = tokens[index].line
+
+    # ✅ If argument is a boolean literal (true/false)
+    if tokens[index].type == "IDENTIFIER":
+        arg_name = tokens[index].value
+        arg_info = symbol_table.lookup_variable(arg_name)
+        if isinstance(arg_info, str):
+            raise SemanticError(f"Semantic Error: Variable '{arg_name}' used before declaration.", line)
+        
+        arg_type = arg_info["type"]
+        arg_node = ASTNode("Value", arg_name, line=line)
+        index += 1
+
+    else:
+        raise SemanticError(f"Syntax Error: Invalid argument in function call.", line)
+
+    return arg_node, arg_type, index
+
