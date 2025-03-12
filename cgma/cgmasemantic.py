@@ -414,6 +414,7 @@ def parse_statement(tokens, index):
         node, index = parse_variable(tokens, index, var_name, var_type)
         return node, index
     
+
     elif token.type == "IDENTIFIER":
         if tokens[index + 1].type == "OPPAR":
             func_name = token.value
@@ -435,9 +436,92 @@ def parse_statement(tokens, index):
             index += 2
             node, index = parse_assignment(tokens, index, token.value, symbol_table.lookup_variable(token.value)["type"])
             return node, index    
+        
+        elif tokens[index + 1].type in {"INC", "DEC"}:
+            node = ASTNode("UnaryOp", tokens[index + 1].value, line=token.line)
+            node.add_child(ASTNode("Identifier", token.value, line=token.line))
+            return node, index + 2
+
         else:
             error = f"Syntax Error: Invalid statement."
             raise SemanticError(error, token.line)
+    
+    elif tokens[index].type in {"INC", "DEC"}:
+        node = ASTNode("UnaryOp", tokens[index].value, line=token.line)
+        if tokens[index + 1].type == "IDENTIFIER":
+            var_token = tokens[index + 1]
+            error = symbol_table.lookup_variable(var_token.value)
+
+            if isinstance(error, str):
+                raise SemanticError(error, token.line)
+            
+            if error["type"] not in {"chungus", "chudeluxe"}:
+                error = f"Type Error: Cannot use '{var_token.value}' of type {error['type']} in this expression."
+                raise SemanticError(error, token.line)
+            
+        node.add_child(ASTNode("Identifier", tokens[index + 1].value, line=token.line))
+        return node, index + 2
+
+    elif token.value == "sturdy":
+        index += 1
+
+    elif token.value == "yap":
+        index += 1
+
+    elif token.value == "lethimcook":
+        index += 1
+
+    elif token.value == "plug":
+        index += 1
+
+    elif token.value == "lil":
+        index += 1
+
+    elif token.value == "jit":
+        index += 1
+
+    elif token.value == "pause":
+        index += 1
+    
+    elif token.value == "tuah":
+        index += 1
+
+    elif token.value == "hawk":
+        index += 1
+
+        if token.value == "tuah":
+            index += 1
+    
+    elif token.value == "caseoh":
+        index += 1
+
+    elif token.value == "npc":
+        index += 1
+
+    elif token.value == "getout":
+        index += 1
+
+    elif token.value == "append":
+        index += 1
+    
+    elif token.value == "insert":
+        index += 1
+
+    elif token.value == "remove":
+        index += 1
+
+    elif token.value == "back":
+        index += 1
+
+    elif token.value == "gng":
+        index += 1
+
+    elif token.value == "nocap":
+        index += 1
+
+    elif token.value == "aura":
+        index += 1
+
     else:
         return None, index
 
@@ -778,9 +862,6 @@ def parse_assignment(tokens, index, var_name, var_type):
     return assign_node, index
 
 def parse_function_call(tokens, index, func_name, func_type, func_params):
-    """
-    Parses a function call, allowing numerical expressions for 'chungus' and 'chudeluxe' parameters.
-    """
     line = tokens[index].line
     index += 2  # Move past function name and '('
 
@@ -791,9 +872,12 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
     while tokens[index].type != "CLPAR":
 
         # ✅ Handle numerical expressions for 'chungus' or 'chudeluxe' parameters
-        if expected_params[len(provided_args)].children[0].value in {"chungus", "chudeluxe"}:
-            arg_node, index = parse_expression(tokens, index)  # ✅ Parse numerical expression
-            arg_type = "chungus"  # Assume chungus for numerical expressions (chudeluxe is also numeric)
+        expected_type = expected_params[len(provided_args)].children[0].value
+        if expected_type in {"chungus", "chudeluxe"}:
+            expr_node, index = parse_expression(tokens, index)
+            arg_node = ASTNode("Argument")
+            arg_node.add_child(expr_node)  # ✅ Parse numerical expression
+            arg_type = expected_type  # Assume chungus for numerical expressions (chudeluxe is also numeric)
         
         # ✅ Handle identifiers (variables)
         elif tokens[index].type == "IDENTIFIER":
@@ -818,6 +902,9 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
             index += 1  # Move past ',' to next argument
 
     index += 1  # Skip closing ')'
+
+    if tokens[index].type in {"INC", "DEC"}:
+        raise SemanticError(f"Type Error: Unary operators cannot be applied to function calls.", line)
 
     # ✅ Correct number of arguments
     if len(provided_args) != len(expected_params):
