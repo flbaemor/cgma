@@ -49,10 +49,13 @@ def parse():
 
 @app.route('/api/semantic', methods=['POST'])
 def semantic_analysis():
-    global symbol_table
+    print("\n🚀 DEBUG: semantic_analysis() called!\n")  # ✅ Confirms request is called once
 
     data = request.json
     source_code = data.get('source_code', '')
+
+    global symbol_table
+    symbol_table = SymbolTable()
 
     tokens, errors = lexer_run('<stdin>', source_code)
     if errors:
@@ -65,18 +68,19 @@ def semantic_analysis():
         return jsonify({'success': False, 'errors': ['Syntax errors found']})
 
     try:
-        ast_root = build_ast(tokens)
+        ast_root = build_ast(tokens)  
+        print("\n🚀 DEBUG: build_ast() finished!\n")  # ✅ AST completed
         ast_root.print_tree()
 
-        semantic_analyzer = SemanticAnalyzer(symbol_table)  # ✅ Uses the reset global symbol table
-        semantic_analyzer.analyze(ast_root)
+        semantic_analyzer = SemanticAnalyzer(symbol_table)  
+        print("\n🚀 DEBUG: Running analyze()...\n")  # ✅ Check when analyze() starts
+        semantic_analyzer.analyze(ast_root)  
 
+        print("\n🚀 DEBUG: analyze() FINISHED!\n")  # ✅ Should print once
         return jsonify({'success': True, 'message': 'Semantic analysis completed successfully'})
 
     except SemanticError as e:
         return jsonify({'success': False, 'errors': [str(e)]})
 
-    
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
