@@ -5,8 +5,10 @@ from cgmaparser import LL1Parser
 from cfg import cfg, predict_sets
 from cgmasemantic import SemanticAnalyzer
 import os
+
 from cgmasemantic import build_ast
 from cgmasemantic import SemanticError
+from cgmasemantic import symbol_table
 from cgmasemantic import SymbolTable
 
 app = Flask(__name__)
@@ -48,31 +50,33 @@ def parse():
 @app.route('/api/semantic', methods=['POST'])
 def semantic_analysis():
     global symbol_table
+
     data = request.json
     source_code = data.get('source_code', '')
+
     tokens, errors = lexer_run('<stdin>', source_code)
     if errors:
         return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
-    
+
     parser = LL1Parser(cfg, predict_sets)
     success, ast_root = parser.parse(tokens)
-    
+
     if not success:
         return jsonify({'success': False, 'errors': ['Syntax errors found']})
-    
+
     try:
         ast_root = build_ast(tokens)
         ast_root.print_tree()
 
-        symbol_table = SymbolTable()
-        semantic_analyzer = SemanticAnalyzer(symbol_table)
-        
+        semantic_analyzer = SemanticAnalyzer(symbol_table)  # ✅ Uses the reset global symbol table
         semantic_analyzer.analyze(ast_root)
-    
+
         return jsonify({'success': True, 'message': 'Semantic analysis completed successfully'})
-    
+
     except SemanticError as e:
         return jsonify({'success': False, 'errors': [str(e)]})
+
+    
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -124,28 +124,36 @@ class SymbolTable:
         self.scopes = [{}]   # Stack of scopes (for local/global tracking)
 
     ###### VARIABLE ######
-    def declare_variable(self, name, type_, scope="global", value=None):
-        if name in self.functions:  # 🚨 Check if a function already exists with the same name
-            return f"Semantic Error: '{name}' is already declared as a function."
+    def declare_variable(self, name, type_, value=None):
+        scope = self.scopes[-1]
+        if name in scope:
+            return f"Semantic Error: Variable '{name}' already declared in this scope."
 
-        if scope == "global":
-            if name in self.variables:  # ✅ Check global variables
-                return f"Semantic Error: Variable '{name}' already declared globally."
-            self.variables[name] = {"type": type_, "value": value, "scope": "global"}
+        if len(self.scopes) == 1:
+            self.variables[name] = {"type": type_, "value": value}
 
-        elif scope == "local":  # ✅ Check current function/local scope instead of global
-            current_scope = self.scopes[-1]
-            if name in current_scope:  
-                return f"Semantic Error: Variable '{name}' already declared in this scope."
-            current_scope[name] = type_  # ✅ Declare variable inside function scope
+        else:
+            scope[name] = {"type": type_, "value": value}
+
+        self.debug_scopes()
 
     def lookup_variable(self, name):
-        for scope in reversed(self.scopes):
+        print(f"\n🔍 DEBUG: Looking up variable '{name}'...")
+        print(f"🌎 Global Variables: {self.variables}")
+        # Search from innermost scope to global
+        for i, scope in enumerate(reversed(self.scopes)):
             if name in scope:
-                return {"type": scope[name], "scope": "local"}
+                print(f"✅ Found '{name}' in Scope {len(self.scopes) - 1 - i}: {scope[name]}")
+                return scope[name]
+
+        # Check global variables
         if name in self.variables:
+            print(f"✅ Found '{name}' in Global Scope: {self.variables[name]}")
             return self.variables[name]
+
+        print(f"❌ ERROR: Variable '{name}' is not declared.")
         return f"Semantic Error: Variable '{name}' used before declaration."
+
 
     ###### FUNCTION ######
     def declare_function(self, name, return_type, params):
@@ -160,11 +168,22 @@ class SymbolTable:
 
     ###### SCOPE ######
     def enter_scope(self):
+        print("🔹 Entering new scope.")
         self.scopes.append({})
+        print("🔹 Current scope:", self.scopes[-1])
 
     def exit_scope(self):
+        print("🔹 Exiting scope.")
         if len(self.scopes) > 1:
             self.scopes.pop()
+        print("🔹 Current scope:", self.scopes[-1])
+
+    def debug_scopes(self):
+        print("\n====== SYMBOL TABLE DEBUG ======")
+        print("🔹 Local Scopes (Stacked from Global to Inner Scope):")
+        for i, scope in enumerate(self.scopes):
+            print(f"  Scope {i}: {scope}")
+        print("================================\n")
 
     
 ##### SEMANTIC ANALYZER #####
@@ -197,8 +216,6 @@ class SemanticAnalyzer:
             params = node.children[1].children
             self.symbol_table.declare_function(func_name, return_type, params)
 
-            print(f"✅ Function detected: {func_name}")  # ✅ Debugging output
-
         elif node.node_type == "FunctionCall":
             func_name = node.value
             line = node.line
@@ -223,7 +240,7 @@ def build_ast(tokens):
         if token.type == "NL":
             index += 1
             continue
-
+        
         if token.value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
             node, index = parse_functionOrVariable(tokens, index)
 
@@ -261,11 +278,11 @@ def parse_functionOrVariable(tokens, index):
     return None, index
 
 def parse_function(tokens, index, func_name, func_type):
-    symbol_table.enter_scope()
     index += 1
     params_node = ASTNode("Parameters")
     line = tokens[index].line
-
+    symbol_table.enter_scope()
+    print("🔹 Entering function scope.")
     while tokens[index].type != "CLPAR":
         if tokens[index].value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
             param_type = tokens[index].value
@@ -273,7 +290,9 @@ def parse_function(tokens, index, func_name, func_type):
 
             if tokens[index].type == "IDENTIFIER":
                 param_name = tokens[index].value
-                symbol_table.declare_variable(param_name, param_type, scope="local")
+                error = symbol_table.declare_variable(param_name, param_type)
+                if error:
+                    raise SemanticError(error, line)
                 param_node = ASTNode("Parameter")
                 param_node.add_child(ASTNode("Type", param_type))
                 param_node.add_child(ASTNode("Identifier", param_name))
@@ -299,23 +318,25 @@ def parse_function(tokens, index, func_name, func_type):
             stmt, index = parse_statement(tokens, index)
             if stmt:
                 block_node.add_child(stmt)
-            index += 1
+            index +=1
+        symbol_table.exit_scope()
         index += 1
         func_node.add_child(block_node)
     else:
         error = f"Syntax Error: Function body must be enclosed in curly braces."
         raise SemanticError(error, line)
     
-    symbol_table.exit_scope()
     return func_node, index
 
 def parse_variable(tokens, index, var_name, var_type):
     var_node_list = ASTNode("VariableDeclarationList")
     line = tokens[index].line
-    scope = "local" if len(symbol_table.scopes) > 1 else "global"
     while True:
         var_node = VariableDeclarationNode(var_type, var_name, line=line)
-        error = symbol_table.declare_variable(var_name, var_type, scope=scope)
+        error = symbol_table.declare_variable(var_name, var_type)
+        if error:
+            raise SemanticError(error, line)
+
         if tokens[index].type == "IS":
             index += 1
             value_node, index = parse_expression_type(tokens, index, var_type)
@@ -366,9 +387,9 @@ def parse_statement(tokens, index):
     
     elif token.type == "IDENTIFIER" and tokens[index + 1].type == "IS":
         var_name = token.value
+        var_type = symbol_table.lookup_variable(var_name)["type"]
         index += 2
-
-        node, index = parse_assignment(tokens, index, var_name)
+        node, index = parse_assignment(tokens, index, var_name, var_type)
         return node, index
 
     return None, index
@@ -451,7 +472,18 @@ def parse_factor(tokens, index):
     """Parses literals, identifiers, parenthesized expressions, and postfix operators."""
     token = tokens[index]
 
-    if token.type in {"CHU_LIT", "CHUDEL_LIT", "IDENTIFIER"}:
+    if token.type in {"CHU_LIT", "CHUDEL_LIT"}:
+        node = ASTNode("Value", token.value)
+        index += 1  
+
+        while tokens[index].type in {"INC", "DEC"}:
+            op = tokens[index].value
+            index += 1
+            node = UnaryOpNode(op, node)
+
+        return node, index
+    
+    elif token.type in {"IDENTIFIER"}:
         node = ASTNode("Value", token.value)
         index += 1  
 
@@ -471,67 +503,18 @@ def parse_factor(tokens, index):
 
     return None, index
 
-def parse_assignment(tokens, index, var_name):
+def parse_assignment(tokens, index, var_name, var_type):
     line = tokens[index].line
-    global symbol_table
 
-    # Look up the variable type
-    variable_info = symbol_table.lookup_variable(var_name)
-    
-    if isinstance(variable_info, str):  # If lookup failed (returns error message)
-        error = f"Semantic Error: Variable '{var_name}' used before declaration."
-        raise SemanticError(error, line)
-
-    var_type = variable_info["type"]  # ✅ Get the variable type
-
-    # Parse the assigned expression based on the variable type
     value_node, index = parse_expression_type(tokens, index, var_type)
 
-    # Create an assignment node
     assign_node = ASTNode("Assignment", var_name, line=line)
     assign_node.add_child(value_node)
 
     return assign_node, index
 
+
 class UnaryOpNode(ASTNode):
     def __init__(self, operator, operand):
         super().__init__("UnaryOp", operator)
         self.add_child(operand)
-
-app = Flask(__name__)
-CORS(app)
-
-@app.route('/api/semantic', methods=['POST'])
-def semantic_analysis():
-    data = request.json
-    source_code = data.get('source_code', '')
-
-    lexer = Lexer('<stdin>', source_code)
-    tokens, errors = lexer.make_tokens()
-    
-    if errors:
-        return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
-    
-    parser = LL1Parser(cfg, predict_sets)
-    success, ast_root = parser.parse(tokens)
-    
-    if not success:
-        return jsonify({'success': False, 'errors': ['Syntax errors found']})
-    
-    try:
-        
-        ast_root = build_ast(tokens)
-        ast_root.print_tree()
-
-        symbol_table = SymbolTable()
-        semantic_analyzer = SemanticAnalyzer(symbol_table)
-
-        semantic_analyzer.analyze(ast_root)
-    
-        return jsonify({'success': True, 'message': 'Semantic analysis completed successfully'})
-    
-    except SemanticError as e:
-        return jsonify({'success': False, 'errors': [str(e)]})
-
-if __name__ == '__main__':
-    app.run(debug=True)
