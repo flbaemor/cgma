@@ -152,7 +152,6 @@ class SymbolTable:
         for i, scope in enumerate(reversed(self.scopes)):
             if name in scope:
                 return scope[name]
-
         # Check global variables
         if name in self.variables:
             return self.variables[name]
@@ -216,10 +215,8 @@ class SemanticAnalyzer:
 
         elif node.node_type == "Assignment":
             var_name = node.children[0].value
-            error = self.symbol_table.lookup_variable(var_name)
             line = node.line
-            if isinstance(error, str):
-                raise SemanticError(error, line)
+            
 
         elif node.node_type == "FunctionDeclaration":
             func_name = node.value
@@ -247,6 +244,9 @@ semantic_analyzer = SemanticAnalyzer(symbol_table)
 def build_ast(tokens):
     """Constructs an AST from the token list after LL(1) parsing."""
     root = ProgramNode()
+    symbol_table.variables = {}  # Stores variables
+    symbol_table.functions = {}  # Stores function definitions
+    symbol_table.scopes = [{}] 
     index = 0
     
     while index < len(tokens):
@@ -301,6 +301,15 @@ def parse_functionOrVariable(tokens, index):
 
 def parse_function(tokens, index, func_name, func_type):
     index += 1
+
+    if func_name in symbol_table.functions:
+        error = f"Semantic Error: '{func_name}' already declared."
+        raise SemanticError(error, tokens[index].line)
+    
+    elif func_name in symbol_table.variables:
+        error = f"Semantic Error: '{func_name}' already declared."
+        raise SemanticError(error, tokens[index].line)
+
     params_node = ASTNode("Parameters")
     line = tokens[index].line
     symbol_table.enter_scope()
@@ -419,13 +428,12 @@ def parse_statement(tokens, index):
 
         elif tokens[index + 1].type == "IS":
             var_name = token.value
-            if isinstance(symbol_table.lookup_variable(var_name), str):
-                error = symbol_table.lookup_variable(var_name)
+            error = symbol_table.lookup_variable(var_name)
+            if isinstance(error, str):
                 raise SemanticError(error, token.line)
             
-            var_type = symbol_table.lookup_variable(var_name)["type"]
             index += 2
-            node, index = parse_assignment(tokens, index, var_name, var_type)
+            node, index = parse_assignment(tokens, index, token.value, symbol_table.lookup_variable(token.value)["type"])
             return node, index    
         else:
             error = f"Syntax Error: Invalid statement."
@@ -770,50 +778,65 @@ def parse_assignment(tokens, index, var_name, var_type):
     return assign_node, index
 
 def parse_function_call(tokens, index, func_name, func_type, func_params):
+    """
+    Parses a function call, allowing numerical expressions for 'chungus' and 'chudeluxe' parameters.
+    """
     line = tokens[index].line
     index += 2  # Move past function name and '('
 
     args_node = ASTNode("Arguments")
     provided_args = []  # Store parsed argument nodes
-
-    expected_params = func_params
+    expected_params = func_params  # Expected function parameters
 
     while tokens[index].type != "CLPAR":
-        if tokens[index].type == "IDENTIFIER":
+
+        # ✅ Handle numerical expressions for 'chungus' or 'chudeluxe' parameters
+        if expected_params[len(provided_args)].children[0].value in {"chungus", "chudeluxe"}:
+            arg_node, index = parse_expression(tokens, index)  # ✅ Parse numerical expression
+            arg_type = "chungus"  # Assume chungus for numerical expressions (chudeluxe is also numeric)
+        
+        # ✅ Handle identifiers (variables)
+        elif tokens[index].type == "IDENTIFIER":
             arg_name = tokens[index].value
             var_info = symbol_table.lookup_variable(arg_name)
-            if isinstance(var_info, str):
+
+            if isinstance(var_info, str):  # Variable not found
                 raise SemanticError(f"Semantic Error: Variable '{arg_name}' used before declaration.", line)
-            
+
             arg_type = var_info["type"]
             arg_node = ASTNode("Argument", arg_name, line=line)
-
-            args_node.add_child(arg_node)
-            provided_args.append((arg_node, arg_type))
-            index += 1
+            index += 1  # Move past identifier
 
         else:
             raise SemanticError(f"Syntax Error: Invalid argument in function call.", line)
-        
+
+        args_node.add_child(arg_node)
+        provided_args.append((arg_node, arg_type))
+
+        # ✅ Handle multiple arguments
         if tokens[index].type == "COMMA":
-            index += 1
+            index += 1  # Move past ',' to next argument
 
-    index += 1  # skip ')'
+    index += 1  # Skip closing ')'
 
-    #  correct number of arguments
+    # ✅ Correct number of arguments
     if len(provided_args) != len(expected_params):
         raise SemanticError(f"Type Error: Function '{func_name}' expects {len(expected_params)} arguments, but {len(provided_args)} were provided.", line)
 
     # ✅ Ensure argument types match expected parameter types
     for i, (arg_node, arg_type) in enumerate(provided_args):
-        expected_type = expected_params[i].children[0].value
+        expected_type = expected_params[i].children[0].value  # Get expected type
 
+        # ✅ Allow numeric expressions for chungus/chudeluxe parameters
+        if expected_type in {"chungus", "chudeluxe"} and arg_type == "chungus":
+            continue  # ✅ Valid numeric expression argument
+        
+        # ❌ Type mismatch
         if arg_type != expected_type:
             raise SemanticError(f"Type Error: Argument {i+1} of '{func_name}' should be '{expected_type}', but got '{arg_type}'.", line)
-        
-    #  argument types match expected parameter types
 
     return FunctionCallNode(func_name, args_node.children, line=line), index
+
 
 def parse_argument(tokens, index):
     line = tokens[index].line
@@ -833,4 +856,5 @@ def parse_argument(tokens, index):
         raise SemanticError(f"Syntax Error: Invalid argument in function call.", line)
 
     return arg_node, arg_type, index
+    
 

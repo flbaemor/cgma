@@ -187,6 +187,7 @@ async function runSyntax() {
 
 async function runSemantic() {
     const errorBox = document.getElementById('errorText');
+    errorBox.value = '';
     await runSyntax();
     if (errorBox.value != 'Syntax analysis successful!') {
         return;
