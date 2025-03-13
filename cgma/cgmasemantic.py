@@ -148,6 +148,26 @@ class TaperNode(ASTNode):
         super().__init__("Taper", line=line)
         self.add_child(ASTNode("Identifier", variable_name, line=line))
 
+class AppendNode(ASTNode):
+    def __init__(self, elements, line=None):
+        super().__init__("Append", line=line)
+        for elem in elements:
+            self.add_child(elem)
+
+class InsertNode(ASTNode):
+    def __init__(self, index, elements, line=None):
+        super().__init__("Insert", line=line)
+        self.add_child(ASTNode("Index", index, line=line))
+        for elem in elements:
+            self.add_child(elem)
+
+class RemoveNode(ASTNode):
+    def __init__(self, value, index, line=None):
+        super().__init__("Remove", line=line)
+        self.add_child(ASTNode("Identifier", value, line=line))
+        self.add_child(ASTNode("Index", index, line=line))
+
+
 ###### SYMBOL TABLE ######
 
 class SymbolTable:
@@ -552,22 +572,6 @@ def parse_statement(tokens, index, func_type = None):
         node, index = parse_switch(tokens, index)
         return node, index
     
-        
-        '''elif token.value == "append":
-                index += 1
-            
-            elif token.value == "insert":
-                index += 1
-
-            elif token.value == "remove":
-                index += 1
-
-            elif token.value == "nocap":
-                index += 1
-
-            elif token.value == "aura":
-                index += 1'''
-        
     else:
         return None, index
 
@@ -925,6 +929,19 @@ def parse_assignment(tokens, index, var_name, var_type):
         else:
             error = f"Syntax Error: Expected() after chat."
             raise SemanticError(error, line)
+        
+    elif tokens[index].value == "append":
+        list_op_node, index = parse_append(tokens, index, var_type)
+        return list_op_node, index
+    
+    elif tokens[index].value == "insert":
+        list_op_node, index = parse_insert(tokens, index, var_type)
+        return list_op_node, index
+        
+    elif tokens[index].value == "remove":
+        list_op_node, index = parse_remove(tokens, index, var_name, var_type)
+        return list_op_node, index 
+        
     else:
         value_node, index = parse_expression_type(tokens, index, var_type)
 
@@ -1674,3 +1691,91 @@ def parse_list(tokens, index, expected_type):
     index += 1
 
     return ListNode(elements = elements, line = line), index
+
+def parse_append(tokens, index, expected_type):
+    """
+    Parses: list = append(value1, value2, ...)
+    """
+    line = tokens[index].line
+    if tokens[index].value != "append":
+        raise SemanticError(f"Syntax Error: Expected 'append'.", line)
+    
+    index += 1
+    if tokens[index].type != "OPPAR":
+        raise SemanticError(f"Syntax Error: Expected '(' after 'append'.", line)
+    index += 1
+
+    elements = []
+    while tokens[index].type != "CLPAR":
+        elem, index = parse_expression_type(tokens, index, expected_type)  # ✅ Type-check elements
+        elements.append(elem)
+
+        if tokens[index].type == "COMMA":
+            index += 1
+
+    if tokens[index].type != "CLPAR":
+        raise SemanticError(f"Syntax Error: Expected ')' after append arguments.", line)
+    index += 1  # Move past `)`
+
+    return AppendNode(elements, line=line), index
+
+def parse_insert(tokens, index, expected_type):
+    """
+    Parses: list = insert(index, value1, value2, ...)
+    """
+    line = tokens[index].line
+    if tokens[index].value != "insert":
+        raise SemanticError(f"Syntax Error: Expected 'insert'.", line)
+
+    index += 1
+    if tokens[index].type != "OPPAR":
+        raise SemanticError(f"Syntax Error: Expected '(' after 'insert'.", line)
+    index += 1
+
+    # ✅ First argument must be an index (chungus literal)
+    index_value, index = parse_expression_type(tokens, index, "chungus")
+
+    if tokens[index].type != "COMMA":
+        raise SemanticError(f"Syntax Error: Expected ',' after index in 'insert'.", line)
+    index += 1  # Move past `,`
+
+    elements = []
+    while tokens[index].type != "CLPAR":
+        elem, index = parse_expression_type(tokens, index, expected_type)  # ✅ Type-check elements
+        elements.append(elem)
+
+        if tokens[index].type == "COMMA":
+            index += 1
+
+    if tokens[index].type != "CLPAR":
+        raise SemanticError(f"Syntax Error: Expected ')' after insert arguments.", line)
+    index += 1  # Move past `)`
+
+    return InsertNode(index_value, elements, line=line), index
+
+def parse_remove(tokens, index, var_name, expected_type):
+    """
+    Parses: list = remove(index)
+    """
+    line = tokens[index].line
+    if tokens[index].value != "remove":
+        raise SemanticError(f"Syntax Error: Expected 'remove'.", line)
+
+    index += 1
+    if tokens[index].type != "OPPAR":
+        raise SemanticError(f"Syntax Error: Expected '(' after 'remove'.", line)
+    index += 1
+
+    if tokens[index].type == "CHU_LIT":
+        value = tokens[index].value
+        index += 1
+        
+    else:
+        raise SemanticError(f"Syntax Error: Expected chungus literal or identifier as argument to 'remove'.", line)
+
+    if tokens[index].type != "CLPAR":
+        raise SemanticError(f"Syntax Error: Expected ')' after remove argument.", line)
+    index += 1  # Move past `)`
+
+    return RemoveNode(var_name, value, line=line), index
+
