@@ -105,7 +105,7 @@ cfg = {
     "<start>":[["<global_declaration>", "<start>"],["chungus", "<chungus_follow>"]],
     "<chungus_follow>":[["<identifier>", "<declaration_tail>", "<start>"], ["skibidi", "(", ")", "{", "<body_main>", "back", "0", "}"]],
     "<global_declaration>": [["<constant_var>"], ["<gldata_type>", "<identifier>", "<declaration_tail>"], ["<expression>"]],
-    "<gldata_type>": [["aura"], ["gng"], ["nocap"], ["forsen"], ["forsencd"], ["chudeluxe"], ["lwk"]],
+    "<gldata_type>": [["aura"], ["nocap"], ["forsen"], ["forsencd"], ["chudeluxe"], ["lwk"]],
     "<data_type>": [["chungus"], ["<gldata_type>"]],
     "<body>": [["ε"], ["<declaration>", "<body>"], ["<statement>", "<body>"], ["back", "<return_value>"]],
     "<body_main>": [["ε"], ["<declaration>", "<body_main>"], ["<statement>", "<body_main>"]],

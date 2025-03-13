@@ -137,6 +137,17 @@ class BreakNode(ASTNode):
     def __init__(self, line=None):
         super().__init__("Break", line=line)
 
+class ListNode(ASTNode):
+    def __init__(self, line=None, elements = None):
+        super().__init__("List", line=line)
+        for element in elements:
+            self.add_child(element)
+
+class TaperNode(ASTNode):
+    def __init__(self, variable_name, line=None):
+        super().__init__("Taper", line=line)
+        self.add_child(ASTNode("Identifier", variable_name, line=line))
+
 ###### SYMBOL TABLE ######
 
 class SymbolTable:
@@ -371,21 +382,46 @@ def parse_variable(tokens, index, var_name, var_type):
     var_nodes = []
 
     while True:
-       
         global_var = symbol_table.variables.get(var_name)
         if global_var and global_var.get("is_sturdy"):
             raise SemanticError(f"Semantic Error: Variable '{var_name}' is declared as sturdy and cannot be re-declared.", line)
-        
-      
+
         var_node = VariableDeclarationNode(var_type, var_name, line=line)
         error = symbol_table.declare_variable(var_name, var_type)
 
         if isinstance(error, str):
             raise SemanticError(error, line)
 
+        # ✅ Check if `=` is used
         if tokens[index].type == "IS":
             index += 1
-            if tokens[index].value == "chat":
+
+            # ✅ Handle `taper()` function
+            if (
+                var_type == "forsen" and
+                tokens[index].type == "IDENTIFIER" and
+                tokens[index + 1].type == "DOT" and
+                tokens[index + 2].value == "taper"
+            ):
+                identifier = tokens[index].value
+
+                # ✅ Ensure the identifier exists
+                identifier_info = symbol_table.lookup_variable(identifier)
+                if isinstance(identifier_info, str):
+                    raise SemanticError(f"Semantic Error: Variable '{identifier}' used before declaration.", line)
+
+                # ✅ Ensure it is a `forsencd` (string) type
+                if identifier_info["type"] != "forsencd":
+                    raise SemanticError(f"Type Error: Cannot use taper function on '{identifier}'. Must be a forsencd type identifier.", line)
+
+                index += 3  # ✅ Move past `.taper()`
+                
+                # ✅ Create TaperNode
+                taper_node = TaperNode(identifier, line=line)
+                var_node.add_child(taper_node)
+
+            # ✅ Handle `chat()`
+            elif tokens[index].value == "chat":
                 index += 1
                 if tokens[index].type == "OPPAR":
                     index += 1
@@ -395,23 +431,35 @@ def parse_variable(tokens, index, var_name, var_type):
                     value_node = ASTNode("Input", "chat()", line=line)
                 else:
                     raise SemanticError(f"Syntax Error: Expected () after chat.", line)
+
+                var_node.add_child(value_node)
+
+            # ✅ Handle list assignment `[ ... ]`
+            elif tokens[index].type == "OPBRA":
+                value_node, index = parse_list(tokens, index, var_type)
+                var_node.add_child(value_node)
+
+            # ✅ Handle normal expressions (`x = 10`, `x = y + 2`)
             else:
                 value_node, index = parse_expression_type(tokens, index, var_type)
+                var_node.add_child(value_node)
 
-            var_node.add_child(value_node)
         else:
             raise SemanticError(f"Semantic Error: Variable must be initialized. Missing '=' after '{var_name}'.", line)
 
-        var_nodes.append(var_node) 
+        var_nodes.append(var_node)
+
+        # ✅ Handle multiple variable declarations (`x, y = 5`)
         if tokens[index].type == "COMMA":
             index += 1
             var_name = tokens[index].value
             index += 1
         else:
-            break 
+            break
 
+    # ✅ Return a single variable or a list of declarations
     if len(var_nodes) == 1:
-        return var_nodes[0], index 
+        return var_nodes[0], index
     else:
         var_list_node = ASTNode("VariableDeclarationList")
         for node in var_nodes:
@@ -544,18 +592,19 @@ def parse_expression_type(tokens, index, var_type):
 
 def parse_expression_forsen(tokens, index):
     line = tokens[index].line
+    print("🔹 Parsing forsencd expression.")
     if tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
         func_name = tokens[index].value
         func_info = symbol_table.lookup_function(func_name)
         func_return_type = func_info["return_type"]
         func_params = func_info["params"]
-
+        
         if func_return_type not in {"forsen"}:
             error = f"Type Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
             raise SemanticError(error, line)
-        
+        index += 1
         return parse_function_call(tokens, index, func_name, func_return_type, func_params)
-    
+
     elif tokens[index].type == "IDENTIFIER":
         variable_info = symbol_table.lookup_variable(tokens[index].value)
         if isinstance(variable_info, str):
@@ -565,20 +614,24 @@ def parse_expression_forsen(tokens, index):
         if variable_info["type"] != "forsen":
             error = f"Type Error: Cannot use '{tokens[index].value}' of type {variable_info['type']} in forsen expression.", line
             raise SemanticError(error, line)
-    
+
+        node = ASTNode("Value", tokens[index].value)
+        index += 1
+        return node, index
+
     elif tokens[index].type == "FORSEN_LIT":
         node = ASTNode("Value", tokens[index].value)
+        index += 1
         return node, index
 
     else:
         error = f"Type Error: forsen can only be assigned with identifier of type forsen or a forsen literal."
-        raise SemanticError(error, line)
-    
-    node = ASTNode("Value", tokens[index].value)
-    return node, index  
+        raise SemanticError(error, line) 
 
 def parse_expression_forsencd(tokens, index):
     line = tokens[index].line  # Get line number for error handling
+
+
 
     # ✅ Ensure valid starting token (FORSENCD_LIT, IDENTIFIER, or function call)
     if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER"}:
@@ -666,7 +719,7 @@ def parse_expression_forsencd(tokens, index):
             # ✅ Create a Binary Operation Node for concatenation
             left_node = BinaryOpNode(left_node, op, right_node, line=line)
 
-        elif tokens[index].type not in {"PLUS", "COMMA", "NL", "CLPAR"}:
+        elif tokens[index].type not in {"PLUS", "COMMA", "NL", "CLPAR", "CLBRA"}:
             raise SemanticError(f"Syntax Error: Unexpected token '{tokens[index].value}' in forsencd expression.", line)
 
         else:
@@ -859,21 +912,31 @@ def parse_assignment(tokens, index, var_name, var_type):
     global_var = symbol_table.variables.get(var_name)
     if global_var and global_var["is_sturdy"]:
         raise SemanticError(f"Semantic Error: Variable '{var_name}' is declared as sturdy.", line)
-    if tokens[index-1].type == "IS":
-            if tokens[index].value == "chat":
-                index += 1
-                if tokens[index].type == "OPPAR":
-                    index += 1
-                    if tokens[index].type != "CLPAR":
-                        error = f"Syntax Error: chat() should not have parameters."
-                        raise SemanticError(error, line)
-                    index += 1
-                    value_node = ASTNode("Input", "chat()", line=line)
-                else:
-                    error = f"Syntax Error: Expected() after chat."
-                    raise SemanticError(error, line)
-            else:
-                value_node, index = parse_expression_type(tokens, index, var_type)
+    
+    if tokens[index].value == "chat":
+        index += 1
+        if tokens[index].type == "OPPAR":
+            index += 1
+            if tokens[index].type != "CLPAR":
+                error = f"Syntax Error: chat() should not have parameters."
+                raise SemanticError(error, line)
+            index += 1
+            value_node = ASTNode("Input", "chat()", line=line)
+        else:
+            error = f"Syntax Error: Expected() after chat."
+            raise SemanticError(error, line)
+    else:
+        value_node, index = parse_expression_type(tokens, index, var_type)
+
+    while tokens[index].type == "IS":
+        index += 1
+        next_var_name = tokens[index].value
+        index += 1
+
+        if not symbol_table.lookup_variable(next_var_name):
+            raise SemanticError(f"Semantic Error: Variable '{next_var_name}' used before declaration.", line)
+
+        value_node = AssignmentNode(next_var_name, value_node, line=line)
 
     assign_node = AssignmentNode(var_name, value_node, line=line)
     return assign_node, index
@@ -916,9 +979,9 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
 
         # ✅ Handle multiple arguments
         if tokens[index].type == "COMMA":
-            index += 1  # Move past ',' to next argument
+            index += 1 
 
-    index += 1  # Skip closing ')'
+    index += 1 
 
     if tokens[index].type in {"INC", "DEC"}:
         raise SemanticError(f"Type Error: Unary operators cannot be applied to function calls.", line)
@@ -1580,8 +1643,34 @@ def parse_switch(tokens, index):
     if tokens[index].type != "CLCUR":
         raise SemanticError(f"Syntax Error: Expected '}}' after switch statement.", line)
         
-        index += 1
+    index += 1
 
     symbol_table.exit_scope()
 
     return SwitchNode(switch_expr, case_nodes, default_case, line=line), index
+
+def parse_list(tokens, index, expected_type):
+    line = tokens[index].line
+    if tokens[index].type != "OPBRA":
+        raise SemanticError(f"Syntax Error: Expected '[' for list declaration.", line)
+    index += 1
+    
+    elements = []
+
+    if tokens[index].type == "CLBRA":
+        index += 1
+        return ListNode(elements=[], line=line), index
+    
+    while tokens[index].type != "CLBRA":
+        expr, index = parse_expression_type(tokens, index, expected_type)
+        elements.append(expr)
+
+        if tokens[index].type == "COMMA":
+            index += 1
+    
+    if tokens[index].type != "CLBRA":
+        raise SemanticError(f"Syntax Error: Expected ']' after list elements.", line)
+
+    index += 1
+
+    return ListNode(elements = elements, line = line), index
