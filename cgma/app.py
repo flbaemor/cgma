@@ -77,6 +77,5 @@ def semantic_analysis():
     except SemanticError as e:
         return jsonify({'success': False, 'errors': [str(e)]})
 
-
 if __name__ == '__main__':
     app.run(debug=False, use_reloader=True)

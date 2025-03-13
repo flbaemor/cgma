@@ -54,7 +54,7 @@ class AssignmentNode(ASTNode):
 
 class BinaryOpNode(ASTNode):
     def __init__(self, left, operator, right, line=None):
-        super().__init__("BinaryOp", operator, line=line)
+        super().__init__("Value", operator, line=line)
         self.add_child(left)
         self.add_child(right)
 
@@ -116,10 +116,11 @@ class DoWhileLoopNode(ASTNode):
         self.add_child(self.body)
         self.add_child(condition)
 
-class PrintStatementNode(ASTNode):
-    def __init__(self, expression, line=None):
+class PrintNode(ASTNode):
+    def __init__(self, args, line=None):
         super().__init__("PrintStatement", line=line)  # ✅ Pass line
-        self.add_child(expression)
+        for arg in args:
+            self.add_child(arg)
 
 class UnaryOpNode(ASTNode):
     def __init__(self, operator, operand):
@@ -137,10 +138,15 @@ class SymbolTable:
     ###### VARIABLE ######
     def declare_variable(self, name, type_, value=None):
         scope = self.scopes[-1]
+        
         if name in scope:
             return f"Semantic Error: Variable '{name}' already declared in this scope."
 
         if len(self.scopes) == 1:
+            if name in self.variables:
+                return f"Semantic Error: Variable '{name}' already declared."
+            if name in self.functions:
+                return f"Semantic Error: Variable '{name}' already declared as a function."
             self.variables[name] = {"type": type_, "value": value}
 
         else:
@@ -208,16 +214,13 @@ class SemanticAnalyzer:
         if node.node_type == "VariableDeclaration":
             var_type = node.children[0].value
             var_name = node.children[1].value
-            line = node.line
-            error = self.symbol_table.declare_variable(var_name, var_type)
-            if error:
-                raise SemanticError(error, line)
+            self.symbol_table.declare_variable(var_name, var_type)
+
 
         elif node.node_type == "Assignment":
             var_name = node.children[0].value
-            line = node.line
             
-
+            
         elif node.node_type == "FunctionDeclaration":
             func_name = node.value
             return_type = node.children[0].value
@@ -226,10 +229,6 @@ class SemanticAnalyzer:
 
         elif node.node_type == "FunctionCall":
             func_name = node.value
-            line = node.line
-            if not self.symbol_table.lookup_function(func_name):
-                error = f"Semantic Error: Function '{func_name}' is not defined."
-                raise SemanticError(error, line)
 
         for child in node.children:
             self.analyze(child)
@@ -262,12 +261,11 @@ def build_ast(tokens):
             if node:
                 root.add_child(node)
 
-        elif token.type == "IDENTIFIER" and tokens[index + 1].type == "IS":
-            index += 2
-            print(f"✅ Adding assignment node for {token.value}")
-            node, index = parse_assignment(tokens, index, token.value, symbol_table.lookup_variable(token.value)["type"])
-            if node:
-                root.add_child(node)
+            '''elif token.type == "IDENTIFIER" and tokens[index + 1].type == "IS":
+                index += 2
+                node, index = parse_assignment(tokens, index, token.value, symbol_table.lookup_variable(token.value)["type"])
+                if node:
+                    root.add_child(node)'''
 
         else:
             node = ASTNode(token.type, token.value, token.line)
@@ -327,17 +325,17 @@ def parse_function(tokens, index, func_name, func_type):
                 if error:
                     raise SemanticError(error, line)
                 index += 1
- 
+
+                if tokens[index].type == "COMMA":
+                    index += 1
+
             else:
                 error = f"Syntax Error: Invalid parameter declaration."
                 raise SemanticError(error, line)
-            
-        elif tokens[index].type != "COMMA":
-            error = f"Syntax Error: Expected ',' in parameter list."
-            raise SemanticError(error, line)
         
         else:
             index += 1
+            
     symbol_table.declare_function(func_name, func_type, params_node.children)
     index += 1
     func_node = FunctionDeclarationNode(func_type, func_name, params_node)
@@ -366,7 +364,7 @@ def parse_variable(tokens, index, var_name, var_type):
         var_node = VariableDeclarationNode(var_type, var_name, line=line)
         error = symbol_table.declare_variable(var_name, var_type)
 
-        if error:
+        if isinstance(error, str):
             raise SemanticError(error, line)
 
         if tokens[index].type == "IS":
@@ -389,7 +387,7 @@ def parse_variable(tokens, index, var_name, var_type):
             var_node.add_child(value_node)
 
         else:
-            error = f"Syntax Error: Variable must be initialized."
+            error = f"Semantic Error: Variable must be initialized. Missing '=' after '{var_name}'."
             raise SemanticError(error, line)
 
         var_node_list.add_child(var_node)
@@ -400,6 +398,7 @@ def parse_variable(tokens, index, var_name, var_type):
             index += 1
         else:
             break
+
     return var_node_list, index
 
 
@@ -461,66 +460,68 @@ def parse_statement(tokens, index):
             
         node.add_child(ASTNode("Identifier", tokens[index + 1].value, line=token.line))
         return node, index + 2
-
-    elif token.value == "sturdy":
-        index += 1
-
+    
     elif token.value == "yap":
-        index += 1
+        node, index = parse_print(tokens, index)
+        return node, index
 
-    elif token.value == "lethimcook":
-        index += 1
-
-    elif token.value == "plug":
-        index += 1
-
-    elif token.value == "lil":
-        index += 1
-
-    elif token.value == "jit":
-        index += 1
-
-    elif token.value == "pause":
-        index += 1
-    
-    elif token.value == "tuah":
-        index += 1
-
-    elif token.value == "hawk":
-        index += 1
-
-        if token.value == "tuah":
+        '''elif token.value == "sturdy":
             index += 1
-    
-    elif token.value == "caseoh":
-        index += 1
 
-    elif token.value == "npc":
-        index += 1
 
-    elif token.value == "getout":
-        index += 1
+        elif token.value == "lethimcook":
+            index += 1
 
-    elif token.value == "append":
-        index += 1
-    
-    elif token.value == "insert":
-        index += 1
+        elif token.value == "plug":
+            index += 1
 
-    elif token.value == "remove":
-        index += 1
+        elif token.value == "lil":
+            index += 1
 
-    elif token.value == "back":
-        index += 1
+        elif token.value == "jit":
+            index += 1
 
-    elif token.value == "gng":
-        index += 1
+        elif token.value == "pause":
+            index += 1
+        
+        elif token.value == "tuah":
+            index += 1
 
-    elif token.value == "nocap":
-        index += 1
+        elif token.value == "hawk":
+            index += 1
 
-    elif token.value == "aura":
-        index += 1
+            if token.value == "tuah":
+                index += 1
+        
+        elif token.value == "caseoh":
+            index += 1
+
+        elif token.value == "npc":
+            index += 1
+
+        elif token.value == "getout":
+            index += 1
+
+        elif token.value == "append":
+            index += 1
+        
+        elif token.value == "insert":
+            index += 1
+
+        elif token.value == "remove":
+            index += 1
+
+        elif token.value == "back":
+            index += 1
+
+        elif token.value == "gng":
+            index += 1
+
+        elif token.value == "nocap":
+            index += 1
+
+        elif token.value == "aura":
+            index += 1'''
 
     else:
         return None, index
@@ -542,19 +543,6 @@ def parse_expression_type(tokens, index, var_type):
     else:
         error = f"Type Error: Invalid type for assignment."
         raise SemanticError(error, line)
-
-def parse_expression_lwk(tokens, index):
-    line = tokens[index].line
-    
-    left_node, index = parse_relational(tokens, index)
-
-    while tokens[index].type in {"AND", "OR"}:
-        operator = tokens[index].value
-        index += 1  # Move past the operator
-        right_node, index = parse_relational(tokens, index)  # Parse the right-hand side
-        left_node = BinaryOpNode(left_node, operator, right_node, line=line)  # Build AST node
-    
-    return left_node, index
 
 def parse_expression_forsen(tokens, index):
     line = tokens[index].line
@@ -591,169 +579,114 @@ def parse_expression_forsen(tokens, index):
     node = ASTNode("Value", tokens[index].value)
     return node, index  
 
-def parse_relational(tokens, index):
-    line = tokens[index].line
-
-    if tokens[index].type == "LWK_LIT":
-        left_node = ASTNode("Value", tokens[index].value, line=line)
-        index += 1  # Move past LWK_LIT
-        
-        if tokens[index].value in {"EQ", "NE"}:
-            operator = tokens[index].value
-            index += 1
-
-            if tokens[index].type == "LWK_LIT":
-                right_node = ASTNode("Value", tokens[index].value, line=line)
-                index += 1
-                return BinaryOpNode(left_node, operator, right_node, line=line), index
-            
-            elif tokens[index].type == "IDENTIFIER":
-                variable_info = symbol_table.lookup_variable(tokens[index].value)
-                if isinstance(variable_info, str):
-                    error = f"Semantic Error: Variable '{tokens[index].value}' used before declaration."
-                    raise SemanticError(error, line)
-                if variable_info["type"] != "lwk":
-                    error = f"Type Error: Cannot use '{tokens[index].value}' of type {variable_info['type']} in lwk expression.", line
-                    raise SemanticError(error, line)
-                
-                right_node = ASTNode("Value", tokens[index].value, line=line)
-                index += 1
-                return BinaryOpNode(left_node, operator, right_node, line=line), index
-        
-            else:
-                error = f"Type Error: Expected LWK_LIT after relational operator."
-                raise SemanticError(error, line)
-
-        return left_node, index
-    
-    elif tokens[index].type == "IDENTIFIER":
-        variable_name = tokens[index].value
-        left_node = ASTNode("Value", tokens[index].value, line=line)
-        index += 1
-
-        variable_info = symbol_table.lookup_variable(variable_name)
-        if isinstance(variable_info, str):
-            error = f"Semantic Error: Variable '{tokens[index].value}' used before declaration."
-            raise SemanticError(error, line)
-        
-        if variable_info["type"] != "lwk":
-            error = f"Type Error: Cannot use '{tokens[index].value}' of type {variable_info['type']} in lwk expression.", line
-            raise SemanticError(error, line)
-        
-        if tokens[index].value in {"EQ", "NE"}:
-            operator = tokens[index].value
-            index += 1
-
-            if tokens[index].type == "LWK_LIT":
-                right_node = ASTNode("Value", tokens[index].value, line=line)
-                index += 1
-                return BinaryOpNode(left_node, operator, right_node, line=line), index
-            
-            elif tokens[index].type == "IDENTIFIER":
-                variable_info = symbol_table.lookup_variable(tokens[index].value)
-
-                if isinstance(variable_info, str):
-                    error = f"Semantic Error: Variable '{tokens[index].value}' used before declaration."
-                    raise SemanticError(error, line)
-                
-                if variable_info["type"] != "lwk":
-                    error = f"Type Error: Cannot use '{tokens[index].value}' of type {variable_info['type']} in lwk expression.", line
-                    raise SemanticError(error, line)
-                
-                right_node = ASTNode("Value", tokens[index].value, line=line)
-                index += 1
-                return BinaryOpNode(left_node, operator, right_node, line=line), index
-        
-            else:
-                error = f"Type Error: Expected lwk lit or lwk type identifier after relational operator."
-                raise SemanticError(error, line)
-
-        return left_node, index
-
-    else:
-        left_node, index = parse_expression(tokens, index)
-
-        if tokens[index].type in {"LT", "GT", "LE", "GE", "EQ", "NE"}:
-            operator = tokens[index].value
-            index += 1
-            right_node, index = parse_expression(tokens, index)
-
-            if right_node.node_type == "Value" and right_node.value in {"true", "false"}:
-               raise SemanticError(f"Type Error: Relational operators can only be used with numeric expressions, not boolean values.", line)
-            
-        else:
-            error = f"Syntax Error: Invalid relational operator."
-            raise SemanticError(error, line)
-
-        return BinaryOpNode(left_node, operator, right_node, line=line), index
-
 def parse_expression_forsencd(tokens, index):
-    line = tokens[index].line
+    line = tokens[index].line  # Get line number for error handling
 
+    # ✅ Ensure valid starting token (FORSENCD_LIT, IDENTIFIER, or function call)
     if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER"}:
-        error = f"Type Error: forsencd can only be assigned a FORSENCD_LIT or an identifier of type forsen/forsencd."
-        raise SemanticError(error, line)
-    
-    elif tokens[index].type in {"IDENTIFIER"} and tokens[index + 1].type == "OPPAR":
+        raise SemanticError(f"Type Error: forsencd can only be assigned a FORSENCD_LIT or an identifier of type forsen/forsencd.", line)
+
+    # ✅ Function Call Handling
+    if tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
         func_name = tokens[index].value
         func_info = symbol_table.lookup_function(func_name)
+
+        if isinstance(func_info, str):  # Function not found
+            raise SemanticError(f"Semantic Error: Function '{func_name}' is not defined.", line)
+
         func_return_type = func_info["return_type"]
-        func_params = func_info["params"]
         if func_return_type not in {"forsen", "forsencd"}:
-            error = f"Type Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
-            raise SemanticError(error, line)
-        return parse_function_call(tokens, index, func_name, func_return_type, func_params)
+            raise SemanticError(f"Type Error: Cannot use function '{func_name}' of type '{func_return_type}' in this expression.", line)
 
+        node, index = parse_function_call(tokens, index, func_name, func_return_type, func_info["params"])
+
+    # ✅ Variable Handling
     elif tokens[index].type == "IDENTIFIER":
-        variable_info = symbol_table.lookup_variable(tokens[index].value)
+        var_name = tokens[index].value
+        var_info = symbol_table.lookup_variable(var_name)
 
-        if isinstance(variable_info, str):
-            error = f"Semantic Error: Variable '{tokens[index].value}' used before declaration."
-            raise SemanticError(error, line)
-        
-        if variable_info["type"] not in {"forsen", "forsencd"}:
-            error = f"Type Error: Variable '{tokens[index].value}' is not of type forsen/forsencd."
-            raise SemanticError(error, line)
-    
-    left_node = ASTNode("Value", tokens[index].value)
-    index += 1
+        if isinstance(var_info, str):  # Variable not found
+            raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
 
-    if index >= len(tokens) or tokens[index].type != "PLUS":
-        return left_node, index
+        if var_info["type"] not in {"forsen", "forsencd"}:
+            raise SemanticError(f"Type Error: Cannot use '{var_name}' of type {var_info['type']} in this expression.", line)
 
-    while tokens[index].type in {"PLUS"}:
-        op = tokens[index].value
-        index += 1
+        node = ASTNode("Value", var_name, line=line)
+        index += 1  # ✅ Move past identifier
 
-        # Ensure valid type for right operand
-        if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER", "FORSEN_LIT"}:
-            raise SemanticError(f"Type Error: forsencd can only use + with forsencd literals, forsen literals, or identifiers of type forsencd/forsen.", line)
+    # ✅ Literal Handling
+    elif tokens[index].type == "FORSENCD_LIT":
+        node = ASTNode("Value", tokens[index].value, line=line)
+        index += 1  # ✅ Move past literal
 
-        if tokens[index].type == "IDENTIFIER":
-            variable_info = symbol_table.lookup_variable(tokens[index].value)
-            if isinstance(variable_info, str):  # Undefined variable
-                raise SemanticError(f"Semantic Error: Variable '{tokens[index].value}' used before declaration.", line)
+    # ✅ At this point, `node` contains a valid forsencd expression
+    left_node = node  # ✅ Remove unnecessary `ASTNode("Value", node)`
 
-            if variable_info["type"] not in {"forsencd", "forsen"}:
-                raise SemanticError(f"Type Error: Cannot use '{tokens[index].value}' of type {variable_info['type']} in forsencd expression.", line)
+    # ✅ Check for concatenation (`+`)
+    while index < len(tokens):
+        if tokens[index].type == "PLUS":
+            op = tokens[index].value  # Store '+'
+            index += 1  # Move past '+'
 
-        right_node = ASTNode("Value", tokens[index].value)
-        index += 1  # Move past right operand
+            # ✅ Ensure valid right operand (FORSENCD_LIT, IDENTIFIER, or function call)
+            if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER"}:
+                raise SemanticError(f"Type Error: forsencd can only be assigned a FORSENCD_LIT or an identifier of type forsen/forsencd.", line)
 
-        left_node = BinaryOpNode(left_node, op, right_node)  # Create BinaryOp node
+            # ✅ Function Call Handling (Right Operand)
+            if tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
+                func_name = tokens[index].value
+                func_info = symbol_table.lookup_function(func_name)
 
-    return left_node, index
+                if isinstance(func_info, str):  # Function not found
+                    raise SemanticError(f"Semantic Error: Function '{func_name}' is not defined.", line)
+
+                func_return_type = func_info["return_type"]
+                if func_return_type not in {"forsen", "forsencd"}:
+                    raise SemanticError(f"Type Error: Cannot use function '{func_name}' of type '{func_return_type}' in this expression.", line)
+
+                right_node, index = parse_function_call(tokens, index, func_name, func_return_type, func_info["params"])
+
+            # ✅ Variable Handling (Right Operand)
+            elif tokens[index].type == "IDENTIFIER":
+                var_name = tokens[index].value
+                var_info = symbol_table.lookup_variable(var_name)
+
+                if isinstance(var_info, str):  # Variable not found
+                    raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
+
+                if var_info["type"] not in {"forsen", "forsencd"}:
+                    raise SemanticError(f"Type Error: Cannot use '{var_name}' of type {var_info['type']} in this expression.", line)
+
+                right_node = ASTNode("Value", var_name, line=line)
+                index += 1  # ✅ Move past identifier
+
+            # ✅ Literal Handling (Right Operand)
+            elif tokens[index].type == "FORSENCD_LIT":
+                right_node = ASTNode("Value", tokens[index].value, line=line)
+                index += 1  # ✅ Move past literal
+
+            # ✅ Create a Binary Operation Node for concatenation
+            left_node = BinaryOpNode(left_node, op, right_node, line=line)
+
+        elif tokens[index].type not in {"PLUS", "SEMICOLON", "COMMA", "NL", "CLPAR"}:
+            raise SemanticError(f"Syntax Error: Unexpected token '{tokens[index].value}' in forsencd expression.", line)
+
+        else:
+            break
+
+    return left_node, index  # ✅ Return the fully parsed forsencd expression
+
 
 def parse_expression(tokens, index):
     """Parses an expression with right-to-left associativity for + and -."""
     right_node, index = parse_term(tokens, index)
 
-    while tokens[index].type in {"PLUS", "MINUS"}:
-        op = tokens[index].value
-        index += 1
-        left_node, index = parse_term(tokens, index)
-        right_node = BinaryOpNode(left_node, op, right_node)
-
+    while index < len(tokens):
+        if tokens[index].type in {"PLUS", "MINUS"}:
+            op = tokens[index].value
+            index += 1
+            left_node, index = parse_term(tokens, index)
+            right_node = BinaryOpNode(left_node, op, right_node)
     return right_node, index
 
 def parse_term(tokens, index):
@@ -786,7 +719,7 @@ def parse_factor(tokens, index):
         node = ASTNode("Value", token.value)
         index += 1  
 
-        while tokens[index].type in {"INC", "DEC"}:
+        if tokens[index].type in {"INC", "DEC"}:
             op = tokens[index].value
             index += 1
             node = UnaryOpNode(op, node)
@@ -804,11 +737,6 @@ def parse_factor(tokens, index):
 
         node, index = parse_function_call(tokens, index, func_name, func_return_type, func_params)
 
-        while tokens[index].type in {"INC", "DEC"}:
-            op = tokens[index].value
-            index += 1
-            node = UnaryOpNode(op, node)
-
         return node, index
 
     elif token.type in {"IDENTIFIER"}:
@@ -823,7 +751,7 @@ def parse_factor(tokens, index):
         node = ASTNode("Value", token.value)
         index += 1  
 
-        while tokens[index].type in {"INC", "DEC"}:
+        if tokens[index].type in {"INC", "DEC"}:
             op = tokens[index].value
             index += 1
             node = UnaryOpNode(op, node)
@@ -840,6 +768,93 @@ def parse_factor(tokens, index):
     else:
         error = f"Syntax Error: Invalid factor '{token.value}' in expression."
         raise SemanticError(error, token.line)
+
+def parse_expression_lwk(tokens, index):
+    line = tokens[index].line
+    
+    left_node, index = parse_relational(tokens, index)
+
+    while tokens[index].type in {"AND", "OR"}:
+        operator = tokens[index].value
+        index += 1  # Move past the operator
+        right_node, index = parse_relational(tokens, index)  # Parse the right-hand side
+        left_node = BinaryOpNode(left_node, operator, right_node, line=line)  # Build AST node
+    
+    return left_node, index
+
+def parse_relational(tokens, index):
+    line = tokens[index].line
+    token = tokens[index]
+
+    if tokens[index].type in {"IDENTIFIER"} and tokens[index + 1].type == "OPPAR":
+        if isinstance(symbol_table.lookup_function(token.value), str):
+            error = f"Semantic Error: Function '{token.value}' used before declaration."
+            raise SemanticError(error, line)
+
+    elif tokens[index].type == "IDENTIFIER":
+        if isinstance(symbol_table.lookup_variable(token.value), str):
+            error = f"Semantic Error: Variable '{token.value}' used before declaration."
+            raise SemanticError(error, line)
+
+    if token.type == "LWK_LIT" or (token.type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR" and symbol_table.lookup_function(token.value)["return_type"] in {"lwk"}) or (token.type == "IDENTIFIER" and symbol_table.lookup_variable(token.value)["type"] in {"lwk"}):
+        left_node = ASTNode("Value", tokens[index].value, line=line)
+        index += 1  # Move past LWK_LIT
+
+        if tokens[index].value in {"EQ", "NE"}:
+            operator = tokens[index].value
+            index += 1
+
+            if tokens[index].type == "LWK_LIT" or (token.type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR" and symbol_table.lookup_function(token.value)["return_type"] in {"lwk"}) or (token.type == "IDENTIFIER" and symbol_table.lookup_variable(token.value)["type"] in {"lwk"}):
+                right_node = ASTNode("Value", tokens[index].value, line=line)
+                index += 1
+                return BinaryOpNode(left_node, operator, right_node, line=line), index
+            
+            elif tokens[index].type in {"IDENTIFIER"} and tokens[index + 1].type == "OPPAR":
+                func_name = tokens[index].value
+                func_info = symbol_table.lookup_function(func_name)
+                func_return_type = func_info["return_type"]
+                func_params = func_info["params"]
+                if func_return_type not in {"lwk"}:
+                    error = f"Type Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
+                    raise SemanticError(error, line)
+                right_node, index = parse_function_call(tokens, index, func_name, func_return_type, func_params)
+                return BinaryOpNode(left_node, operator, right_node, line=line), index
+
+            elif tokens[index].type == "IDENTIFIER":
+                variable_info = symbol_table.lookup_variable(tokens[index].value)
+                if isinstance(variable_info, str):
+                    error = f"Semantic Error: Variable '{tokens[index].value}' used before declaration."
+                    raise SemanticError(error, line)
+                if variable_info["type"] != "lwk":
+                    error = f"Type Error: Cannot use '{tokens[index].value}' of type {variable_info['type']} in lwk expression.", line
+                    raise SemanticError(error, line)
+                
+                right_node = ASTNode("Value", tokens[index].value, line=line)
+                index += 1
+                return BinaryOpNode(left_node, operator, right_node, line=line), index
+        
+            else:
+                error = f"Type Error: Expected LWK_LIT after relational operator."
+                raise SemanticError(error, line)
+
+        return left_node, index
+
+    else:
+        left_node, index = parse_expression(tokens, index)
+
+        if tokens[index].type in {"LT", "GT", "LE", "GE", "EQ", "NE"}:
+            operator = tokens[index].value
+            index += 1
+            right_node, index = parse_expression(tokens, index)
+
+            if right_node.node_type == "Value" and right_node.value in {"true", "false"}:
+               raise SemanticError(f"Type Error: Relational operators can only be used with numeric expressions, not boolean values.", line)
+            
+        else:
+            error = f"Syntax Error: Invalid relational operator."
+            raise SemanticError(error, line)
+
+        return BinaryOpNode(left_node, operator, right_node, line=line), index
 
 def parse_assignment(tokens, index, var_name, var_type):
     line = tokens[index].line
@@ -914,11 +929,9 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
     for i, (arg_node, arg_type) in enumerate(provided_args):
         expected_type = expected_params[i].children[0].value  # Get expected type
 
-        # ✅ Allow numeric expressions for chungus/chudeluxe parameters
         if expected_type in {"chungus", "chudeluxe"} and arg_type == "chungus":
-            continue  # ✅ Valid numeric expression argument
+            continue 
         
-        # ❌ Type mismatch
         if arg_type != expected_type:
             raise SemanticError(f"Type Error: Argument {i+1} of '{func_name}' should be '{expected_type}', but got '{arg_type}'.", line)
 
@@ -928,7 +941,6 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
 def parse_argument(tokens, index):
     line = tokens[index].line
 
-    # ✅ If argument is a boolean literal (true/false)
     if tokens[index].type == "IDENTIFIER":
         arg_name = tokens[index].value
         arg_info = symbol_table.lookup_variable(arg_name)
@@ -944,4 +956,112 @@ def parse_argument(tokens, index):
 
     return arg_node, arg_type, index
     
+def parse_print(tokens, index):
+    line = tokens[index].line
+    index += 1
+
+    if tokens[index].type != "OPPAR":
+        raise SemanticError(f"Syntax Error: Expected '(' after yep statement.", line)
+    index += 1
+
+    args = []
+    placeholder_count = 0
+
+    if tokens[index].type == "FORSENCD_LIT":
+        format_node, index, placeholder_count = parse_string_concatenation(tokens, index)  # ✅ Allow `"hello" + "world"`
+        args.append(format_node)
+
+    elif tokens[index].type == "IDENTIFIER":
+        identif_name = tokens[index].value
+
+        if tokens[index + 1].type == "OPPAR":
+            func_name = identif_name
+            func_info = symbol_table.lookup_function(func_name)
+            if isinstance(func_info, str):
+                raise SemanticError(f"Semantic Error: Function '{func_name}' is not defined.", line)
+            if func_info["return_type"] in {"chungus", "chudeluxe"}:
+                expr_node, index = parse_expression(tokens, index)
+                args.append(expr_node)
+            elif func_info["return_type"] in {"forsen"}:
+                expr_node, index = parse_expression_forsen(tokens, index)
+                args.append(expr_node)
+            elif func_info["return_type"] in {"forsencd"}:
+                expr_node, index = parse_expression_forsencd(tokens, index)
+                args.append(expr_node)
+            elif func_info["return_type"] in {"lwk"}:
+                expr_node, index = parse_expression_lwk(tokens, index)
+                args.append(expr_node)
+            else:
+                raise SemanticError(f"Type Error: Function '{func_name}' returns invalid type '{func_info['return_type']}'.", line)
+        else:   
+            arg_info = symbol_table.lookup_variable(identif_name)
+            if isinstance(arg_info, str):
+                raise SemanticError(f"Semantic Error: Variable '{identif_name}' used before declaration.", line)
+            if arg_info["type"] in {"chungus", "chudeluxe"}:
+                expr_node, index = parse_expression(tokens, index)
+                args.append(expr_node)
+            else:
+                args.append(ASTNode("Value", identif_name, line=line))
+                index += 1
+
+    else:
+        expr_node, index = parse_expression(tokens, index)
+        args.append(expr_node)
+    
+    acutal_args = []
+    while tokens[index].type == "COMMA":
+        index += 1
+
+        if tokens[index].type in {"CHU_LIT", "CHUDEL_LIT"}:
+            arg_node, index = parse_expression(tokens, index)
+            acutal_args.append(arg_node)
+
+        elif tokens[index].type == "IDENTIFIER":
+            arg_name = tokens[index].value
+            arg_info = symbol_table.lookup_variable(arg_name)
+            if arg_info["type"] in {"chungus", "chudeluxe"}:
+                arg_node, index = parse_expression(tokens, index)
+                acutal_args.append(arg_node)
+            else:
+                acutal_args.append(ASTNode("Value", arg_name, line=line))
+                index += 1
+
+        else:
+            raise SemanticError(f"Syntax Error: Expected argument after ',' in yap statement.", line)
+
+    if placeholder_count != len(acutal_args):
+        raise SemanticError(f"Type Error: Expected {placeholder_count} arguments, but got {len(acutal_args)}.", line)
+    
+    args.extend(acutal_args)
+
+    if tokens[index].type != "CLPAR":
+        raise SemanticError(f"Syntax Error: Expected ')' after yap statement.", line)
+    index += 1
+
+    return PrintNode(args, line=line), index
+
+def parse_string_concatenation(tokens, index):
+    line = tokens[index].line
+    if tokens[index].type != "FORSENCD_LIT":
+        raise SemanticError(f"Syntax Error: String concatenation must start with a string literal.", line)
+    
+    format_string = tokens[index].value
+    placeholder_count = format_string.count("{}")
+    left_node = ASTNode("FormattedString", tokens[index].value, line=line)
+    index += 1
+
+    while tokens[index].type == "PLUS":
+        index += 1
+        if tokens[index].type != "FORSENCD_LIT":
+            raise SemanticError(f"Syntax Error: Only string literals can be concatenated in yap().", line)
+
+        format_string = tokens[index].value
+        placeholder_count += format_string.count("{}")
+        right_node = ASTNode("FormattedString", tokens[index].value, line=line)
+        index += 1
+
+        left_node = BinaryOpNode(left_node, "+", right_node, line=line)
+
+    return left_node, index, placeholder_count
+
 
