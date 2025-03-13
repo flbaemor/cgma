@@ -78,4 +78,4 @@ def semantic_analysis():
         return jsonify({'success': False, 'errors': [str(e)]})
 
 if __name__ == '__main__':
-    app.run(debug=False, use_reloader=True)
+    app.run(debug=True, use_reloader=True)

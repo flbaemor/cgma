@@ -261,12 +261,6 @@ def build_ast(tokens):
             if node:
                 root.add_child(node)
 
-            '''elif token.type == "IDENTIFIER" and tokens[index + 1].type == "IS":
-                index += 2
-                node, index = parse_assignment(tokens, index, token.value, symbol_table.lookup_variable(token.value)["type"])
-                if node:
-                    root.add_child(node)'''
-
         else:
             node = ASTNode(token.type, token.value, token.line)
             root.add_child(node)
@@ -681,12 +675,12 @@ def parse_expression(tokens, index):
     """Parses an expression with right-to-left associativity for + and -."""
     right_node, index = parse_term(tokens, index)
 
-    while index < len(tokens):
-        if tokens[index].type in {"PLUS", "MINUS"}:
-            op = tokens[index].value
-            index += 1
-            left_node, index = parse_term(tokens, index)
-            right_node = BinaryOpNode(left_node, op, right_node)
+    if tokens[index].type in {"PLUS", "MINUS"}:
+        op = tokens[index].value
+        index += 1
+        left_node, index = parse_term(tokens, index)
+        right_node = BinaryOpNode(left_node, op, right_node)
+
     return right_node, index
 
 def parse_term(tokens, index):
