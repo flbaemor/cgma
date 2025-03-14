@@ -1391,9 +1391,17 @@ class Lexer:
                     tokens.append(Token(TT_DOT, ident_str, line))
                     continue
                 elif self.current_char is not None and self.current_char in NUM:
-                    ident_str += self.current_char
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid integer value before '{ident_str}'"))
-                    self.advance()
+                    fractional_part = ""
+                    while self.current_char is NUM:
+                        fractional_part += self.current_char
+                        self.advance()
+
+                        if len(fractional_part) > 5:
+                            errors.append(IllegalCharError(pos_start, self.pos, f"'{ident_str}' exceeds maximum number of decimal places"))
+                            continue
+                        
+                    ident_str = f"0.{fractional_part}"
+                    tokens.append(Token(TT_CHUDELUXE, ident_str, line))
                     continue
                 else:
                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
@@ -1411,7 +1419,7 @@ class Lexer:
                 tokens.append(Token(TT_NL, "\\n", line))
                 continue
                 
-                
+
             elif self.current_char == '\t':
                 ident_str = self.current_char
                 pos_start = self.pos.copy()

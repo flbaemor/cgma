@@ -152,7 +152,8 @@ cfg = {
     "<return_value>": [["ε"], ["<expression>"]],
     "<case_line>": [["ε"], ["<data_id>", "<var_initialization>", "<case_line>"], ["<expression>", "<case_line>"], ["<statement>", "<case_line>"]],
     "<list_value>": [["append", "(", "<arg>", ")"], ["insert", "(", "CHU_LIT", ",", "<arg>", ")"], ["remove", "(", "CHU_LIT", ")"], ["[", "<list_content>", "]"]],
-    "<list_content>": [["ε"],["<arg>"]]
+    "<list_content>": [["ε"],["<arg>"]],
+    "<newline>": [["ε"], ["NL"]]
 }
 
 first_sets = compute_first(cfg)
