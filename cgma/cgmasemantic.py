@@ -1269,37 +1269,26 @@ def parse_assignment(tokens, index, var_name, var_type):
 
 def parse_function_call(tokens, index, func_name, func_type, func_params):
     line = tokens[index].line
+    
     index += 2  # Move past function name and '('
-
+    print(tokens[index].type)
     args_node = ASTNode("Arguments")
     provided_args = []  
     expected_params = func_params  
-
+    
     while tokens[index].type != "CLPAR":
+        if len(provided_args) >= len(expected_params):
+            raise SemanticError(f"Type Error: Too many arguments in function call '{func_name}'.", line)
 
-        expected_type = expected_params[len(provided_args)].children[0].value
-        if expected_type in {"chungus", "chudeluxe"}:
-            expr_node, index = parse_expression(tokens, index)
-            arg_node = ASTNode("Argument")
-            arg_node.add_child(expr_node)  
+        expected_type = expected_params[len(provided_args)].children[0].value 
+        
+        expr_node, index = parse_expression_type(tokens, index, expected_type)
 
-            arg_type = expected_type  
-        elif tokens[index].type == "IDENTIFIER":
-            arg_name = tokens[index].value
-            var_info = symbol_table.lookup_variable(arg_name)
-
-            if isinstance(var_info, str):  # Variable not found
-                raise SemanticError(f"Semantic Error: Variable '{arg_name}' used before declaration.", line)
-
-            arg_type = var_info["type"]
-            arg_node = ASTNode("Argument", arg_name, line=line)
-            index += 1  # Move past identifier
-
-        else:
-            raise SemanticError(f"Syntax Error: Invalid argument in function call.", line)
-
+        arg_node = ASTNode("Argument")
+        arg_node.add_child(expr_node)
         args_node.add_child(arg_node)
-        provided_args.append((arg_node, arg_type))
+
+        provided_args.append((arg_node, expected_type))
 
    
         if tokens[index].type == "COMMA":
@@ -1623,6 +1612,7 @@ def parse_return(tokens, index, func_type):
         index += 1
 
         if tokens[index].type == "OPPAR":
+            index -= 1
             func_info = symbol_table.lookup_function(identifier)
 
             if isinstance(func_info, str):  # Function not found
@@ -2000,9 +1990,7 @@ def parse_list(tokens, index, expected_type):
     return ListNode(elements = elements, line = line), index
 
 def parse_append(tokens, index, var_name, expected_type):
-    """
-    Parses: list = append(value1, value2, ...)
-    """
+
     line = tokens[index].line
     if symbol_table.lookup_variable(var_name)["is_list"] == False:
         raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
@@ -2030,9 +2018,6 @@ def parse_append(tokens, index, var_name, expected_type):
     return AppendNode(elements, line=line), index
 
 def parse_insert(tokens, index, var_name, expected_type):
-    """
-    Parses: list = insert(index, value1, value2, ...)
-    """
     line = tokens[index].line
     if symbol_table.lookup_variable(var_name)["is_list"] == False:
         raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
@@ -2070,9 +2055,6 @@ def parse_insert(tokens, index, var_name, expected_type):
     return InsertNode(index_value, elements, line=line), index
 
 def parse_remove(tokens, index, var_name, expected_type):
-    """
-    Parses: list = remove(index)
-    """
     line = tokens[index].line
     if symbol_table.lookup_variable(var_name)["is_list"] == False:
         raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
@@ -2158,11 +2140,6 @@ def parse_struct(tokens, index):
     return StructNode(struct_name, members, line=line), index
 
 def parse_struct_instance(tokens, index):
-    """
-    Parses struct instance declarations.
-    Example:
-        aura Car toyota
-    """
     line = tokens[index].line
 
     if tokens[index].value == "aura":
@@ -2203,12 +2180,6 @@ def parse_struct_instance(tokens, index):
         return struct_list_node, index
 
 def parse_struct_member_assignment(tokens, index):
-    """
-    Parses struct member assignments.
-    Example:
-        Rojo.num = 1 + Rojo.num
-        Rojo.fullname = "hello"
-    """
     line = tokens[index].line
 
     if tokens[index].type != "IDENTIFIER":
