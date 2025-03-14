@@ -1416,6 +1416,7 @@ class Lexer:
                     else:
                         line += 1
                         self.advance()
+                        
                 tokens.append(Token(TT_NL, "\\n", line))
                 continue
                 
@@ -1578,7 +1579,7 @@ class Lexer:
                     while self.current_char is not None and self.current_char != "\n":
                         ident_str += self.current_char
                         self.advance()
-                    tokens.append(Token(TT_COMMENT, ident_str, line))
+                    #tokens.append(Token(TT_COMMENT, ident_str, line))
                     continue
                 elif self.current_char == "*":
                     ident_str += self.current_char
@@ -1594,7 +1595,7 @@ class Lexer:
                             if self.current_char == "\n":
                                 line += 1
                             self.advance()
-                    tokens.append(Token(TT_COMMENT, ident_str, line))
+                    #tokens.append(Token(TT_COMMENT, ident_str, line))
                     if self.current_char is None:
                         errors.append(IllegalCharError(pos_start, self.pos, f"Missing closing '*/' after '{ident_str}'"))
                         continue
