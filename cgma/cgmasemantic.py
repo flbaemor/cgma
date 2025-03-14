@@ -1422,17 +1422,33 @@ def parse_string_concatenation(tokens, index):
         raise SemanticError(f"Syntax Error: String concatenation must start with a string literal.", line)
     
     format_string = tokens[index].value
-    placeholder_count = format_string.count("{}")
+    raw_string = format_string.replace("\\{", "").replace("\\}", "")  # Remove escaped brackets for validation
+    print (raw_string.count("{"))
+    if "{" in raw_string or "}" in raw_string:
+        if raw_string.count("{") != raw_string.count("}"):
+            raise SemanticError(f"Syntax Error: Invalid string literal '{format_string}' in yap().", line)
+        if "{}" not in raw_string:
+            raise SemanticError(f"Syntax Error: Placeholders {{}} must be adjacent within the string literal.", line)
+        
+    placeholder_count = raw_string.count("{}")
     left_node = ASTNode("FormattedString", tokens[index].value, line=line)
     index += 1
 
-    while tokens[index].type == "PLUS":
+    while index < len(tokens) and tokens[index].type == "PLUS":
         index += 1
         if tokens[index].type != "FORSENCD_LIT":
             raise SemanticError(f"Syntax Error: Only string literals can be concatenated in yap().", line)
 
         format_string = tokens[index].value
-        placeholder_count += format_string.count("{}")
+        raw_string = format_string.replace("\\{", "").replace("\\}", "")
+        
+        if "{" in raw_string or "}" in raw_string:
+            if raw_string.count("{") != raw_string.count("}"):
+                raise SemanticError(f"Syntax Error: Invalid string literal '{format_string}' in yap().", line)
+            if "{}" not in raw_string:
+                raise SemanticError(f"Syntax Error: Placeholders {{}} must be adjacent within the string literal.", line)
+        
+        placeholder_count += raw_string.count("{}")
         right_node = ASTNode("FormattedString", tokens[index].value, line=line)
         index += 1
 

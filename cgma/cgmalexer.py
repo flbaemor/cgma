@@ -32,7 +32,7 @@ equal_dlm = ' _[(-"+\t!\'' + ALPHANUM
 hawk_dlm =  ' \n{\t'
 identif_dlm = ' \n)(&|;[],.\t' + OPER
 lit_dlm =   ' ,):\n;\t/+-%*]' + OPER
-lwk_dlm =   ' \n&|=)\t]' + OPER
+lwk_dlm =   ' \n&|=)\t],' + OPER
 minus_dlm = ' -()\t' + ALPHANUM
 npc_dlm =   ' :\t' + ALPHANUM
 not_dlm =   '=(\t' + ALPHA
@@ -1171,7 +1171,7 @@ class Lexer:
                         errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                         self.advance()
                         continue
-                elif self.current_char == "*":
+                elif self.current_char == "/":
                     ident_str += self.current_char
                     self.advance()
                     if self.current_char is None or self.current_char in esc_dlm:
@@ -1478,7 +1478,9 @@ class Lexer:
 
                 escape_characters = {
                     'n': '\n',
-                    't': '\t'
+                    't': '\t',
+                    '{': '\\{',
+                    '}': '\\}'
                 }
 
                 while self.current_char is not None and (self.current_char != '"' or escape_character):
