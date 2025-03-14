@@ -268,10 +268,10 @@ class Lexer:
                                 ident_str += self.current_char
                                 ident_count+=1
                                 self.advance()
-                                if self.current_char is None or self.current_char in spc_dlm:
+                                if self.current_char is None or self.current_char in endln_dlm:
                                     tokens.append(Token(TT_KEYWORD, ident_str, line))
                                     continue
-                                elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
+                                elif self.current_char is not None and self.current_char not in endln_dlm and self.current_char not in ALPHANUM:
                                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                                     self.advance()
                                     continue

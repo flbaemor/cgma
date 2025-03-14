@@ -145,7 +145,12 @@ class ListNode(ASTNode):
 
 class TaperNode(ASTNode):
     def __init__(self, variable_name, line=None):
-        super().__init__("Taper", line=line)
+        super().__init__("TaperFunction", line=line)
+        self.add_child(ASTNode("Identifier", variable_name, line=line))
+
+class TSNode(ASTNode):
+    def __init__(self, variable_name, line=None):
+        super().__init__("TSFunction", line=line)
         self.add_child(ASTNode("Identifier", variable_name, line=line))
 
 class AppendNode(ASTNode):
@@ -167,6 +172,11 @@ class RemoveNode(ASTNode):
         self.add_child(ASTNode("Identifier", value, line=line))
         self.add_child(ASTNode("Index", index, line=line))
 
+class CastNode(ASTNode):
+    def __init__(self, target_type, expression, line=None):
+        super().__init__("TypeCast", line=line)
+        self.add_child(ASTNode("TargetType", target_type, line=line))
+        self.add_child(expression)
 
 ###### SYMBOL TABLE ######
 
@@ -177,7 +187,7 @@ class SymbolTable:
         self.scopes = [{}]   # Stack of scopes (for local/global tracking)
 
     ###### VARIABLE ######
-    def declare_variable(self, name, type_, value=None, is_sturdy=False):
+    def declare_variable(self, name, type_, value=None, is_list=False, is_sturdy=False):
         scope = self.scopes[-1]
         
         if name in scope:
@@ -188,10 +198,10 @@ class SymbolTable:
                 return f"Semantic Error: Variable '{name}' already declared."
             if name in self.functions:
                 return f"Semantic Error: Variable '{name}' already declared as a function."
-            self.variables[name] = {"type": type_, "value": value, "is_sturdy": is_sturdy}
+            self.variables[name] = {"type": type_, "value": value, "is_list": is_list,"is_sturdy": is_sturdy}
 
         else:
-            scope[name] = {"type": type_, "value": value}
+            scope[name] = {"type": type_, "value": value, "is_list": is_list}
 
 
     def lookup_variable(self, name):
@@ -302,6 +312,19 @@ def build_ast(tokens):
             if node:
                 root.add_child(node)
 
+        elif token.value == "nocap":
+            index += 1
+            if tokens[index].type == "IDENTIFIER":
+                func_name = tokens[index].value
+                func_type = "nocap"
+                node, index = parse_function(tokens, index, func_name, func_type)
+            else:
+                raise SemanticError(f"Syntax Error: Invalid function declaration.", token.line)
+            
+            if node:
+                root.add_child(node)
+            
+
         elif token.value == "sturdy":
             node, index = parse_sturdy(tokens, index)
             if node:
@@ -383,11 +406,19 @@ def parse_function(tokens, index, func_name, func_type):
     if tokens[index].type == "OPCUR":
         index += 1
         block_node = ASTNode("Block")
+        return_found = False
         while tokens[index].type != "CLCUR":
             stmt, index = parse_statement(tokens, index, func_type)
             if stmt:
                 block_node.add_child(stmt)
+
+                if isinstance(stmt, ReturnNode):
+                    return_found = True
             index += 1
+        
+        if func_type != "nocap" and not return_found:
+            error = f"Semantic Error: Function '{func_name}' must return a value of type '{func_type}'."
+
         index += 1
         func_node.add_child(block_node)
         symbol_table.exit_scope()
@@ -406,17 +437,13 @@ def parse_variable(tokens, index, var_name, var_type):
         if global_var and global_var.get("is_sturdy"):
             raise SemanticError(f"Semantic Error: Variable '{var_name}' is declared as sturdy and cannot be re-declared.", line)
 
+        is_list = False
+
         var_node = VariableDeclarationNode(var_type, var_name, line=line)
-        error = symbol_table.declare_variable(var_name, var_type)
 
-        if isinstance(error, str):
-            raise SemanticError(error, line)
-
-        # ✅ Check if `=` is used
         if tokens[index].type == "IS":
             index += 1
 
-            # ✅ Handle `taper()` function
             if (
                 var_type == "forsen" and
                 tokens[index].type == "IDENTIFIER" and
@@ -425,22 +452,19 @@ def parse_variable(tokens, index, var_name, var_type):
             ):
                 identifier = tokens[index].value
 
-                # ✅ Ensure the identifier exists
                 identifier_info = symbol_table.lookup_variable(identifier)
                 if isinstance(identifier_info, str):
                     raise SemanticError(f"Semantic Error: Variable '{identifier}' used before declaration.", line)
 
-                # ✅ Ensure it is a `forsencd` (string) type
                 if identifier_info["type"] != "forsencd":
                     raise SemanticError(f"Type Error: Cannot use taper function on '{identifier}'. Must be a forsencd type identifier.", line)
 
-                index += 3  # ✅ Move past `.taper()`
-                
-                # ✅ Create TaperNode
+                index += 3
+                is_list = True
                 taper_node = TaperNode(identifier, line=line)
                 var_node.add_child(taper_node)
 
-            # ✅ Handle `chat()`
+
             elif tokens[index].value == "chat":
                 index += 1
                 if tokens[index].type == "OPPAR":
@@ -454,22 +478,25 @@ def parse_variable(tokens, index, var_name, var_type):
 
                 var_node.add_child(value_node)
 
-            # ✅ Handle list assignment `[ ... ]`
             elif tokens[index].type == "OPBRA":
+                is_list = True
                 value_node, index = parse_list(tokens, index, var_type)
                 var_node.add_child(value_node)
 
-            # ✅ Handle normal expressions (`x = 10`, `x = y + 2`)
             else:
                 value_node, index = parse_expression_type(tokens, index, var_type)
                 var_node.add_child(value_node)
-
+   
         else:
             raise SemanticError(f"Semantic Error: Variable must be initialized. Missing '=' after '{var_name}'.", line)
 
+        error = symbol_table.declare_variable(var_name, var_type, is_list = is_list)
+
+        if isinstance(error, str):
+            raise SemanticError(error, line)
+        
         var_nodes.append(var_node)
 
-        # ✅ Handle multiple variable declarations (`x, y = 5`)
         if tokens[index].type == "COMMA":
             index += 1
             var_name = tokens[index].value
@@ -477,7 +504,6 @@ def parse_variable(tokens, index, var_name, var_type):
         else:
             break
 
-    # ✅ Return a single variable or a list of declarations
     if len(var_nodes) == 1:
         return var_nodes[0], index
     else:
@@ -573,6 +599,9 @@ def parse_statement(tokens, index, func_type = None):
         return node, index
     
     else:
+        while tokens[index].type not in {"NL", "EOF", "COMMENT"}:
+            index += 1
+
         return None, index
 
 
@@ -633,10 +662,7 @@ def parse_expression_forsen(tokens, index):
         raise SemanticError(error, line) 
 
 def parse_expression_forsencd(tokens, index):
-    line = tokens[index].line  # Get line number for error handling
-
-
-
+    line = tokens[index].line  
     # ✅ Ensure valid starting token (FORSENCD_LIT, IDENTIFIER, or function call)
     if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER"}:
         raise SemanticError(f"Type Error: forsencd can only be assigned a FORSENCD_LIT or an identifier of type forsen/forsencd.", line)
@@ -687,7 +713,6 @@ def parse_expression_forsencd(tokens, index):
             if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER"}:
                 raise SemanticError(f"Type Error: forsencd can only be assigned a FORSENCD_LIT or an identifier of type forsen/forsencd.", line)
 
-            # ✅ Function Call Handling (Right Operand)
             if tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
                 func_name = tokens[index].value
                 func_info = symbol_table.lookup_function(func_name)
@@ -770,7 +795,19 @@ def parse_factor(tokens, index):
     """Parses literals, identifiers, parenthesized expressions, and postfix operators."""
     token = tokens[index]
 
-    if token.type in {"CHU_LIT", "CHUDEL_LIT"}:
+    if (tokens[index-1].type not in {"IDENTIFIER", "CHU_LIT", "CHUDEL_LIT", "PLUS", "MINUS", "MUL", "DIV", "MOD"} and
+        token.type == "OPPAR" and
+        tokens[index + 1].value in {"chungus", "chudeluxe"} and
+        tokens[index + 2].type == "CLPAR"
+    ):
+        target_type = tokens[index + 1].value 
+        index += 3
+        expr_node, index = parse_factor(tokens, index)
+
+        cast_node = CastNode(target_type, expr_node, line=token.line)
+        return cast_node, index
+    
+    elif token.type in {"CHU_LIT", "CHUDEL_LIT"}:
         node = ASTNode("Value", token.value)
         index += 1  
 
@@ -793,6 +830,25 @@ def parse_factor(tokens, index):
         node, index = parse_function_call(tokens, index, func_name, func_return_type, func_params)
 
         return node, index
+
+    elif (
+        tokens[index].type == "IDENTIFIER" and
+        tokens[index + 1].type == "DOT" and
+        tokens[index + 2].value == "ts"
+    ):
+        identifier = tokens[index].value
+
+        identifier_info = symbol_table.lookup_variable(identifier)
+        if isinstance(identifier_info, str):
+            raise SemanticError(f"Semantic Error: Variable '{identifier}' used before declaration.", token.line)  
+
+        if not identifier_info["is_list"] and identifier_info["type"] != "forsencd":
+            raise SemanticError(f"Type Error: ts() can only be used on lists or strings, but '{identifier}' is of type {identifier_info['type']}.", token.line)
+        
+        index += 5
+
+        ts_node, index = TSNode(identifier, line=token.line), index
+        return ts_node, index
 
     elif token.type in {"IDENTIFIER"}:
         variable_info = symbol_table.lookup_variable(token.value)
@@ -931,11 +987,11 @@ def parse_assignment(tokens, index, var_name, var_type):
             raise SemanticError(error, line)
         
     elif tokens[index].value == "append":
-        list_op_node, index = parse_append(tokens, index, var_type)
+        list_op_node, index = parse_append(tokens, index, var_name, var_type)
         return list_op_node, index
     
     elif tokens[index].value == "insert":
-        list_op_node, index = parse_insert(tokens, index, var_type)
+        list_op_node, index = parse_insert(tokens, index, var_name, var_type)
         return list_op_node, index
         
     elif tokens[index].value == "remove":
@@ -1184,7 +1240,7 @@ def parse_sturdy(tokens, index):
     if tokens[index].type not in {"NL"}:
         raise SemanticError(f"Syntax Error: Sturdy variable '{var_name}' must be assigned only a single literal.", line)
 
-    error = symbol_table.declare_variable(var_name, var_type, value=value_node, is_sturdy=True)
+    error = symbol_table.declare_variable(var_name, var_type, value=value_node, is_list=False, is_sturdy=True)
     if isinstance(error, str):
         raise SemanticError(error, line)
 
@@ -1304,10 +1360,12 @@ def parse_return(tokens, index, func_type):
     line = tokens[index].line
     index += 1
 
-    if func_type == "lwk" and tokens[index].type == "NL":
+    if func_type == "nocap":
+        if tokens[index].type not in {"NL", "CLCUR"}:
+            raise SemanticError(f"Type Error: nocap function must not return any value.", line)
         return ReturnNode(None, line=line), index
 
-    if tokens[index].type in {"CHU_LIT", "CHUDEL_LIT", "FORSEN_LIT", "FORSENCD_LIT", "LWK_LIT"}:
+    elif tokens[index].type in {"CHU_LIT", "CHUDEL_LIT", "FORSEN_LIT", "FORSENCD_LIT", "LWK_LIT"}:
         return_expr = ASTNode("Value", tokens[index].value, line=line)
         index += 1
 
@@ -1692,11 +1750,14 @@ def parse_list(tokens, index, expected_type):
 
     return ListNode(elements = elements, line = line), index
 
-def parse_append(tokens, index, expected_type):
+def parse_append(tokens, index, var_name, expected_type):
     """
     Parses: list = append(value1, value2, ...)
     """
     line = tokens[index].line
+    if symbol_table.lookup_variable(var_name)["is_list"] == False:
+        raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
+    
     if tokens[index].value != "append":
         raise SemanticError(f"Syntax Error: Expected 'append'.", line)
     
@@ -1707,7 +1768,7 @@ def parse_append(tokens, index, expected_type):
 
     elements = []
     while tokens[index].type != "CLPAR":
-        elem, index = parse_expression_type(tokens, index, expected_type)  # ✅ Type-check elements
+        elem, index = parse_expression_type(tokens, index, expected_type)
         elements.append(elem)
 
         if tokens[index].type == "COMMA":
@@ -1719,11 +1780,14 @@ def parse_append(tokens, index, expected_type):
 
     return AppendNode(elements, line=line), index
 
-def parse_insert(tokens, index, expected_type):
+def parse_insert(tokens, index, var_name, expected_type):
     """
     Parses: list = insert(index, value1, value2, ...)
     """
     line = tokens[index].line
+    if symbol_table.lookup_variable(var_name)["is_list"] == False:
+        raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
+    
     if tokens[index].value != "insert":
         raise SemanticError(f"Syntax Error: Expected 'insert'.", line)
 
@@ -1732,16 +1796,19 @@ def parse_insert(tokens, index, expected_type):
         raise SemanticError(f"Syntax Error: Expected '(' after 'insert'.", line)
     index += 1
 
-    # ✅ First argument must be an index (chungus literal)
-    index_value, index = parse_expression_type(tokens, index, "chungus")
+    if tokens[index].type != "CHU_LIT":
+        raise SemanticError(f"Syntax Error: Expected chungus literal as index in 'insert'.", line)
+    index_value = tokens[index].value
+    index += 1
 
     if tokens[index].type != "COMMA":
         raise SemanticError(f"Syntax Error: Expected ',' after index in 'insert'.", line)
     index += 1  # Move past `,`
 
     elements = []
+
     while tokens[index].type != "CLPAR":
-        elem, index = parse_expression_type(tokens, index, expected_type)  # ✅ Type-check elements
+        elem, index = parse_expression_type(tokens, index, expected_type)
         elements.append(elem)
 
         if tokens[index].type == "COMMA":
@@ -1749,7 +1816,7 @@ def parse_insert(tokens, index, expected_type):
 
     if tokens[index].type != "CLPAR":
         raise SemanticError(f"Syntax Error: Expected ')' after insert arguments.", line)
-    index += 1  # Move past `)`
+    index += 1
 
     return InsertNode(index_value, elements, line=line), index
 
@@ -1758,6 +1825,9 @@ def parse_remove(tokens, index, var_name, expected_type):
     Parses: list = remove(index)
     """
     line = tokens[index].line
+    if symbol_table.lookup_variable(var_name)["is_list"] == False:
+        raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
+    
     if tokens[index].value != "remove":
         raise SemanticError(f"Syntax Error: Expected 'remove'.", line)
 
