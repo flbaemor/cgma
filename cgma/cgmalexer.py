@@ -1581,6 +1581,9 @@ class Lexer:
                                 line += 1
                             self.advance()
                     tokens.append(Token(TT_COMMENT, ident_str, line))
+                    if self.current_char is None:
+                        errors.append(IllegalCharError(pos_start, self.pos, f"Missing closing '*/' after '{ident_str}'"))
+                        continue
                     continue    
                 elif self.current_char is not None and self.current_char in operator_dlm:
                     tokens.append(Token(TT_DIV, ident_str, line))
