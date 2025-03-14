@@ -1401,13 +1401,17 @@ class Lexer:
                     continue
 
             elif self.current_char == '\n':
-                ident_str = self.current_char
                 pos_start = self.pos.copy()
-                line += 1
+                while self.current_char == '\t' or self.current_char == ' ' or self.current_char == '\n':
+                    if self.current_char == '\t' or self.current_char == ' ':
+                        self.advance()
+                    else:
+                        line += 1
+                        self.advance()
                 tokens.append(Token(TT_NL, "\\n", line))
-                self.advance()
+                continue
                 
-
+                
             elif self.current_char == '\t':
                 ident_str = self.current_char
                 pos_start = self.pos.copy()

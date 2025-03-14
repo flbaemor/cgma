@@ -393,7 +393,7 @@ def build_ast(tokens):
                 func_type = "nocap"
                 node, index = parse_function(tokens, index, func_name, func_type)
             else:
-                raise SemanticError(f"Syntax Error: Invalid function declaration.", token.line)
+                raise SemanticError(f"Semantic Error: Invalid function declaration.", token.line)
             
             if node:
                 root.add_child(node)
@@ -549,7 +549,7 @@ def parse_variable(tokens, index, var_name, var_type):
                 if tokens[index].type == "OPPAR":
                     index += 1
                     if tokens[index].type != "CLPAR":
-                        raise SemanticError(f"Syntax Error: chat() should not have parameters.", line)
+                        raise SemanticError(f"Semantic Error: chat() should not have parameters.", line)
                     index += 1
                     value_node = ASTNode("Input", "chat()", line=line)
                 else:
@@ -645,7 +645,7 @@ def parse_statement(tokens, index, func_type = None):
             return node, index
         
         else:
-            raise SemanticError(f"Syntax Error: Unexpected token '{tokens[index].value}' in statement.", line)
+            raise SemanticError(f"Semantic Error: Unexpected token '{tokens[index].value}' in statement.", line)
     
     elif tokens[index].type in {"INC", "DEC"}:
         operator = tokens[index].value
@@ -921,7 +921,7 @@ def parse_expression_forsencd(tokens, index):
             left_node = BinaryOpNode(left_node, op, right_node, line=line)
 
         elif tokens[index].type not in {"PLUS", "COMMA", "NL", "CLPAR", "CLBRA"}:
-            raise SemanticError(f"Syntax Error: Unexpected token '{tokens[index].value}' in forsencd expression.", line)
+            raise SemanticError(f"Semantic Error: Unexpected token '{tokens[index].value}' in forsencd expression.", line)
 
         else:
             break
@@ -1076,7 +1076,7 @@ def parse_factor(tokens, index):
         return node, index  
 
     else:
-        error = f"Syntax Error: Invalid factor '{token.value}' in expression."
+        error = f"Semantic Error: Invalid factor '{token.value}' in expression."
         raise SemanticError(error, token.line)
 
 def parse_expression_lwk(tokens, index):
@@ -1215,7 +1215,7 @@ def parse_relational(tokens, index):
                raise SemanticError(f"Type Error: Relational operators can only be used with numeric expressions, not boolean values.", line)
             
         else:
-            error = f"Syntax Error: Invalid relational operator."
+            error = f"Semantic Error: Invalid relational operator."
             raise SemanticError(error, line)
 
         return BinaryOpNode(left_node, operator, right_node, line=line), index
@@ -1328,7 +1328,7 @@ def parse_argument(tokens, index):
         index += 1
 
     else:
-        raise SemanticError(f"Syntax Error: Invalid argument in function call.", line)
+        raise SemanticError(f"Semantic Error: Invalid argument in function call.", line)
 
     return arg_node, arg_type, index
     
@@ -1419,14 +1419,14 @@ def parse_print(tokens, index):
 def parse_string_concatenation(tokens, index):
     line = tokens[index].line
     if tokens[index].type != "FORSENCD_LIT":
-        raise SemanticError(f"Syntax Error: String concatenation must start with a string literal.", line)
+        raise SemanticError(f"Semantic Error: String concatenation must start with a string literal.", line)
     
     format_string = tokens[index].value
-    raw_string = format_string.replace("\\{", "").replace("\\}", "")  # Remove escaped brackets for validation
+    raw_string = format_string.replace("\\{", "").replace("\\}", "")
     print (raw_string.count("{"))
     if "{" in raw_string or "}" in raw_string:
         if raw_string.count("{") != raw_string.count("}"):
-            raise SemanticError(f"Syntax Error: Invalid string literal '{format_string}' in yap().", line)
+            raise SemanticError(f"Semantic Error: Invalid string literal '{format_string}' in yap().", line)
         if "{}" not in raw_string:
             raise SemanticError(f"Syntax Error: Placeholders {{}} must be adjacent within the string literal.", line)
         
@@ -1437,14 +1437,14 @@ def parse_string_concatenation(tokens, index):
     while index < len(tokens) and tokens[index].type == "PLUS":
         index += 1
         if tokens[index].type != "FORSENCD_LIT":
-            raise SemanticError(f"Syntax Error: Only string literals can be concatenated in yap().", line)
+            raise SemanticError(f"Semantic Error: Only string literals can be concatenated in yap().", line)
 
         format_string = tokens[index].value
         raw_string = format_string.replace("\\{", "").replace("\\}", "")
         
         if "{" in raw_string or "}" in raw_string:
             if raw_string.count("{") != raw_string.count("}"):
-                raise SemanticError(f"Syntax Error: Invalid string literal '{format_string}' in yap().", line)
+                raise SemanticError(f"Semantic Error: Invalid string literal '{format_string}' in yap().", line)
             if "{}" not in raw_string:
                 raise SemanticError(f"Syntax Error: Placeholders {{}} must be adjacent within the string literal.", line)
         
@@ -1462,7 +1462,7 @@ def parse_sturdy(tokens, index):
     line = token.line
     index += 1 
     if tokens[index].value not in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
-        raise SemanticError(f"Syntax Error: Invalid sturdy variable type '{tokens[index].value}'.", line)
+        raise SemanticError(f"Semantic Error: Invalid sturdy variable type '{tokens[index].value}'.", line)
     
     var_type = tokens[index].value
     index += 1  
@@ -1474,7 +1474,7 @@ def parse_sturdy(tokens, index):
     index += 1
 
     if tokens[index].type != "IS":
-        raise SemanticError(f"Syntax Error: Sturdy variables must be initialized.", line)
+        raise SemanticError(f"Semantic Error: Sturdy variables must be initialized.", line)
     index += 1
 
     expected_literals = {
@@ -1492,7 +1492,7 @@ def parse_sturdy(tokens, index):
     index += 1
 
     if tokens[index].type not in {"NL"}:
-        raise SemanticError(f"Syntax Error: Sturdy variable '{var_name}' must be assigned only a single literal.", line)
+        raise SemanticError(f"Semantic Error: Sturdy variable '{var_name}' must be assigned only a single literal.", line)
 
     error = symbol_table.declare_variable(var_name, var_type, value=value_node, is_list=False, is_sturdy=True)
     if isinstance(error, str):
@@ -1647,8 +1647,8 @@ def parse_return(tokens, index, func_type):
 
             if var_info["type"] != func_type:
                 raise SemanticError(f"Type Error: Variable '{identifier}' is of type '{var_info['type']}', expected '{func_type}'.", line)
-
-            return_expr = ASTNode("Value", identifier, line=line)
+            index -= 1 
+            return_expr, index = parse_expression_type(tokens, index, func_type)
 
     else: 
         return_expr, index = parse_expression_type(tokens, index, func_type)
@@ -1762,7 +1762,7 @@ def parse_update(tokens, index):
 
             return UpdateNode(operator, operand, prefix = True, line=line), index
         
-    raise SemanticError(f"Syntax Error: Invalid update statement.", line)
+    raise SemanticError(f"Semantic Error: Invalid update statement.", line)
     
 def parse_while(tokens, index):
     line = tokens[index].line
@@ -1909,7 +1909,7 @@ def parse_switch(tokens, index):
         line = tokens[index].line
 
         if tokens[index].type not in {"FORSENCD_LIT", "FORSEN_LIT", "LWK_LIT", "CHU_LIT", "CHUDEL_LIT"}:
-            raise SemanticError(f"Syntax Error: Expected a valid literal value after 'caseoh'.", line)
+            raise SemanticError(f"Semantic Error: Expected a valid literal value after 'caseoh'.", line)
         
         case_value = ASTNode("CaseValue", tokens[index].value, line=case_line)
         index += 1
@@ -1943,7 +1943,7 @@ def parse_switch(tokens, index):
 
 
     if tokens[index].value != "npc":
-        raise SemanticError(f"Syntax Error: Expected 'npc' after switch cases.", line)
+        raise SemanticError(f"Semantic Error: Expected 'npc' after switch cases.", line)
 
     if tokens[index].value == "npc":
         line = tokens[index].line
@@ -1982,7 +1982,7 @@ def parse_switch(tokens, index):
 def parse_list(tokens, index, expected_type):
     line = tokens[index].line
     if tokens[index].type != "OPBRA":
-        raise SemanticError(f"Syntax Error: Expected '[' for list declaration.", line)
+        raise SemanticError(f"Semantic Error: Expected '[' for list declaration.", line)
     index += 1
     
     elements = []
@@ -2012,7 +2012,7 @@ def parse_append(tokens, index, var_name, expected_type):
         raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
     
     if tokens[index].value != "append":
-        raise SemanticError(f"Syntax Error: Expected 'append'.", line)
+        raise SemanticError(f"Semantic Error: Expected 'append'.", line)
     
     index += 1
     if tokens[index].type != "OPPAR":
@@ -2039,7 +2039,7 @@ def parse_insert(tokens, index, var_name, expected_type):
         raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
     
     if tokens[index].value != "insert":
-        raise SemanticError(f"Syntax Error: Expected 'insert'.", line)
+        raise SemanticError(f"Semantic Error: Expected 'insert'.", line)
 
     index += 1
     if tokens[index].type != "OPPAR":
@@ -2047,7 +2047,7 @@ def parse_insert(tokens, index, var_name, expected_type):
     index += 1
 
     if tokens[index].type != "CHU_LIT":
-        raise SemanticError(f"Syntax Error: Expected chungus literal as index in 'insert'.", line)
+        raise SemanticError(f"Semantic Error: Expected chungus literal as index in 'insert'.", line)
     index_value = tokens[index].value
     index += 1
 
@@ -2076,7 +2076,7 @@ def parse_remove(tokens, index, var_name, expected_type):
         raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
     
     if tokens[index].value != "remove":
-        raise SemanticError(f"Syntax Error: Expected 'remove'.", line)
+        raise SemanticError(f"Semantic Error: Expected 'remove'.", line)
 
     index += 1
     if tokens[index].type != "OPPAR":
@@ -2088,7 +2088,7 @@ def parse_remove(tokens, index, var_name, expected_type):
         index += 1
         
     else:
-        raise SemanticError(f"Syntax Error: Expected chungus literal or identifier as argument to 'remove'.", line)
+        raise SemanticError(f"Semantic Error: Expected chungus literal or identifier as argument to 'remove'.", line)
 
     if tokens[index].type != "CLPAR":
         raise SemanticError(f"Syntax Error: Expected ')' after remove argument.", line)
@@ -2101,7 +2101,7 @@ def parse_struct(tokens, index):
     index += 1 
 
     if tokens[index].type != "IDENTIFIER":
-        raise SemanticError(f"Syntax Error: Expected struct name after 'aura'.", line)
+        raise SemanticError(f"Semantic Error: Expected struct name after 'aura'.", line)
 
     struct_name = tokens[index].value
     index += 1
@@ -2118,13 +2118,13 @@ def parse_struct(tokens, index):
         line = tokens[index].line
         print(tokens[index].value)
         if tokens[index].value not in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
-            raise SemanticError(f"Syntax Error: Expected valid data type in struct declaration.", line)
+            raise SemanticError(f"Semantic Error: Expected valid data type in struct declaration.", line)
         
         member_type = tokens[index].value
         index += 1
 
         if tokens[index].type != "IDENTIFIER":
-            raise SemanticError(f"Syntax Error: Expected member variable name after data type.", line)
+            raise SemanticError(f"Semantic Error: Expected member variable name after data type.", line)
 
         member_name = tokens[index].value
         index += 1
@@ -2162,7 +2162,7 @@ def parse_struct_instance(tokens, index):
         index += 1 
 
     if tokens[index].type != "IDENTIFIER":
-        raise SemanticError(f"Syntax Error: Expected struct name after 'aura'.", line)
+        raise SemanticError(f"Semantic Error: Expected struct name after 'aura'.", line)
 
     struct_name = tokens[index].value
     index += 1
@@ -2199,7 +2199,7 @@ def parse_struct_member_assignment(tokens, index):
     line = tokens[index].line
 
     if tokens[index].type != "IDENTIFIER":
-        raise SemanticError(f"Syntax Error: Expected struct instance name.", line)
+        raise SemanticError(f"Semantic Error: Expected struct instance name.", line)
 
     struct_instance = tokens[index].value  # e.g., `Rojo`
     index += 1

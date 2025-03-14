@@ -30,7 +30,6 @@ class LL1Parser:
     def parse(self, tokens):
         self.stack = ['EOF', list(self.cfg.keys())[0]]  # Initialize stack
         index = 0
-        line = 1
         error_messages = []
 
         while self.stack:
@@ -38,12 +37,9 @@ class LL1Parser:
             token = tokens[index]
             token_type = token.type  
             token_value = token.value  
+            line = token.line
 
             while token_type in {'SPC', 'NL', 'TAB', 'COMMENT'}:
-                if token_type == 'NL':
-                    line += 1
-                elif token_type == 'COMMENT' and '\n' in token_value:
-                    line += 1
                 index += 1
                 token = tokens[index]
                 token_type = token.type
@@ -57,8 +53,6 @@ class LL1Parser:
 
             #print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
-            if token_type == 'TT_NL':
-                line += 1
 
             if top == token_type or top == token_value:
                 #print(f"Matched: {top}")
