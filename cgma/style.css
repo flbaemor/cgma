@@ -25,17 +25,30 @@ body {
 .navbar {
     display: flex;
     align-items: center;
-    justify-content: space-between; 
+    justify-content: flex-start; 
     background-color: #4f134e;
     padding: 15px 30px;
     max-height: 5%;
+}
+
+
+.navbar img {
+    width: 50px;
+    height: 50px;
+    margin-right: 10px;
+}
+
+.logoContainer{
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }
 
 .nav-links {
     list-style: none;
     display: flex;
     gap: 20px;
-    margin: 0;
+    margin-left: auto;
     padding: 0;
 }
 
@@ -44,10 +57,10 @@ body {
 }
 
 .logoName {
-    position:absolute;
-    left: 10%;
-    transform: translateX(-100%);
-    
+    font-size: 24px;
+    margin: 0;
+    white-space: nowrap;
+
 }
 
 .nav-links a.active {
