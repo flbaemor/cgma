@@ -32,7 +32,7 @@ equal_dlm = ' _[(-"+\t!\'' + ALPHANUM
 hawk_dlm =  ' \n{\t'
 identif_dlm = ' \n)(&|;[],.\t' + OPER
 lit_dlm =   ' ,):\n;\t/+-%*]' + OPER
-lwk_dlm =   ' \n&|=)\t],' + OPER
+lwk_dlm =   ' \n&|=)\t],:' + OPER
 minus_dlm = ' -()\t' + ALPHANUM
 npc_dlm =   ' :\t' + ALPHANUM
 not_dlm =   '=(\t' + ALPHA
@@ -1416,7 +1416,7 @@ class Lexer:
                     else:
                         line += 1
                         self.advance()
-                        
+
                 tokens.append(Token(TT_NL, "\\n", line))
                 continue
                 
