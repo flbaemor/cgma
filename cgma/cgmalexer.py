@@ -23,12 +23,12 @@ clbra_dlm = ' =\n)\t'
 clcur_dlm = ' \n)}\t' + ALPHANUM
 clpar_dlm = ' \n}{)&|}\t.,(' + ARITH_OPER + ALPHANUM
 com_dlm   = ' ('
-comma_dlm = ' _"\t' + ALPHANUM
+comma_dlm = ' "\t' + ALPHANUM
 convert_dlm = ' )\t,\n' + OPER
 comnt_dlm = ' \n\t' + ASCII
 endln_dlm = ' \n\t'
 esc_dlm =   ' "\t'+ ASCII
-equal_dlm = ' _[(-"+\t!\'' + ALPHANUM
+equal_dlm = ' [(-"+\t!\'' + ALPHANUM
 hawk_dlm =  ' \n{\t'
 identif_dlm = ' \n)(&|;[],.\t' + OPER
 lit_dlm =   ' ,):\n;\t/+-%*]' + OPER
@@ -38,13 +38,14 @@ npc_dlm =   ' :\t' + ALPHANUM
 not_dlm =   '=(\t' + ALPHA
 opbra_dlm = ' "]\t!\'' + ALPHANUM 
 opcur_dlm = ' \n\t}' + ALPHANUM
-operator_dlm = ' _(\t!' + ALPHANUM
-oppar_dlm = ' _)("-\t!' + ALPHANUM
-plus_dlm =  ' _("+)\t' + ALPHANUM
-relat_dlm = ' _("\t!' + ALPHANUM
-scolon_dlm = ' _+-\t' + ALPHANUM
+operator_dlm = ' (\t!' + ALPHANUM
+arith_operator_dlm = ' (\t' + ALPHANUM
+oppar_dlm = ' )("-\t!' + ALPHANUM
+plus_dlm =  ' ("+)\t' + ALPHANUM
+relat_dlm = ' ("\t!' + ALPHANUM
+scolon_dlm = ' +-\t' + ALPHANUM
 spc_dlm =   ' \t'
-unary_dlm = ' _)\t\n' + ALPHANUM
+unary_dlm = ' )\t\n' + ALPHANUM
 
 #TOKENS
 
@@ -1056,7 +1057,7 @@ class Lexer:
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
                 self.advance()
-                if self.current_char is not None and self.current_char in operator_dlm:
+                if self.current_char is not None and self.current_char in arith_operator_dlm:
                     tokens.append(Token(TT_MOD, ident_str, line))
                     continue
                 else:
@@ -1137,7 +1138,7 @@ class Lexer:
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
                 self.advance()
-                if self.current_char is None or self.current_char in operator_dlm:
+                if self.current_char is None or self.current_char in arith_operator_dlm:
                     tokens.append(Token(TT_MUL, ident_str, line))
                     continue
                 else:
@@ -1312,14 +1313,14 @@ class Lexer:
                 if self.current_char == "=":
                     ident_str += self.current_char
                     self.advance()
-                    if self.current_char is not None and self.current_char in operator_dlm:
+                    if self.current_char is not None and self.current_char in arith_operator_dlm:
                         tokens.append(Token(TT_LTE, ident_str, line))
                         continue
                     else:
                         errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                         self.advance()
                         continue
-                elif self.current_char is not None and self.current_char in operator_dlm:
+                elif self.current_char is not None and self.current_char in arith_operator_dlm:
                     tokens.append(Token(TT_LT, ident_str, line))
                     continue
                 else:
@@ -1334,14 +1335,14 @@ class Lexer:
                 if self.current_char == "=":
                     ident_str += self.current_char
                     self.advance()
-                    if self.current_char is not None and self.current_char in operator_dlm:
+                    if self.current_char is not None and self.current_char in arith_operator_dlm:
                         tokens.append(Token(TT_GTE, ident_str, line))
                         continue
                     else:
                         errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                         self.advance()
                         continue
-                elif self.current_char is not None and self.current_char in operator_dlm:
+                elif self.current_char is not None and self.current_char in arith_operator_dlm:
                     tokens.append(Token(TT_GT, ident_str, line))
                     continue
                 else:
@@ -1600,7 +1601,7 @@ class Lexer:
                         errors.append(IllegalCharError(pos_start, self.pos, f"Missing closing '*/' after '{ident_str}'"))
                         continue
                     continue    
-                elif self.current_char is not None and self.current_char in operator_dlm:
+                elif self.current_char is not None and self.current_char in arith_operator_dlm:
                     tokens.append(Token(TT_DIV, ident_str, line))
                     continue
                 else:

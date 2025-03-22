@@ -39,7 +39,7 @@ class LL1Parser:
             token_value = token.value  
             line = token.line
 
-            while token_type in {'SPC', 'NL', 'TAB', 'COMMENT'}:
+            while token_type in {'SPC', 'TAB', 'COMMENT'}:
                 index += 1
                 token = tokens[index]
                 token_type = token.type
@@ -51,19 +51,19 @@ class LL1Parser:
             elif token_value in self.parsing_table.get(top, {}):
                 token_type = token_value 
 
-            #print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
+            print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
 
             if top == token_type or top == token_value:
-                #print(f"Matched: {top}")
+                print(f"Matched: {top}")
                 index += 1  
             elif top in self.parsing_table:
                 if token_type in self.parsing_table[top]:
                     production = self.parsing_table[top][token_type]
-                    #print(f"Expand: {top} → {' '.join(production)}")
+                    print(f"Expand: {top} → {' '.join(production)}")
                     if production != ['ε']:
                         self.stack.extend(reversed(production))
-                    #print(f"Updated Stack: {self.stack}")
+                    print(f"Updated Stack: {self.stack}")
                 else:
                     expected_tokens = list(self.parsing_table[top].keys())
                     error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected one of: {expected_tokens}"
@@ -77,30 +77,8 @@ class LL1Parser:
                 return False, error_messages
 
         if token_type == 'EOF' and not self.stack:
-            #print("\nSyntax analysis successful!")
+            print("\nSyntax analysis successful!")
             return True, []
         else:
-            #print("Error: Tokens remaining after parsing")
+            print("Error: Tokens remaining after parsing")
             return False, ["Error: Tokens remaining after parsing"]
-
-
-@app.route('/api/parse', methods=['POST'])
-def parse():
-    data = request.json
-    source_code = data.get('source_code', '')
-
-    lexer = Lexer('<stdin>', source_code)
-    tokens, errors = lexer.make_tokens()
-
-    if errors:
-        return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
-
-    parser = LL1Parser(cfg, predict_sets)
-    success, parse_errors = parser.parse(tokens)
-
-    if not success:
-        return jsonify({'success': False, 'errors': parse_errors})
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
