@@ -1453,12 +1453,11 @@ class Lexer:
 
                 if self.current_char is not None and self.current_char not in lit_dlm:
                     invalid_part = ""
-                    while self.current_char is not None and self.current_char not in NUM + lit_dlm and self.current_char in ALPHA:
+                    while self.current_char is not None and self.current_char not in NUM + lit_dlm:
                         invalid_part += self.current_char
                         self.advance()
 
-                    ident_str += invalid_part
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid identifier '{ident_str}'"))
+                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{invalid_part}' after '{ident_str}'"))
                     self.advance()
                     continue
 

@@ -254,6 +254,15 @@ class StructMemberAccessNode(ASTNode):
         self.add_child(ASTNode("Member", member_name, line=line))
         self.member_type = member_type
 
+class ListAccessNode(ASTNode):
+    def __init__(self, list_name, index_expr, line=None):
+        super().__init__("ListAccess", line=line)
+        self.add_child(ASTNode("ListName", list_name, line=line))
+        self.add_child(index_expr)
+
+
+
+
 ###### SYMBOL TABLE ######
 
 class SymbolTable:
@@ -291,7 +300,6 @@ class SymbolTable:
                 "is_list": is_list,
                 "is_struct": is_struct
             }
-
 
 
     def lookup_variable(self, name):
@@ -370,10 +378,6 @@ def build_ast(tokens):
     
     while index < len(tokens):
         token = tokens[index]
-
-        if token.type == "NL":
-            index += 1
-            continue
         
         if token.value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
             node, index = parse_functionOrVariable(tokens, index)
@@ -440,7 +444,6 @@ def parse_functionOrVariable(tokens, index):
     return None, index
 
 def parse_function(tokens, index, func_name, func_type):
-    index += 1
 
     if func_name in symbol_table.functions:
         error = f"Semantic Error: '{func_name}' already declared."
@@ -486,17 +489,14 @@ def parse_function(tokens, index, func_name, func_type):
         index += 1
         block_node = ASTNode("Block")
         return_found = False
+        
         while tokens[index].type != "CLCUR":
             stmt, index = parse_statement(tokens, index, func_type)
             if stmt:
                 block_node.add_child(stmt)
                 if isinstance(stmt, ReturnNode):
                     return_found = True
-            print(f"!!!!!!!!!!!!!!!!!!!!!!{tokens[index-1].value}")
-            index += 1
-
-        index += 1
-        print(f"!!!!!!!!!!!!!!!!!!!!!!{tokens[index].value}")
+        
         if (func_type != "nocap" and not return_found) and func_name != "skibidi":
             raise SemanticError(f"Semantic Error: Function '{func_name}' must return a value of type '{func_type}'.", line)
 
@@ -540,7 +540,7 @@ def parse_variable(tokens, index, var_name, var_type):
                 if identifier_info["type"] != "forsencd":
                     raise SemanticError(f"Type Error: Cannot use taper function on '{identifier}'. Must be a forsencd type identifier.", line)
 
-                index += 3
+                index += 5
                 is_list = True
                 taper_node = TaperNode(identifier, line=line)
                 var_node.add_child(taper_node)
@@ -569,7 +569,6 @@ def parse_variable(tokens, index, var_name, var_type):
                 var_node.add_child(value_node)
    
         else:
-            print(f"????{tokens[index].value}")
             raise SemanticError(f"Semantic Error: Variable must be initialized. Missing '=' after '{var_name}'.", line)
 
         error = symbol_table.declare_variable(var_name, var_type, is_list = is_list)
@@ -700,12 +699,9 @@ def parse_statement(tokens, index, func_type = None):
     elif token.value == "lethimcook":
         node, index = parse_switch(tokens, index)
         return node, index
-    
-    else:
-        while tokens[index].type not in {"NL", "EOF", "COMMENT"}:
-            index += 1
 
-        return None, index
+    else:
+        raise SemanticError(f"Semantic Error: Unexpected token '{token.value}' in statement.", line)
 
 
 def parse_expression_type(tokens, index, var_type):
@@ -855,8 +851,8 @@ def parse_expression_forsencd(tokens, index):
 
     left_node = node
 
-    while index < len(tokens):
-        if tokens[index].type == "PLUS":
+    if tokens[index].type == "PLUS":
+        while tokens[index].type == "PLUS":
             op = tokens[index].value  
             index += 1 
 
@@ -921,14 +917,8 @@ def parse_expression_forsencd(tokens, index):
                 index += 1  
 
             left_node = BinaryOpNode(left_node, op, right_node, line=line)
-
-        elif tokens[index].type not in {"PLUS", "COMMA", "NL", "CLPAR", "CLBRA"}:
-            raise SemanticError(f"Semantic Error: Unexpected token '{tokens[index].value}' in forsencd expression.", line)
-
-        else:
-            break
-
-    return left_node, index 
+    else:
+        return left_node, index 
 
 
 def parse_expression(tokens, index):
@@ -951,6 +941,8 @@ def parse_term(tokens, index):
         op = tokens[index].value
         index += 1
         left_node, index = parse_unary(tokens, index)
+        if op in {"/", "%"} and isinstance(left_node, ASTNode) and int(left_node.value) == 0:
+            raise SemanticError(f"Semantic Error: Division or modulus by zero is undefined.", tokens[index].line)
         right_node = BinaryOpNode(left_node, op, right_node)
 
     return right_node, index
@@ -1049,6 +1041,30 @@ def parse_factor(tokens, index):
 
         struct_node = StructMemberAccessNode(struct_instance, member_name, expected_type, line=token.line)
         return struct_node, index
+
+    elif token.type == "IDENTIFIER" and tokens[index + 1].type == "OPBRA":
+        list_name = token.value
+        list_info = symbol_table.lookup_variable(list_name)
+
+        if isinstance(list_info, str):
+            raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", token.line)
+
+        if not list_info["is_list"]:
+            raise SemanticError(f"Type Error: '{list_name}' is not a list.", token.line)
+
+        index += 2
+        expr_node, index = parse_expression(tokens, index)
+
+        if tokens[index].type != "CLBRA":
+            raise SemanticError("Syntax Error: Missing closing bracket.", token.line)
+
+        index_node = ASTNode("Index", line=token.line)
+        index_node.add_child(expr_node)
+
+        index += 1
+        list_access_node = ListAccessNode(list_name, index_node, line=token.line)
+        return list_access_node, index
+        
 
     elif token.type in {"IDENTIFIER"}:
         variable_info = symbol_table.lookup_variable(token.value)
@@ -1228,57 +1244,35 @@ def parse_assignment(tokens, index, var_name, var_type):
     if global_var and global_var["is_sturdy"]:
         raise SemanticError(f"Semantic Error: Variable '{var_name}' is declared as sturdy.", line)
 
-    assign_nodes = []
-
-    while True:
-        
-        if tokens[index].type == "IS":
-            index += 1 
-
-            if tokens[index].type != "IDENTIFIER":
-                raise SemanticError(f"Syntax Error: Middle assignments must have an identifier on the right.", line)
-
-            next_var_name = tokens[index].value
-            index += 1 
-            assign_nodes.append((var_name, ASTNode("Variable", next_var_name, line=line)))
-            var_name = next_var_name  
-
+    if tokens[index].value == "chat":
+        index += 1
+        if tokens[index].type == "OPPAR":
+            index += 1
+            if tokens[index].type != "CLPAR":
+                raise SemanticError(f"Semantic Error: chat() should not have parameters.", line)
+            index += 1
+            value_node = ASTNode("Input", "chat()", line=line)
         else:
-            if tokens[index].value == "chat":
-                index += 1
-                if tokens[index].type == "OPPAR":
-                    index += 1
-                    if tokens[index].type != "CLPAR":
-                        raise SemanticError(f"Semantic Error: chat() should not have parameters.", line)
-                    index += 1
-                    value_node = ASTNode("Input", "chat()", line=line)
-                else:
-                    raise SemanticError(f"Syntax Error: Expected '()' after chat.", line)
+            raise SemanticError(f"Syntax Error: Expected '()' after chat.", line)
 
-            elif tokens[index].value == "append":
-                value_node, index = parse_append(tokens, index, var_name, var_type)
+    elif tokens[index].value == "append":
+        value_node, index = parse_append(tokens, index, var_name, var_type)
 
-            elif tokens[index].value == "insert":
-                value_node, index = parse_insert(tokens, index, var_name, var_type)
+    elif tokens[index].value == "insert":
+        value_node, index = parse_insert(tokens, index, var_name, var_type)
 
-            elif tokens[index].value == "remove":
-                value_node, index = parse_remove(tokens, index, var_name, var_type)
+    elif tokens[index].value == "remove":
+        value_node, index = parse_remove(tokens, index, var_name, var_type)
 
-            elif tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
-                value_node, index = parse_function_call(tokens, index, tokens[index].value, var_type, [])
+    elif tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
+        value_node, index = parse_function_call(tokens, index, tokens[index].value, var_type, [])
 
-            else:
-                value_node, index = parse_expression_type(tokens, index, var_type)
+    else:
+        value_node, index = parse_expression_type(tokens, index, var_type)
 
-            assign_nodes.append((var_name, value_node))
-            break  # Stop looping
+    assignment_node = AssignmentNode(var_name, value_node, line=line)
 
-    prev_node = None
-    for var, expr in reversed(assign_nodes):
-        prev_node = AssignmentNode(var, expr, line=line)
-        expr = prev_node  
-
-    return prev_node, index
+    return assignment_node, index
 
 
 def parse_function_call(tokens, index, func_name, func_type, func_params):
@@ -1547,7 +1541,6 @@ def parse_if(tokens, index):
             stmt, index = parse_statement(tokens, index)
             if stmt:
                 block_node.add_child(stmt)
-            index += 1
 
         if tokens[index].type != "CLCUR":
             raise SemanticError(f"Syntax Error: Expected '}}' after 'tuah' block.", line)
@@ -1588,8 +1581,7 @@ def parse_if(tokens, index):
                 stmt, index = parse_statement(tokens, index)
                 if stmt:
                     elseif_block_node.add_child(stmt)
-                index += 1
-
+    
             elseif_node.add_child(elseif_block_node)
             index += 1
 
@@ -1599,7 +1591,6 @@ def parse_if(tokens, index):
         else:
             raise SemanticError(f"Syntax Error: Expected '{{' after 'tuah' condition.", line)
 
-        index += 1
 
     if tokens[index].value == "hawk" and tokens[index + 1].value not in {"tuah", "{"}:
         raise SemanticError(f"Syntax Error: Unexpected token after 'hawk'", line)
@@ -1618,7 +1609,6 @@ def parse_if(tokens, index):
                 stmt, index = parse_statement(tokens, index)
                 if stmt:
                     else_block_node.add_child(stmt)
-                index += 1
 
         index += 1
         symbol_table.exit_scope()
@@ -1725,24 +1715,25 @@ def parse_for(tokens, index):
         block_node = ASTNode("Block", line=line)
 
         while tokens[index].type != "CLCUR":
-
+            print(tokens[index].value)
             if tokens[index].value == "pause":
                 index += 1
                 cont_node = ContinueNode(line)
                 block_node.add_child(cont_node)
 
             elif tokens[index].value == "getout":
-                index += 1
+                index +=1
                 break_node = BreakNode(line)
                 block_node.add_child(break_node)
 
-            stmt, index = parse_statement(tokens, index)
-            if stmt:
-                block_node.add_child(stmt)
-            
-            index += 1
+            else:
+                stmt, index = parse_statement(tokens, index)
+                if stmt:
+                    block_node.add_child(stmt)
 
         index += 1
+        
+
         symbol_table.exit_scope()
 
         for_node.add_child(block_node)
@@ -1787,7 +1778,7 @@ def parse_update(tokens, index):
 def parse_while(tokens, index):
     line = tokens[index].line
     index += 1
-
+    
     if tokens[index].type != "OPPAR":
         raise SemanticError(f"Syntax Error: Expected '(' after 'while'.", line)
     index += 1
@@ -1797,6 +1788,7 @@ def parse_while(tokens, index):
 
     if tokens[index].type != "CLPAR":
         raise SemanticError(f"Syntax Error: Expected ')' after 'while' condition.", line)
+    
     index += 1
 
     symbol_table.enter_scope()
@@ -1822,11 +1814,10 @@ def parse_while(tokens, index):
                 break_node = BreakNode(line)
                 block_node.add_child(break_node)
 
-            stmt, index = parse_statement(tokens, index)
-            if stmt:
-                block_node.add_child(stmt)
-
-            index += 1
+            else:
+                stmt, index = parse_statement(tokens, index)
+                if stmt:
+                    block_node.add_child(stmt)
 
         index += 1
         symbol_table.exit_scope()
@@ -1867,7 +1858,6 @@ def parse_do(tokens, index):
         if stmt:
             block_node.add_child(stmt)
         
-        index += 1
         
         
 
@@ -1946,7 +1936,7 @@ def parse_switch(tokens, index):
             stmt, index = parse_statement(tokens, index)
             if stmt:
                 case_block.add_child(stmt)
-            index += 1
+            
 
         index += 1
 
@@ -1979,13 +1969,11 @@ def parse_switch(tokens, index):
             stmt, index = parse_statement(tokens, index)
             if stmt:
                 default_block.add_child(stmt)
-            index += 1
+            
 
         if tokens[index].value == "getout":
             index += 1
             
-        while tokens[index].type == "NL":
-            index += 1
 
         default_case = ASTNode("DefaultCase", line=line)
         default_case.add_child(default_block)
@@ -2161,12 +2149,6 @@ def parse_struct(tokens, index):
             member_node.add_child(ASTNode("DefaultValue", default_value, line=line))
 
         members.append(member_node)
-
-        
-        if tokens[index].type == "NL":
-            index += 1
-        else:
-            raise SemanticError(f"Syntax Error: Expected newline after struct member '{member_name}'.", line)
 
     index += 1  # Move past `}`
 

@@ -49,7 +49,7 @@ def parse():
 
 @app.route('/api/semantic', methods=['POST'])
 def semantic_analysis():
-    print("\n🚀 DEBUG: semantic_analysis() called!\n")  # ✅ Confirms request is called once
+    print("\nDEBUG: semantic_analysis() called!\n")
 
     data = request.json
     source_code = data.get('source_code', '')
@@ -62,13 +62,14 @@ def semantic_analysis():
         return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
     parser = LL1Parser(cfg, predict_sets)
-    success, ast_root = parser.parse(tokens)
+    success, parse_errors = parser.parse(tokens)
 
     if not success:
         return jsonify({'success': False, 'errors': ['Syntax errors found']})
 
     try:
-        ast_root = build_ast(tokens)  
+        semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"NL", "\n"}]
+        ast_root = build_ast(semantic_tokens)
         ast_root.print_tree()
         semantic_analyzer = SemanticAnalyzer(symbol_table)  
         semantic_analyzer.analyze(ast_root)  

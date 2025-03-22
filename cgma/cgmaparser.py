@@ -51,34 +51,34 @@ class LL1Parser:
             elif token_value in self.parsing_table.get(top, {}):
                 token_type = token_value 
 
-            print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
+            #print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
 
             if top == token_type or top == token_value:
-                print(f"Matched: {top}")
+                #print(f"Matched: {top}")
                 index += 1  
             elif top in self.parsing_table:
                 if token_type in self.parsing_table[top]:
                     production = self.parsing_table[top][token_type]
-                    print(f"Expand: {top} → {' '.join(production)}")
+                    #print(f"Expand: {top} → {' '.join(production)}")
                     if production != ['ε']:
                         self.stack.extend(reversed(production))
-                    print(f"Updated Stack: {self.stack}")
+                    #print(f"Updated Stack: {self.stack}")
                 else:
-                    expected_tokens = list(self.parsing_table[top].keys())
+                    expected_tokens = list(set(self.parsing_table[top].keys()) - {'$', 'ε'})
                     error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected one of: {expected_tokens}"
-                    print(error_message)
+                    #print(error_message)
                     error_messages.append(error_message)
                     return False, error_messages
             else:
                 error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: '{top}'"
-                print(error_message)
+                #print(error_message)
                 error_messages.append(error_message)
                 return False, error_messages
 
         if token_type == 'EOF' and not self.stack:
-            print("\nSyntax analysis successful!")
+            #print("\nSyntax analysis successful!")
             return True, []
         else:
-            print("Error: Tokens remaining after parsing")
+            #print("Error: Tokens remaining after parsing")
             return False, ["Error: Tokens remaining after parsing"]
