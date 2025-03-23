@@ -620,6 +620,23 @@ def parse_statement(tokens, index, func_type = None):
         return node, index
 
     elif token.type == "IDENTIFIER":
+        var_info = symbol_table.lookup_variable(token.value)
+        if isinstance(var_info, str):
+            raise SemanticError(var_info, line)
+        
+        var_name = token.value
+        var_type = var_info["type"]
+        is_list = var_info.get("is_list", False)
+
+        if is_list:
+            if tokens[index + 1].type == "OPBRA":
+                node, index = parse_list_access(tokens, index)
+            elif tokens[index + 1].type == "IS":
+                node, index = parse_list_assignment(tokens, index)
+                return node, index
+            else:
+                raise SemanticError(f"Syntax Error: Expected '[' or '=' after list '{var_name}'.", line)
+
         if tokens[index + 1].type == "OPPAR":
             func_name = token.value
             error = symbol_table.lookup_function(func_name)
@@ -715,6 +732,87 @@ def parse_statement(tokens, index, func_type = None):
 
     else:
         raise SemanticError(f"Semantic Error: Unexpected token '{token.value}' in statement.", line)
+
+
+def parse_list_access(tokens, index):
+    line = tokens[index].line
+    list_name = tokens[index].value
+
+    list_info = symbol_table.lookup_variable(list_name)
+    if isinstance(list_info, str):
+        raise SemanticError(list_info, line)
+    
+    if not list_info.get("is_list", False):
+        raise SemanticError(f"Type Error: Variable '{list_name}' is not a list.", line)
+    
+    list_type = list_info["type"]
+    index += 2 
+
+    index_node, index = parse_expression(tokens, index)
+
+    if tokens[index].type != "CLBRA":
+        raise SemanticError(f"Syntax Error: Expected ']' after list index.", line)
+    
+    return ListAccessNode(list_name, index_node, line=line), index
+
+
+def parse_list_assignment(tokens, index):
+    """Parses full list assignment, list operations, or function calls on a list."""
+    line = tokens[index].line
+    var_name = tokens[index].value
+
+    var_info = symbol_table.lookup_variable(var_name)
+    if isinstance(var_info, str):
+        raise SemanticError(var_info, line)
+    
+    if not var_info.get("is_list", False):
+        raise SemanticError(f"Type Error: '{var_name}' is not a list.", line)
+    
+    var_type = var_info["type"] 
+
+    index += 2
+
+    if var_info.get("is_sturdy", False):
+        raise SemanticError(f"Semantic Error: Variable '{var_name}' is declared as sturdy.", line)
+
+    # List functions
+    if tokens[index].value == "append":
+        value_node, index = parse_append(tokens, index, var_name, var_type)
+
+    elif tokens[index].value == "insert":
+        value_node, index = parse_insert(tokens, index, var_name, var_type)
+
+    elif tokens[index].value == "remove":
+        value_node, index = parse_remove(tokens, index, var_name, var_type)
+
+    # Assignment from another list
+    elif tokens[index].type == "IDENTIFIER":
+        source_var = tokens[index].value
+        source_info = symbol_table.lookup_variable(source_var)
+        if isinstance(source_info, str):
+            raise SemanticError(f"Semantic Error: Variable '{source_var}' used before declaration.", line)
+        
+        if not source_info.get("is_list", False):
+            raise SemanticError(f"Type Error: Cannot assign non-list '{source_var}' to list '{var_name}'.", line)
+
+        source_type = source_info["type"]
+        if var_type != source_type:
+            if not (var_type in {"chungus", "chudeluxe"} and source_type in {"chungus", "chudeluxe"}):
+                raise SemanticError(
+                    f"Type Error: Cannot assign list of '{source_type}' to list of '{var_type}'.", line
+                )
+
+        value_node = ASTNode("Identifier", source_var, line=line)
+        index += 1
+
+    # Assignment from list literal
+    elif tokens[index].type == "OPBRA":
+        value_node, index = parse_list(tokens, index, var_type)
+
+    else:
+        raise SemanticError(f"Syntax Error: Invalid list assignment or operation.", line)
+
+    return AssignmentNode(var_name, value_node, line=line), index
 
 
 def parse_expression_type(tokens, index, var_type):
@@ -1379,15 +1477,6 @@ def parse_assignment(tokens, index, var_name, var_type):
             value_node = ASTNode("Input", "chat()", line=line)
         else:
             raise SemanticError(f"Syntax Error: Expected '()' after chat.", line)
-
-    elif tokens[index].value == "append":
-        value_node, index = parse_append(tokens, index, var_name, var_type)
-
-    elif tokens[index].value == "insert":
-        value_node, index = parse_insert(tokens, index, var_name, var_type)
-
-    elif tokens[index].value == "remove":
-        value_node, index = parse_remove(tokens, index, var_name, var_type)
 
     elif tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
         value_node, index = parse_function_call(tokens, index, tokens[index].value, var_type, [])
