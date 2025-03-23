@@ -176,6 +176,7 @@ class BreakNode(ASTNode):
 class ListNode(ASTNode):
     def __init__(self, line=None, elements = None):
         super().__init__("List", line=line)
+        self.elements = elements
         for element in elements:
             self.add_child(element)
 
@@ -229,10 +230,10 @@ class StructInstanceNode(ASTNode):
 
         if initial_values:
             init_node = ASTNode("InitialValues", line=line)
-            for key, value in initial_values.items():
+            for member_name, value_node in initial_values.items():
                 assign_node = ASTNode("Assignment", line=line)
-                assign_node.add_child(ASTNode("Member", key, line=line))
-                assign_node.add_child(ASTNode("Value", value, line=line))
+                assign_node.add_child(ASTNode("Member", member_name, line=line))
+                assign_node.add_child(value_node)
                 init_node.add_child(assign_node)
             self.add_child(init_node)
 
@@ -241,11 +242,8 @@ class StructMemberAssignmentNode(ASTNode):
         super().__init__("StructMemberAssignment", line=line)
         self.add_child(ASTNode("StructInstance", struct_instance, line=line))
         self.add_child(ASTNode("Member", member_name, line=line))
+        self.add_child(value_node)
 
-        if isinstance(value_node, ASTNode) and value_node.node_type in {"Value", "BinaryOp"}:
-            self.add_child(value_node)
-            
-            self.add_child(ASTNode("Value", value_node, line=line))
 
 class StructMemberAccessNode(ASTNode):
     def __init__(self, struct_instance, member_name, member_type, line=None):
@@ -259,8 +257,6 @@ class ListAccessNode(ASTNode):
         super().__init__("ListAccess", line=line)
         self.add_child(ASTNode("ListName", list_name, line=line))
         self.add_child(index_expr)
-
-
 
 
 ###### SYMBOL TABLE ######
@@ -312,6 +308,20 @@ class SymbolTable:
             return self.variables[name]
 
         return f"Semantic Error: Variable '{name}' used before declaration."
+    
+    def update_struct_member(self, struct_instance, member_name, value):
+        variable_info = self.lookup_variable(struct_instance)
+        if isinstance(variable_info, str):
+            raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' not found.")
+        
+        struct_type = variable_info['type']
+        struct_info = self.lookup_struct(struct_type)
+        
+        if member_name not in struct_info:
+            raise SemanticError(f"Semantic Error: Struct '{struct_type}' has no member '{member_name}'.")
+        
+        struct_info[member_name]['default'] = value
+
 
 
     ###### FUNCTION ######
@@ -330,19 +340,14 @@ class SymbolTable:
         for scope in self.structs:
             if name in scope:
                 return f"Semantic Error: Struct '{name}' is already declared."
-        self.structs[-1][name] = {
-            member.value.split()[1]: {  
-                "type": member.value.split()[0],
-                "default": member.children[0].value if member.children else None
-            } for member in members
-        }
-
+        self.structs[-1][name] = members
 
     def lookup_struct(self, name):
         for scope in reversed(self.structs):
             if name in scope:
                 return scope[name]
-        return f"Semantic Error: Struct '{name}' is not defined."
+        return None  # Return None instead of an error string
+
 
     ###### SCOPE ######
     def enter_scope(self):
@@ -637,6 +642,9 @@ def parse_statement(tokens, index, func_type = None):
             return node, index    
         
         elif tokens[index+1].type in {"INC", "DEC"}:
+            var_info = symbol_table.lookup_variable(token.value)
+            if var_info["type"] not in {"chungus", "chudeluxe"}:
+                raise SemanticError(f"Type Error: Cannot use '{token.value}' of type {var_info['type']} in expression.", line)
             operand = ASTNode("Identifier", token.value, line=line)
             operator = tokens[index + 1].value
             index += 2
@@ -655,6 +663,8 @@ def parse_statement(tokens, index, func_type = None):
 
         if tokens[index].type == "IDENTIFIER":
             var_name = symbol_table.lookup_variable(tokens[index].value)
+            if var_name["type"] not in {"chungus", "chudeluxe"}:
+                raise SemanticError(f"Type Error: Cannot use '{tokens[index].value}' of type {var_name['type']} in expression.", line)
             if isinstance(var_name, str):
                 raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
             
@@ -662,6 +672,9 @@ def parse_statement(tokens, index, func_type = None):
             index += 1
 
             return UpdateNode(operator, operand, prefix = True, line=line), index
+        
+        else:
+            raise SemanticError(f"Syntax Error: Expected identifier after '{operator}'.", line)
     
     elif token.value == "aura" and tokens[index + 1].type == "IDENTIFIER" and tokens[index + 2].type == "IDENTIFIER":
         node, index = parse_struct_instance(tokens, index)
@@ -724,6 +737,7 @@ def parse_expression_type(tokens, index, var_type):
 
 def parse_expression_forsen(tokens, index):
     line = tokens[index].line
+    token = tokens[index]
     if tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
         func_name = tokens[index].value
         func_info = symbol_table.lookup_function(func_name)
@@ -764,6 +778,12 @@ def parse_expression_forsen(tokens, index):
     
     elif tokens[index].type == "IDENTIFIER":
         variable_info = symbol_table.lookup_variable(tokens[index].value)
+
+        is_list = variable_info.get("is_list", False)
+
+        if is_list and tokens[index + 1].type != "OPBRA":
+            raise SemanticError(f"Type Error: List '{token.value}' must be indexed with '[]' in expressions.", line)
+
         if isinstance(variable_info, str):
             error = f"Semantic Error: Variable '{tokens[index].value}' used before declaration."
             raise SemanticError(error, line)
@@ -787,6 +807,7 @@ def parse_expression_forsen(tokens, index):
 
 def parse_expression_forsencd(tokens, index):
     line = tokens[index].line  
+    token = tokens[index]
 
     if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER"}:
         raise SemanticError(f"Type Error: forsencd can only be assigned a FORSENCD_LIT or an identifier of type forsen/forsencd.", line)
@@ -835,7 +856,9 @@ def parse_expression_forsencd(tokens, index):
     elif tokens[index].type == "IDENTIFIER":
         var_name = tokens[index].value
         var_info = symbol_table.lookup_variable(var_name)
-
+        is_list = var_info.get("is_list", False)
+        if is_list and tokens[index + 1].type != "OPBRA":
+            raise SemanticError(f"Type Error: List '{tokens[index].value}' must be indexed with '[]' in expressions.", line)
         if isinstance(var_info, str):  # Variable not found
             raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
 
@@ -903,6 +926,11 @@ def parse_expression_forsencd(tokens, index):
                 var_name = tokens[index].value
                 var_info = symbol_table.lookup_variable(var_name)
 
+                is_list = var_info.get("is_list", False)
+
+                if is_list and tokens[index + 1].type != "OPBRA":
+                    raise SemanticError(f"Type Error: List '{token.value}' must be indexed with '[]' in expressions.", line)
+
                 if isinstance(var_info, str):  # Variable not found
                     raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
 
@@ -917,35 +945,35 @@ def parse_expression_forsencd(tokens, index):
                 index += 1  
 
             left_node = BinaryOpNode(left_node, op, right_node, line=line)
-    else:
-        return left_node, index 
+    
+    return left_node, index 
 
 
 def parse_expression(tokens, index):
     """Parses an expression with right-to-left associativity for + and -."""
-    right_node, index = parse_term(tokens, index)
+    left_node, index = parse_term(tokens, index)
 
     if tokens[index].type in {"PLUS", "MINUS"}:
         op = tokens[index].value
         index += 1
-        left_node, index = parse_term(tokens, index)
-        right_node = BinaryOpNode(left_node, op, right_node)
+        right_node, index = parse_term(tokens, index)
+        left_node = BinaryOpNode(left_node, op, right_node)
 
-    return right_node, index
+    return left_node, index
 
 def parse_term(tokens, index):
     """Parses multiplication, division, and modulus with right-to-left associativity."""
-    right_node, index = parse_unary(tokens, index)
+    left_node, index = parse_unary(tokens, index)
 
     while tokens[index].type in {"MUL", "DIV", "MOD"}:
         op = tokens[index].value
         index += 1
-        left_node, index = parse_unary(tokens, index)
-        if op in {"/", "%"} and isinstance(left_node, ASTNode) and int(left_node.value) == 0:
+        right_node, index = parse_unary(tokens, index)
+        if op in {"/", "%"} and isinstance(right_node, ASTNode) and int(right_node.value) == 0:
             raise SemanticError(f"Semantic Error: Division or modulus by zero is undefined.", tokens[index].line)
-        right_node = BinaryOpNode(left_node, op, right_node)
+        left_node = BinaryOpNode(left_node, op, right_node)
 
-    return right_node, index
+    return left_node, index
 
 def parse_unary(tokens, index):
     """Parses unary operators (++x, --x, !x, -x) with right-to-left associativity."""
@@ -957,33 +985,43 @@ def parse_unary(tokens, index):
 
     return parse_factor(tokens, index)
 
-def parse_factor(tokens, index):
-    """Parses literals, identifiers, parenthesized expressions, and postfix operators."""
+def parse_cast(tokens, index):
+    """Parses explicit type casting for the entire expression inside (type)."""
     token = tokens[index]
-    if (tokens[index-1].type not in {"IDENTIFIER", "CHU_LIT", "CHUDEL_LIT", "PLUS", "MINUS", "MUL", "DIV", "MOD"} and
-        token.type == "OPPAR" and
-        tokens[index + 1].value in {"chungus", "chudeluxe"} and
-        tokens[index + 2].type == "CLPAR"
+
+    if (
+        token.type == "OPPAR" 
+        and tokens[index + 1].value in {"chungus", "chudeluxe"}
+        and tokens[index + 2].type == "CLPAR"
     ):
-        target_type = tokens[index + 1].value 
+        target_type = tokens[index + 1].value
         index += 3
-        expr_node, index = parse_factor(tokens, index)
+
+        expr_node, index = parse_expression(tokens, index)
 
         cast_node = CastNode(target_type, expr_node, line=token.line)
         return cast_node, index
-    
-    elif token.type in {"CHU_LIT", "CHUDEL_LIT"}:
-        node = ASTNode("Value", token.value)
+
+    return parse_factor(tokens, index)
+
+
+def parse_factor(tokens, index):
+    """Parses literals, identifiers, parenthesized expressions, and postfix operators."""
+    token = tokens[index]
+
+    if token.type == "OPPAR":
         index += 1  
-
-        if tokens[index].type in {"INC", "DEC"}:
-            op = tokens[index].value
-            index += 1
-            node = UnaryOpNode(op, node)
-
+        node, index = parse_expression(tokens, index)  
+        if tokens[index].type == "CLPAR":
+            index += 1  
+        return node, index  
+    
+    if token.type in {"CHU_LIT", "CHUDEL_LIT"}:
+        node = ASTNode("Value", token.value)
+        index += 1
         return node, index
     
-    elif token.type in {"IDENTIFIER"} and tokens[index + 1].type == "OPPAR":
+    if token.type in {"IDENTIFIER"} and tokens[index + 1].type == "OPPAR":
         func_name = token.value
         func_info = symbol_table.lookup_function(func_name)
         func_return_type = func_info["return_type"]
@@ -1068,6 +1106,11 @@ def parse_factor(tokens, index):
 
     elif token.type in {"IDENTIFIER"}:
         variable_info = symbol_table.lookup_variable(token.value)
+
+        is_list = variable_info.get("is_list", False)
+        if is_list and tokens[index + 1].type != "OPBRA":
+            raise SemanticError(f"Type Error: List '{token.value}' must be indexed with '[]' in expressions.", token.line)
+        
         if isinstance(variable_info, str):
             raise SemanticError(f"Semantic Error: Variable '{token.value}' used before declaration.", token.line)
         
@@ -1085,92 +1128,228 @@ def parse_factor(tokens, index):
 
         return node, index
 
-    elif token.type == "OPPAR":
-        index += 1  
-        node, index = parse_expression(tokens, index)  
-        if tokens[index].type == "CLPAR":
-            index += 1  
-        return node, index  
 
     else:
         error = f"Semantic Error: Invalid factor '{token.value}' in expression."
         raise SemanticError(error, token.line)
 
+
 def parse_expression_lwk(tokens, index):
+    """Parses logical expressions with AND/OR operators for lwk type."""
     line = tokens[index].line
-    
-    left_node, index = parse_relational(tokens, index)
+    left_node, index, left_type = parse_equality(tokens, index)
 
     while tokens[index].type in {"AND", "OR"}:
         operator = tokens[index].value
-        index += 1 
-        right_node, index = parse_relational(tokens, index)  # Parse the right-hand side
-        left_node = BinaryOpNode(left_node, operator, right_node, line=line)  # Build AST node
-    
+        index += 1
+        right_node, index, right_type = parse_equality(tokens, index)
+        
+        if left_type != "lwk" or right_type != "lwk":
+            raise SemanticError(f"Type Error: Logical operators only apply to 'lwk' type.", line)
+
+        left_node = BinaryOpNode(left_node, operator, right_node, line=line)
+        left_type = "lwk"
+
     return left_node, index
 
-def parse_relational(tokens, index):
+
+def parse_equality(tokens, index):
+    """Parses equality expressions with == or !=."""
     line = tokens[index].line
-    token = tokens[index]
+    left_node, index, left_type = parse_relational(tokens, index)
 
-    if tokens[index].type == "NOT": 
-        index += 1  
-        operand_node, index, operand_type = parse_operand(tokens, index)
+    while tokens[index].type in {"EQ", "NEQ"}:
+        operator = tokens[index].type
+        index += 1
+        right_node, index, right_type = parse_relational(tokens, index)
 
+        if left_type != right_type:
+            raise SemanticError(f"Type Error: Cannot compare '{left_type}' with '{right_type}'.", line)
+
+        left_node = BinaryOpNode(left_node, operator, right_node, line=line)
+        left_type = "lwk"
+
+    return left_node, index, left_type
+
+
+def parse_relational(tokens, index):
+    """Parses relational expressions with <, >, <=, >= or NOT unary operator."""
+    line = tokens[index].line
+
+    if tokens[index].type == "NOT":
+        index += 1
+        operand_node, index, operand_type = parse_relational(tokens, index)
+        
         if operand_type != "lwk":
-            raise SemanticError(f"Type Error: Cannot apply '!' to type '{operand_type}'.", line)
+            raise SemanticError(f"Type Error: NOT operator can only apply to 'lwk' type.", line)
 
-        return UnaryOpNode("NOT", operand_node), index
+        return UnaryOpNode("NOT", operand_node, line=line), index, "lwk"
+
     left_node, index, left_type = parse_operand(tokens, index)
 
-    if left_type == "lwk" and tokens[index].type not in {"EQ", "NEQ"}:
-        return left_node, index
+    if tokens[index].type in {"LT", "LTE", "GT", "GTE"}:
+        if left_type not in {"chungus", "chudeluxe"}:
+            raise SemanticError(f"Type Error: Relational operators only apply to arithmetic types.", line)
+        
+        operator = tokens[index].type
+        index += 1
+        right_node, index, right_type = parse_operand(tokens, index)
 
-    if tokens[index].type not in {"LTE", "GTE", "LT", "GT", "EQ", "NEQ"}:
-        error = f"Semantic Error: Expected relational operator after {left_node.value}."
-        raise SemanticError(error, line)
-
-    operator = tokens[index].type
-    index += 1  
-
-    right_node, index, right_type = parse_operand(tokens, index)
-
-    if tokens[index].type in {"LTE", "GTE", "LT", "GT", "EQ", "NEQ"}:
-        error = f"Semantic Error: Cannot chain multiple relational operators."
-        raise SemanticError(error, line)
-
-   
-    if left_type in {"chungus", "chudeluxe"}:
         if right_type not in {"chungus", "chudeluxe"}:
-            raise SemanticError(f"Type Error: Cannot compare '{left_type}' with '{right_type}'.", line)
-        if operator not in {"LTE", "GTE", "LT", "GT", "EQ", "NEQ"}:
-            raise SemanticError(f"Semantic Error: Invalid operator '{operator}' for {left_type}.", line)
+            raise SemanticError(f"Type Error: Relational operators only apply to arithmetic types.", line)
 
-    elif left_type == "forsen":
-        if right_type != "forsen":
-            raise SemanticError(f"Type Error: Cannot compare '{left_type}' with '{right_type}'.", line)
-        if operator not in {"EQ", "NEQ"}:
-            raise SemanticError(f"Semantic Error: Invalid operator '{operator}' for forsen type.", line)
+        left_node = BinaryOpNode(left_node, operator, right_node, line=line)
+        return left_node, index, "lwk"
 
-    elif left_type == "forsencd":
-        if right_type != "forsencd":
-            raise SemanticError(f"Type Error: Cannot compare '{left_type}' with '{right_type}'.", line)
-        if operator not in {"EQ", "NEQ"}:
-            raise SemanticError(f"Semantic Error: Invalid operator '{operator}' for forsencd type.", line)
+    return left_node, index, left_type
 
-    elif left_type == "lwk":
-        if right_type != "lwk":
-            raise SemanticError(f"Type Error: Cannot compare '{left_type}' with '{right_type}'.", line)
-        if operator not in {"EQ", "NEQ"}:
-            raise SemanticError(f"Semantic Error: Invalid operator '{operator}' for lwk type.", line)
 
-    else:
-        raise SemanticError(f"Type Error: Unsupported type '{left_type}' in relational expression.", line)
+def parse_operand(tokens, index):
+    """Determines the parsing function based on the operand type."""
+    token = tokens[index]
+    line = token.line
 
-    return BinaryOpNode(left_node, operator, right_node, line=line), index
+    # Handle parentheses
+    if token.type == "OPPAR":
+        index += 1
+        expr_node, index = parse_expression_lwk(tokens, index)
+        if tokens[index].type != "CLPAR":
+            raise SemanticError(f"Syntax Error: Expected ')' to close expression.", line)
+        index += 1
+        return expr_node, index, "lwk"
+
+    # Chungus or Chudeluxe (arithmetic types)
+    if token.type in {"CHU_LIT", "CHUDEL_LIT"}:
+        expr_node, index = parse_expression(tokens, index)
+        return expr_node, index, infer_literal_type(token.type)
+
+    # Forsencd (String concatenation or manipulation)
+    if token.type == "FORSENCD_LIT":
+        expr_node, index = parse_expression_forsencd(tokens, index)
+        return expr_node, index, infer_literal_type(token.type)
+
+    # Forsen (String literal)
+    if token.type == "FORSEN_LIT":
+        return ASTNode("Value", token.value, line=line), index + 1, "forsen"
+
+    # Lwk (Boolean literal)
+    if token.type == "LWK_LIT":
+        return ASTNode("Value", token.value, line=line), index + 1, "lwk"
+
+    if token.type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
+        func_name = tokens[index].value
+        func_info = symbol_table.lookup_function(func_name)
+
+        if isinstance(func_info, str):
+            raise SemanticError(f"Semantic Error: Function '{func_name}' is not declared.", line)
+        
+        func_return_type = func_info["return_type"]
+        func_params = func_info["params"]
+
+        func_node, index = parse_function_call(tokens, index, func_name, func_return_type, func_params)
+        return func_node, index, func_return_type
+    
+    if token.type == "IDENTIFIER" and tokens[index + 1].type == "OPBRA":
+        list_name = token.value
+        list_info = symbol_table.lookup_variable(list_name)
+
+        if isinstance(list_info, str):
+            raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", token.line)
+
+        if not list_info["is_list"]:
+            raise SemanticError(f"Type Error: '{list_name}' is not a list.", token.line)
+
+        index += 2
+        expr_node, index = parse_expression(tokens, index)
+
+        if tokens[index].type != "CLBRA":
+            raise SemanticError("Syntax Error: Missing closing bracket.", token.line)
+
+        index_node = ASTNode("Index", line=token.line)
+        index_node.add_child(expr_node)
+
+        index += 1
+        list_access_node = ListAccessNode(list_name, index_node, line=token.line)
+        return list_access_node, index, list_info["type"]
+
+    if token.type == "IDENTIFIER" and tokens[index + 1].type == "DOT":
+        struct_instance = tokens[index].value 
+        index += 2 
+
+        if tokens[index].type != "IDENTIFIER":
+            raise SemanticError(f"Syntax Error: Expected member name after '.'.", line)
+
+        member_name = tokens[index].value  
+        index += 1
+
+        instance_info = symbol_table.lookup_variable(struct_instance)
+        if isinstance(instance_info, str):
+            raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", line)
+
+        struct_name = instance_info["type"]
+        struct_info = symbol_table.lookup_struct(struct_name)
+
+        if isinstance(struct_info, str):
+            raise SemanticError(struct_info, line)
+
+        if member_name not in struct_info:
+            raise SemanticError(f"Semantic Error: Struct '{struct_name}' has no member '{member_name}'.", line)
+
+        member_type = struct_info[member_name]["type"]
+
+        struct_node = StructMemberAccessNode(struct_instance, member_name, member_type, line=line)
+        return struct_node, index, member_type
+
+    # Chungus or Chudeluxe (arithmetic types)
+    if token.type in {"CHU_LIT", "CHUDEL_LIT"}:
+        expr_node, index = parse_expression(tokens, index)
+        return expr_node, index, infer_literal_type(token.type)
+
+    # Forsencd (String concatenation or manipulation)
+    if token.type == "FORSENCD_LIT":
+        expr_node, index = parse_expression_forsencd(tokens, index)
+        return expr_node, index, infer_literal_type(token.type)
+
+    # Forsen (String literal)
+    if token.type == "FORSEN_LIT":
+        return ASTNode("Value", token.value, line=line), index + 1, "forsen"
+
+    # Lwk (Boolean literal)
+    if token.type == "LWK_LIT":
+        return ASTNode("Value", token.value, line=line), index + 1, "lwk"
+
+    # Identifiers (Variables)
+    if token.type == "IDENTIFIER":
+        var_info = symbol_table.lookup_variable(token.value)
+        if isinstance(var_info, str):
+            raise SemanticError(f"Semantic Error: Variable '{token.value}' used before declaration.", line)
+        
+        var_type = var_info["type"]
+        is_list = var_info.get("is_list", False)
+
+        if is_list and tokens[index + 1].type != "OPBRA":
+            raise SemanticError(f"Type Error: List '{token.value}' must be indexed with '[]' in expressions.", line)
+    
+        # Dispatch to specific parsers based on type
+        if var_type in {"chungus", "chudeluxe"}:
+            expr_node, index = parse_expression(tokens, index)
+            return expr_node, index, var_type
+
+        elif var_type == "forsencd":
+            expr_node, index = parse_expression_forsencd(tokens, index)
+            return expr_node, index, var_type
+
+        elif var_type in {"forsen", "lwk"}:
+            return ASTNode("Value", token.value, line=line), index + 1, var_type
+
+        else:
+            raise SemanticError(f"Type Error: Unsupported type '{var_type}'.", line)
+
+    raise SemanticError(f"Type Error: Expected valid operand, got '{token.value}'.", line)
 
 
 def infer_literal_type(token_type):
+    """Returns the type string for a given literal token type."""
     if token_type == "CHU_LIT":
         return "chungus"
     if token_type == "CHUDEL_LIT":
@@ -1182,60 +1361,6 @@ def infer_literal_type(token_type):
     if token_type == "LWK_LIT":
         return "lwk"
     return None
-
-
-def parse_operand(tokens, index):
-    token = tokens[index]
-    line = token.line
-
-    if token.type in {"CHU_LIT", "CHUDEL_LIT", "FORSEN_LIT", "FORSENCD_LIT", "LWK_LIT"}:
-        return ASTNode("Value", token.value, line=line), index + 1, infer_literal_type(token.type)
-
-    
-
-    if token.type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
-        func_info = symbol_table.lookup_function(token.value)
-        if isinstance(func_info, str):
-            raise SemanticError(f"Semantic Error: Function '{token.value}' used before declaration.", line)
-        func_return_type = func_info["return_type"]
-        func_params = func_info["params"]
-
-        func_node, index = parse_function_call(tokens, index, token.value, func_return_type, func_params)
-        return func_node, index, func_return_type
-
-    if (
-        token.type == "IDENTIFIER"
-        and tokens[index + 1].type == "DOT"
-        and tokens[index + 2].type == "IDENTIFIER"
-    ):
-        struct_instance = token.value
-        member_name = tokens[index + 2].value
-        index += 3  
-
-        instance_info = symbol_table.lookup_variable(struct_instance)
-        if isinstance(instance_info, str):
-            raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", line)
-
-        struct_name = instance_info["type"]
-        struct_info = symbol_table.lookup_struct(struct_name)
-
-        if member_name not in struct_info:
-            raise SemanticError(f"Semantic Error: Struct '{struct_name}' has no member '{member_name}'.", line)
-
-        expected_type = struct_info[member_name]["type"]
-
-        struct_node = StructMemberAccessNode(struct_instance, member_name, expected_type, line=line)
-        return struct_node, index, expected_type
-
-    if token.type == "IDENTIFIER":
-        variable_info = symbol_table.lookup_variable(token.value)
-        if isinstance(variable_info, str):
-            raise SemanticError(f"Semantic Error: Variable '{token.value}' used before declaration.", line)
-        var_type = variable_info["type"]
-        return ASTNode("Variable", token.value, line=line), index + 1, var_type
-
-    raise SemanticError(f"Type Error: Expected valid operand, got '{token.value}'.", line)
-
 
 def parse_assignment(tokens, index, var_name, var_type):
     line = tokens[index].line
@@ -1321,24 +1446,6 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
     return FunctionCallNode(func_name, args_node.children, line=line), index
 
 
-def parse_argument(tokens, index):
-    line = tokens[index].line
-
-    if tokens[index].type == "IDENTIFIER":
-        arg_name = tokens[index].value
-        arg_info = symbol_table.lookup_variable(arg_name)
-        if isinstance(arg_info, str):
-            raise SemanticError(f"Semantic Error: Variable '{arg_name}' used before declaration.", line)
-        
-        arg_type = arg_info["type"]
-        arg_node = ASTNode("Value", arg_name, line=line)
-        index += 1
-
-    else:
-        raise SemanticError(f"Semantic Error: Invalid argument in function call.", line)
-
-    return arg_node, arg_type, index
-    
 def parse_print(tokens, index):
     line = tokens[index].line
     index += 1
@@ -1443,7 +1550,7 @@ def parse_string_concatenation(tokens, index):
 
     while index < len(tokens) and tokens[index].type == "PLUS":
         index += 1
-        if tokens[index].type != "FORSENCD_LIT":
+        if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER"}:
             raise SemanticError(f"Semantic Error: Only string literals can be concatenated in yap().", line)
 
         format_string = tokens[index].value
@@ -2103,7 +2210,6 @@ def parse_remove(tokens, index, var_name, expected_type):
     index += 1
 
     return RemoveNode(var_name, value, line=line), index
-
 def parse_struct(tokens, index):
     line = tokens[index].line
     index += 1 
@@ -2114,15 +2220,14 @@ def parse_struct(tokens, index):
     struct_name = tokens[index].value
     index += 1
 
-    if tokens[index].type != "OPCUR":  # Expect `{`
+    if tokens[index].type != "OPCUR":
         raise SemanticError(f"Syntax Error: Expected '{{' to start struct body.", line)
     index += 1
 
-    while tokens[index].type == "NL":
-        index += 1
+    member_nodes = []
+    struct_members = {}
 
-    members = []
-    while tokens[index].type != "CLCUR":  # Until `}`
+    while tokens[index].type != "CLCUR":
         line = tokens[index].line
         if tokens[index].value not in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
             raise SemanticError(f"Semantic Error: Expected valid data type in struct declaration.", line)
@@ -2136,31 +2241,43 @@ def parse_struct(tokens, index):
         member_name = tokens[index].value
         index += 1
 
+        if member_name in struct_members:
+            raise SemanticError(f"Semantic Error: Duplicate member name '{member_name}' in struct '{struct_name}'.", line)
+
+        member_node = ASTNode("Member", f"{member_type} {member_name}", line=line)
         default_value = None
 
         if tokens[index].type == "IS":
             index += 1
-            default_node, index = parse_expression_type(tokens, index, member_type)
-            default_value = default_node.value
+            default_value_node = ASTNode("DefaultValue", line=line)
+            if tokens[index].type == "OPBRA":  # List initialization
+                list_node, index = parse_list(tokens, index, member_type)
+                default_value_node.add_child(list_node)
+                default_value = list_node.elements
+            else:  # Regular value
+                default_node, index = parse_expression_type(tokens, index, member_type)
+                default_value_node.add_child(default_node)
+                default_value = default_node.value
 
-        member_node = ASTNode("Member", f"{member_type} {member_name}", line=line)
+            member_node.add_child(default_value_node)
 
-        if default_value:
-            member_node.add_child(ASTNode("DefaultValue", default_value, line=line))
+        struct_members[member_name] = {
+            "type": member_type,
+            "default": default_value,
+            "is_list": isinstance(default_value, list)
+        }
+        member_nodes.append(member_node)
 
-        members.append(member_node)
+    index += 1
+    symbol_table.declare_struct(struct_name, struct_members)
+    return StructNode(struct_name, member_nodes, line=line), index
 
-    index += 1  # Move past `}`
-
-    symbol_table.declare_struct(struct_name, members)
-
-    return StructNode(struct_name, members, line=line), index
 
 def parse_struct_instance(tokens, index):
     line = tokens[index].line
 
     if tokens[index].value == "aura":
-        index += 1 
+        index += 1
 
     if tokens[index].type != "IDENTIFIER":
         raise SemanticError(f"Semantic Error: Expected struct name after 'aura'.", line)
@@ -2168,23 +2285,53 @@ def parse_struct_instance(tokens, index):
     struct_name = tokens[index].value
     index += 1
 
+
     struct_info = symbol_table.lookup_struct(struct_name)
     if isinstance(struct_info, str):
         raise SemanticError(f"Semantic Error: Struct '{struct_name}' is not defined.", line)
 
- 
     struct_instances = []
+    
+
     while tokens[index].type == "IDENTIFIER":
-        instance_name = tokens[index].value
+        instance_name = tokens[index].value 
         index += 1
 
-       
+        instance_values = {} 
+
+        while tokens[index].type == "DOT":
+            index += 1
+
+            if tokens[index].type != "IDENTIFIER":
+                raise SemanticError(f"Syntax Error: Expected struct member name after '.'.", line)
+            
+            member_name = tokens[index].value  
+            index += 1
+
+            if member_name not in struct_info:
+                raise SemanticError(f"Semantic Error: Struct '{struct_name}' has no member '{member_name}'.", line)
+            
+            if tokens[index].type != "IS":
+                raise SemanticError(f"Syntax Error: Expected '=' in struct member assignment.", line)
+            index += 1
+
+            expected_type = struct_info[member_name]["type"]
+
+
+            if tokens[index].type == "OPBRA":
+                value_node, index = parse_list(tokens, index, expected_type)
+            else:
+                value_node, index = parse_expression_type(tokens, index, expected_type)
+            
+            instance_values[member_name] = value_node
+
         symbol_table.declare_variable(instance_name, struct_name, is_struct=True)
 
-        struct_instances.append(StructInstanceNode(struct_name, instance_name, line=line))
+
+        struct_instances.append(StructInstanceNode(struct_name, instance_name, instance_values, line=line))
 
         if tokens[index].type == "COMMA":
-            index += 1
+            index += 1 
         else:
             break
 
@@ -2196,13 +2343,14 @@ def parse_struct_instance(tokens, index):
             struct_list_node.add_child(instance)
         return struct_list_node, index
 
+
 def parse_struct_member_assignment(tokens, index):
     line = tokens[index].line
 
     if tokens[index].type != "IDENTIFIER":
         raise SemanticError(f"Semantic Error: Expected struct instance name.", line)
 
-    struct_instance = tokens[index].value  # e.g., `Rojo`
+    struct_instance = tokens[index].value
     index += 1
 
     if tokens[index].type != "DOT":
@@ -2211,8 +2359,7 @@ def parse_struct_member_assignment(tokens, index):
 
     if tokens[index].type != "IDENTIFIER":
         raise SemanticError(f"Syntax Error: Expected struct member name after '.'.", line)
-
-    member_name = tokens[index].value  # e.g., `num`
+    member_name = tokens[index].value
     index += 1
 
     if tokens[index].type != "IS":
@@ -2231,12 +2378,10 @@ def parse_struct_member_assignment(tokens, index):
 
     expected_type = struct_info[member_name]["type"]
 
-
-    value_node, index = parse_expression_type(tokens, index, expected_type)
-
-    if isinstance(value_node, ASTNode) and value_node.node_type == "Value":
-        final_value = value_node 
+    if tokens[index].type == "OPBRA":
+        value_node, index = parse_list(tokens, index, expected_type)
     else:
-        final_value = value_node  
+        value_node, index = parse_expression_type(tokens, index, expected_type)
 
-    return StructMemberAssignmentNode(struct_instance, member_name, final_value, line=line), index
+    symbol_table.update_struct_member(struct_instance, member_name, value_node.value)
+    return StructMemberAssignmentNode(struct_instance, member_name, value_node, line=line), index
