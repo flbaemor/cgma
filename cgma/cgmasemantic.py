@@ -876,6 +876,8 @@ def parse_expression_forsen(tokens, index):
     
     elif tokens[index].type == "IDENTIFIER":
         variable_info = symbol_table.lookup_variable(tokens[index].value)
+        if isinstance(variable_info, str):
+            raise SemanticError(variable_info, line)
 
         is_list = variable_info.get("is_list", False)
 
@@ -954,6 +956,8 @@ def parse_expression_forsencd(tokens, index):
     elif tokens[index].type == "IDENTIFIER":
         var_name = tokens[index].value
         var_info = symbol_table.lookup_variable(var_name)
+        if isinstance(var_info, str):
+            raise SemanticError(var_info, line)
         is_list = var_info.get("is_list", False)
         if is_list and tokens[index + 1].type != "OPBRA":
             raise SemanticError(f"Type Error: List '{tokens[index].value}' must be indexed with '[]' in expressions.", line)
@@ -1023,7 +1027,8 @@ def parse_expression_forsencd(tokens, index):
             elif tokens[index].type == "IDENTIFIER":
                 var_name = tokens[index].value
                 var_info = symbol_table.lookup_variable(var_name)
-
+                if isinstance(var_info, str):
+                    raise SemanticError(var_info, line)
                 is_list = var_info.get("is_list", False)
 
                 if is_list and tokens[index + 1].type != "OPBRA":
@@ -1067,8 +1072,13 @@ def parse_term(tokens, index):
         op = tokens[index].value
         index += 1
         right_node, index = parse_unary(tokens, index)
-        if op in {"/", "%"} and isinstance(right_node, ASTNode) and int(right_node.value) == 0:
-            raise SemanticError(f"Semantic Error: Division or modulus by zero is undefined.", tokens[index].line)
+        if op in {"/", "%"} and isinstance(right_node, ASTNode) and right_node.node_type == "Value":
+            try:
+                if float(right_node.value) == 0:
+                    raise SemanticError(f"Semantic Error: Division or modulus by zero is undefined.", tokens[index].line)
+            except ValueError:
+                pass
+            
         left_node = BinaryOpNode(left_node, op, right_node)
 
     return left_node, index
@@ -1204,7 +1214,8 @@ def parse_factor(tokens, index):
 
     elif token.type in {"IDENTIFIER"}:
         variable_info = symbol_table.lookup_variable(token.value)
-
+        if isinstance(variable_info, str):
+            raise SemanticError(variable_info, token.line)
         is_list = variable_info.get("is_list", False)
         if is_list and tokens[index + 1].type != "OPBRA":
             raise SemanticError(f"Type Error: List '{token.value}' must be indexed with '[]' in expressions.", token.line)
@@ -1298,6 +1309,9 @@ def parse_relational(tokens, index):
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
         return left_node, index, "lwk"
+    
+    if left_type in {"chungus", "chudeluxe"}:
+        raise SemanticError(f"Type Error: Expected relational operator after arithmetic expression.", line)
 
     return left_node, index, left_type
 
