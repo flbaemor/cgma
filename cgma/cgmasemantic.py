@@ -163,7 +163,8 @@ class SwitchNode(ASTNode):
         self.add_child(expression)
         for case in cases:
             self.add_child(case)
-        self.add_child(default_case)
+        if default_case is not None:
+            self.add_child(default_case)
 
 class ContinueNode(ASTNode):
     def __init__(self, line=None):
@@ -2108,6 +2109,7 @@ def parse_do(tokens, index):
     symbol_table.exit_scope()
     return do_node, index
 
+
 def parse_switch(tokens, index):
     line = tokens[index].line
     index += 1
@@ -2131,9 +2133,6 @@ def parse_switch(tokens, index):
     case_nodes = []
     default_case = None
 
-    while tokens[index].type == "NL":
-        index += 1
-
     while tokens[index].value == "caseoh":
         case_line = tokens[index].line
         index += 1
@@ -2150,30 +2149,28 @@ def parse_switch(tokens, index):
         index += 1
 
         case_block = ASTNode("Block", line=case_line)
+        getout_node = None
 
-        while tokens[index].value != "getout":
-            line = tokens[index].line
+        while tokens[index].value not in {"caseoh", "npc"} and tokens[index].type != "CLCUR":
+            if tokens[index].value == "getout":
+                getout_node = ASTNode("Break", "getout", line=tokens[index].line)
+                index += 1
+                break 
+
             stmt, index = parse_statement(tokens, index)
             if stmt:
                 case_block.add_child(stmt)
-            
 
-        index += 1
+        if getout_node:
+            if tokens[index].value not in {"caseoh", "npc"} and tokens[index].type != "CLCUR":
+                raise SemanticError(f"Semantic Error: Unexpected statement after 'getout' in case block.", tokens[index].line)
+            case_block.add_child(getout_node) 
 
-        while tokens[index].type == "NL":
-            index += 1
 
         case_node = ASTNode("Case", line=case_line)
         case_node.add_child(case_value)
         case_node.add_child(case_block)
         case_nodes.append(case_node)
-    
-    
-    line = tokens[index].line
-
-
-    if tokens[index].value != "npc":
-        raise SemanticError(f"Semantic Error: Expected 'npc' after switch cases.", line)
 
     if tokens[index].value == "npc":
         line = tokens[index].line
@@ -2184,20 +2181,27 @@ def parse_switch(tokens, index):
         index += 1
         
         default_block = ASTNode("Block", line=line)
+        getout_node = None
 
-        while tokens[index].value != "getout":
+        while tokens[index].type != "CLCUR":
+            if tokens[index].value == "getout":
+                getout_node = ASTNode("Break", "getout", line=tokens[index].line)
+                index += 1
+                break
+
             stmt, index = parse_statement(tokens, index)
             if stmt:
                 default_block.add_child(stmt)
-            
 
-        if tokens[index].value == "getout":
-            index += 1
-            
+        if getout_node:
+            if tokens[index].type != "CLCUR":
+                raise SemanticError(f"Semantic Error: Unexpected statement after 'getout' in default block.", tokens[index].line)
+            default_block.add_child(getout_node)
+
 
         default_case = ASTNode("DefaultCase", line=line)
         default_case.add_child(default_block)
-        
+
     if tokens[index].type != "CLCUR":
         raise SemanticError(f"Syntax Error: Expected '}}' after switch statement.", line)
         
@@ -2206,6 +2210,7 @@ def parse_switch(tokens, index):
     symbol_table.exit_scope()
 
     return SwitchNode(switch_expr, case_nodes, default_case, line=line), index
+
 
 def parse_list(tokens, index, expected_type):
     line = tokens[index].line
