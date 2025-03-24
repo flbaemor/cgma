@@ -90,7 +90,7 @@ class AssignmentNode(ASTNode):
 
 class BinaryOpNode(ASTNode):
     def __init__(self, left, operator, right, line=None):
-        super().__init__("Value", operator, line=line)
+        super().__init__("BinaryOp", operator, line=line)
         self.add_child(left)
         self.add_child(right)
 
@@ -1056,7 +1056,7 @@ def parse_expression(tokens, index):
     """Parses an expression with right-to-left associativity for + and -."""
     left_node, index = parse_term(tokens, index)
 
-    if tokens[index].type in {"PLUS", "MINUS"}:
+    while tokens[index].type in {"PLUS", "MINUS"}:
         op = tokens[index].value
         index += 1
         right_node, index = parse_term(tokens, index)
@@ -1096,13 +1096,10 @@ def parse_unary(tokens, index):
 def parse_cast(tokens, index):
     """Parses explicit type casting for the entire expression inside (type)."""
     token = tokens[index]
-
-    if (
-        token.type == "OPPAR" 
-        and tokens[index + 1].value in {"chungus", "chudeluxe"}
-        and tokens[index + 2].type == "CLPAR"
-    ):
+    if token.type == "OPPAR" and tokens[index + 1].value in {"chungus", "chudeluxe"}:
         target_type = tokens[index + 1].value
+        if tokens[index + 2].type != "CLPAR":
+            raise SemanticError("Syntax Error: Missing closing parenthesis.", token.line)
         index += 3
 
         expr_node, index = parse_expression(tokens, index)
@@ -1117,11 +1114,16 @@ def parse_factor(tokens, index):
     """Parses literals, identifiers, parenthesized expressions, and postfix operators."""
     token = tokens[index]
 
+    if token.type == "OPPAR" and tokens[index + 1].value in {"chungus", "chudeluxe"}:
+        node, index = parse_cast(tokens, index)
+        return node, index
+
     if token.type == "OPPAR":
+        index += 1
+        node, index = parse_expression(tokens, index)
+        if tokens[index].type != "CLPAR":
+            raise SemanticError("Syntax Error: Missing closing parenthesis.", token.line)
         index += 1  
-        node, index = parse_expression(tokens, index)  
-        if tokens[index].type == "CLPAR":
-            index += 1  
         return node, index  
     
     if token.type in {"CHU_LIT", "CHUDEL_LIT"}:
@@ -1297,6 +1299,7 @@ def parse_relational(tokens, index):
     left_node, index, left_type = parse_operand(tokens, index)
 
     if tokens[index].type in {"LT", "LTE", "GT", "GTE"}:
+        print(left_type)
         if left_type not in {"chungus", "chudeluxe"}:
             raise SemanticError(f"Type Error: Relational operators only apply to arithmetic types.", line)
         
@@ -1323,8 +1326,13 @@ def parse_operand(tokens, index):
 
     # Handle parentheses
     if token.type == "OPPAR":
-        index += 1
-        expr_node, index = parse_expression_lwk(tokens, index)
+        if tokens[index+1].value in {"chungus", "chudeluxe"}:
+            expr_type = tokens[index+1].value
+            expr_node, index = parse_expression(tokens, index)
+            return expr_node, index, expr_type
+        else:
+            index += 1
+            expr_node, index = parse_expression_lwk(tokens, index)
         if tokens[index].type != "CLPAR":
             raise SemanticError(f"Syntax Error: Expected ')' to close expression.", line)
         index += 1
@@ -1591,7 +1599,12 @@ def parse_print(tokens, index):
             arg_info = symbol_table.lookup_variable(identif_name)
             if isinstance(arg_info, str):
                 raise SemanticError(f"Semantic Error: Variable '{identif_name}' used before declaration.", line)
-            if arg_info["type"] in {"chungus", "chudeluxe"}:
+            
+            if arg_info["type"] in {"forsencd"}:
+                expr_node, index = parse_string_concatenation(tokens, index)
+                args.append(expr_node)
+            
+            elif arg_info["type"] in {"chungus", "chudeluxe"}:
                 expr_node, index = parse_expression(tokens, index)
                 args.append(expr_node)
             else:
@@ -2310,6 +2323,8 @@ def parse_remove(tokens, index, var_name, expected_type):
     index += 1
 
     return RemoveNode(var_name, value, line=line), index
+
+
 def parse_struct(tokens, index):
     line = tokens[index].line
     index += 1 
@@ -2329,6 +2344,7 @@ def parse_struct(tokens, index):
 
     while tokens[index].type != "CLCUR":
         line = tokens[index].line
+
         if tokens[index].value not in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
             raise SemanticError(f"Semantic Error: Expected valid data type in struct declaration.", line)
         
@@ -2340,6 +2356,9 @@ def parse_struct(tokens, index):
 
         member_name = tokens[index].value
         index += 1
+
+        if member_name == struct_name:
+            raise SemanticError(f"Semantic Error: Struct member name '{member_name}' cannot be the same as struct name.", line)
 
         if member_name in struct_members:
             raise SemanticError(f"Semantic Error: Duplicate member name '{member_name}' in struct '{struct_name}'.", line)
