@@ -23,7 +23,7 @@ clbra_dlm = ' =\n)\t'
 clcur_dlm = ' \n)}\t' + ALPHANUM
 clpar_dlm = ' \n}{)&|}\t.,(' + ARITH_OPER + ALPHANUM
 com_dlm   = ' ('
-comma_dlm = ' "\t' + ALPHANUM
+comma_dlm = ' "\t-!\'(' + ALPHANUM
 convert_dlm = ' )\t,\n' + OPER
 comnt_dlm = ' \n\t' + ASCII
 endln_dlm = ' \n\t'

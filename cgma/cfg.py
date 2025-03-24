@@ -101,7 +101,7 @@ def compute_predict(cfg, first, follow):
     
 
 cfg = {
-    "<program>": [["<start>"]],
+    "<program>": [["<nl1>", "<start>"]],
     "<start>":[["<global_declaration>", "<nl>", "<start>"],
         ["chungus", "<chungus_follow>"]],
     "<chungus_follow>":[["<identifier>", "<declaration_tail>", "<nl>", "<start>"], 

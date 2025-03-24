@@ -977,8 +977,8 @@ def parse_expression_forsencd(tokens, index):
             op = tokens[index].value  
             index += 1 
 
-            if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER"}:
-                raise SemanticError(f"Type Error: forsencd can only be assigned a FORSENCD_LIT or an identifier of type forsen/forsencd.", line)
+            if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER", "FORSEN_LIT"}:
+                raise SemanticError(f"Type Error: forsencd can only be assigned a literal or identifier with type forsen/forsencd.", line)
 
             if tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPPAR":
                 func_name = tokens[index].value
@@ -1038,7 +1038,7 @@ def parse_expression_forsencd(tokens, index):
                 right_node = ASTNode("Value", var_name, line=line)
                 index += 1 
 
-            elif tokens[index].type == "FORSENCD_LIT":
+            elif tokens[index].type in {"FORSENCD_LIT", "FORSEN_LIT"}:
                 right_node = ASTNode("Value", tokens[index].value, line=line)
                 index += 1  
 
@@ -1074,8 +1074,8 @@ def parse_term(tokens, index):
     return left_node, index
 
 def parse_unary(tokens, index):
-    """Parses unary operators (++x, --x, !x, -x) with right-to-left associativity."""
-    if tokens[index].type in {"INC", "DEC", "NOT", "NEGAT"}:
+    """Parses unary operators (++x, --x, -x) with right-to-left associativity."""
+    if tokens[index].type in {"INC", "DEC", "NEGAT"}:
         op = tokens[index].value
         index += 1
         operand, index = parse_unary(tokens, index)
@@ -1693,9 +1693,6 @@ def parse_sturdy(tokens, index):
 
     value_node = ASTNode("Value", tokens[index].value, line=line)
     index += 1
-
-    if tokens[index].type not in {"NL"}:
-        raise SemanticError(f"Semantic Error: Sturdy variable '{var_name}' must be assigned only a single literal.", line)
 
     error = symbol_table.declare_variable(var_name, var_type, value=value_node, is_list=False, is_sturdy=True)
     if isinstance(error, str):
