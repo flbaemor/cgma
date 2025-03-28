@@ -505,7 +505,7 @@ def parse_function(tokens, index, func_name, func_type):
         
         if (func_type != "nocap" and not return_found) and func_name != "skibidi":
             raise SemanticError(f"Semantic Error: Function '{func_name}' must return a value of type '{func_type}'.", line)
-
+        
         index += 1
         func_node.add_child(block_node)
         symbol_table.exit_scope()
@@ -708,7 +708,7 @@ def parse_statement(tokens, index, func_type = None):
         return node, index
 
     elif token.value == "tuah":
-        node, index = parse_if(tokens, index)
+        node, index = parse_if(tokens, index, func_type)
         return node, index
 
     elif token.value == "back":
@@ -716,19 +716,19 @@ def parse_statement(tokens, index, func_type = None):
         return node, index 
     
     elif token.value == "plug":
-        node, index = parse_for(tokens, index)
+        node, index = parse_for(tokens, index, func_type)
         return node, index
 
     elif token.value == "jit":
-        node, index = parse_while(tokens, index)
+        node, index = parse_while(tokens, index, func_type)
         return node, index
     
     elif token.value == "lil":
-        node, index = parse_do(tokens, index)
+        node, index = parse_do(tokens, index, func_type)
         return node, index
     
     elif token.value == "lethimcook":
-        node, index = parse_switch(tokens, index)
+        node, index = parse_switch(tokens, index, func_type)
         return node, index
 
     else:
@@ -1728,7 +1728,7 @@ def parse_sturdy(tokens, index):
 
     return SturdyDeclarationNode(var_type, var_name, value_node, line=line), index
 
-def parse_if(tokens, index):
+def parse_if(tokens, index, func_type):
     line = tokens[index].line
     index += 1  # Move past "tuah"
 
@@ -1759,7 +1759,7 @@ def parse_if(tokens, index):
         block_node = ASTNode("Block", line=line)
 
         while tokens[index].type != "CLCUR":
-            stmt, index = parse_statement(tokens, index)
+            stmt, index = parse_statement(tokens, index, func_type)
             if stmt:
                 block_node.add_child(stmt)
 
@@ -1799,7 +1799,7 @@ def parse_if(tokens, index):
             elseif_block_node = ASTNode("Block", line=line)
 
             while tokens[index].type != "CLCUR":
-                stmt, index = parse_statement(tokens, index)
+                stmt, index = parse_statement(tokens, index, func_type)
                 if stmt:
                     elseif_block_node.add_child(stmt)
     
@@ -1827,7 +1827,7 @@ def parse_if(tokens, index):
             else_block_node = ASTNode("Block", line=line)
 
             while tokens[index].type != "CLCUR":
-                stmt, index = parse_statement(tokens, index)
+                stmt, index = parse_statement(tokens, index, func_type)
                 if stmt:
                     else_block_node.add_child(stmt)
 
@@ -1870,7 +1870,7 @@ def parse_return(tokens, index, func_type):
                 raise SemanticError(f"Semantic Error: Variable '{identifier}' used before declaration.", line)
 
             if var_info["type"] != func_type:
-                raise SemanticError(f"Type Error: Variable '{identifier}' is of type '{var_info['type']}', expected '{func_type}'.", line)
+                raise SemanticError(f"Type Error: Variable '{identifier}' is of type '{var_info['type']}'. Expected return value: '{func_type}'.", line)
 
             return_expr, index = parse_expression_type(tokens, index, func_type)
 
@@ -1881,7 +1881,7 @@ def parse_return(tokens, index, func_type):
 
 
 
-def parse_for(tokens, index):
+def parse_for(tokens, index, func_type):
     line = tokens[index].line
     index += 1
 
@@ -1948,7 +1948,7 @@ def parse_for(tokens, index):
                 block_node.add_child(break_node)
 
             else:
-                stmt, index = parse_statement(tokens, index)
+                stmt, index = parse_statement(tokens, index, func_type)
                 if stmt:
                     block_node.add_child(stmt)
 
@@ -1996,7 +1996,7 @@ def parse_update(tokens, index):
         
     raise SemanticError(f"Semantic Error: Invalid update statement.", line)
     
-def parse_while(tokens, index):
+def parse_while(tokens, index, func_type):
     line = tokens[index].line
     index += 1
     
@@ -2036,7 +2036,7 @@ def parse_while(tokens, index):
                 block_node.add_child(break_node)
 
             else:
-                stmt, index = parse_statement(tokens, index)
+                stmt, index = parse_statement(tokens, index, func_type)
                 if stmt:
                     block_node.add_child(stmt)
 
@@ -2050,7 +2050,7 @@ def parse_while(tokens, index):
     
     return while_node, index
 
-def parse_do(tokens, index):
+def parse_do(tokens, index, func_type):
     line = tokens[index].line
     index += 1
 
@@ -2075,7 +2075,7 @@ def parse_do(tokens, index):
             block_node.add_child(break_node)
 
 
-        stmt, index = parse_statement(tokens, index)
+        stmt, index = parse_statement(tokens, index, func_type)
         if stmt:
             block_node.add_child(stmt)
         
@@ -2110,7 +2110,7 @@ def parse_do(tokens, index):
     return do_node, index
 
 
-def parse_switch(tokens, index):
+def parse_switch(tokens, index, func_type):
     line = tokens[index].line
     index += 1
 
@@ -2157,7 +2157,7 @@ def parse_switch(tokens, index):
                 index += 1
                 break 
 
-            stmt, index = parse_statement(tokens, index)
+            stmt, index = parse_statement(tokens, index, func_type)
             if stmt:
                 case_block.add_child(stmt)
 
@@ -2189,7 +2189,7 @@ def parse_switch(tokens, index):
                 index += 1
                 break
 
-            stmt, index = parse_statement(tokens, index)
+            stmt, index = parse_statement(tokens, index, func_type)
             if stmt:
                 default_block.add_child(stmt)
 
