@@ -70,6 +70,7 @@ class LL1Parser:
                     #print(error_message)
                     error_messages.append(error_message)
                     return False, error_messages
+            
             else:
                 error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: '{top}'"
                 #print(error_message)
@@ -79,6 +80,7 @@ class LL1Parser:
         if token_type == 'EOF' and not self.stack:
             #print("\nSyntax analysis successful!")
             return True, []
+        
         else:
             #print("Error: Tokens remaining after parsing")
             return False, ["Error: Tokens remaining after parsing"]

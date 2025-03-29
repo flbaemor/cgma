@@ -30,7 +30,7 @@ endln_dlm = ' \n\t'
 esc_dlm =   ' "\t'+ ASCII
 equal_dlm = ' [(-"+\t!\'' + ALPHANUM
 hawk_dlm =  ' \n{\t'
-identif_dlm = ' \n)(&|;[],.\t' + OPER
+identif_dlm = ' \n)(&|;[],.\t{' + OPER
 lit_dlm =   ' ,):\n;\t/+-%*]' + OPER
 lwk_dlm =   ' \n&|=)\t],:' + OPER
 minus_dlm = ' -()\t' + ALPHANUM
