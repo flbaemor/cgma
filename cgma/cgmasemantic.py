@@ -1441,8 +1441,10 @@ def parse_equality(tokens, index):
         operator = tokens[index].type
         index += 1
         right_node, index, right_type = parse_relational(tokens, index)
-
-        if left_type != right_type:
+        
+        if {left_type, right_type} <= {"chungus", "chudeluxe"}:
+            pass
+        elif left_type != right_type:
             raise SemanticError(f"Type Error: Cannot compare '{left_type}' with '{right_type}'.", line)
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
@@ -1481,9 +1483,6 @@ def parse_relational(tokens, index):
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
         return left_node, index, "lwk"
     
-    if left_type in {"chungus", "chudeluxe"}:
-        raise SemanticError(f"Type Error: Expected relational operator after arithmetic expression.", line)
-
     return left_node, index, left_type
 
 
