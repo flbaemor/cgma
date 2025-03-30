@@ -618,13 +618,11 @@ def parse_statement(tokens, index, func_type = None):
         is_list = var_info.get("is_list", False)
 
         if is_list:
-            if tokens[index + 1].type == "OPBRA":
-                node, index = parse_list_access(tokens, index)
-            elif tokens[index + 1].type == "IS":
+            if tokens[index + 1].type == "IS":
                 node, index = parse_list_assignment(tokens, index)
                 return node, index
             else:
-                raise SemanticError(f"Syntax Error: Expected '[' or '=' after list '{var_name}'.", line)
+                raise SemanticError(f"Syntax Error: Expected '=' after list '{var_name}'.", line)
 
         if tokens[index + 1].type == "OPPAR":
             func_name = token.value
@@ -2467,9 +2465,7 @@ def parse_list(tokens, index, expected_type):
 def parse_append(tokens, index, var_name, expected_type):
 
     line = tokens[index].line
-    if symbol_table.lookup_variable(var_name)["is_list"] == False:
-        raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
-    
+
     if tokens[index].value != "append":
         raise SemanticError(f"Semantic Error: Expected 'append'.", line)
     
@@ -2494,9 +2490,7 @@ def parse_append(tokens, index, var_name, expected_type):
 
 def parse_insert(tokens, index, var_name, expected_type):
     line = tokens[index].line
-    if symbol_table.lookup_variable(var_name)["is_list"] == False:
-        raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
-    
+
     if tokens[index].value != "insert":
         raise SemanticError(f"Semantic Error: Expected 'insert'.", line)
 
@@ -2531,9 +2525,7 @@ def parse_insert(tokens, index, var_name, expected_type):
 
 def parse_remove(tokens, index, var_name, expected_type):
     line = tokens[index].line
-    if symbol_table.lookup_variable(var_name)["is_list"] == False:
-        raise SemanticError(f"Semantic Error: Variable '{var_name}' is not a list.", line)
-    
+
     if tokens[index].value != "remove":
         raise SemanticError(f"Semantic Error: Expected 'remove'.", line)
 
@@ -2752,39 +2744,31 @@ def parse_struct_member_assignment(tokens, index):
     if member_type not in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
         raise SemanticError(f"Semantic Error: Expected primitive type after struct member.", line)
     
-    if is_list:
-        if tokens[index].type != "OPBRA":
-            raise SemanticError(f"Semantic Error: Missing index for list '{full_access}'.", tokens[index].line)
-
-        index += 1
-        expr_node, index = parse_expression(tokens, index)
-
-        if tokens[index].type != "CLBRA":
-            raise SemanticError("Syntax Error: Missing ']'.", tokens[index].line)
-
-        index_node = ASTNode("Index", line=tokens[index].line)
-        index_node.add_child(expr_node)
-
-        list_access_node = ListAccessNode(full_access, index_node, line=tokens[index].line)
-        index += 1 
-
-    if tokens[index].type == "OPBRA":
-        raise SemanticError(f"Semantic Error: '{full_access}' is not a list.", tokens[index].line)
-
 
     if tokens[index].type != "IS":
         chain_str = ".".join(member_chain)
         raise SemanticError(f"Syntax Error: Expected '=' in struct member assignment for '{chain_str}'.", line)
     index += 1
 
-    if tokens[index].type == "OPBRA":
-        value_node, index = parse_list(tokens, index, member_type)
+    if is_list:
+        if tokens[index].type == "OPBRA":
+            value_node, index = parse_list(tokens, index, member_type)
+
+        elif tokens[index].value == "append":
+            value_node, index = parse_append(tokens, index, full_access, member_type)
+
+        elif tokens[index].value == "insert":
+            value_node, index = parse_insert(tokens, index, full_access, member_type)
+
+        elif tokens[index].value == "remove":
+            value_node, index = parse_remove(tokens, index, full_access, member_type)
+
+        else:
+            raise SemanticError(f"Semantic Error: Invalid statement for list assignment for '{full_access}'.", line)
+
     else:
         value_node, index = parse_expression_type(tokens, index, member_type)
 
     struct_member_node = StructMemberAssignmentNode(struct_instance, full_access, value_node, line=line)
-    
-    if is_list:
-        struct_member_node.add_child(list_access_node)
 
     return struct_member_node, index
