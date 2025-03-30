@@ -39,6 +39,7 @@ class LL1Parser:
             token_value = token.value  
             line = token.line
 
+
             while token_type in {'SPC', 'TAB', 'COMMENT'}:
                 index += 1
                 token = tokens[index]
@@ -52,7 +53,6 @@ class LL1Parser:
                 token_type = token_value 
 
             #print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
-
 
             if top == token_type or top == token_value:
                 #print(f"Matched: {top}")
@@ -71,6 +71,20 @@ class LL1Parser:
                     error_messages.append(error_message)
                     return False, error_messages
             
+
+            ###########remove if error xd#############
+            elif top == 'EOF':
+                while token_type == 'NL':
+                    index += 1
+                    token = tokens[index]
+                    token_type = token.type
+                    token_value = token.value
+                if token_type != 'NL' and token_type != 'EOF':
+                    error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: 'EOF'"
+                    error_messages.append(error_message)
+                    return False, error_messages
+            ###########################################
+                    
             else:
                 error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: '{top}'"
                 #print(error_message)

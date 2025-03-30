@@ -1848,8 +1848,11 @@ def parse_print(tokens, index):
                 expr_node, index = parse_expression(tokens, start_index)
                 args.append(expr_node)
 
+            elif is_list:
+                actual_args.append(list_access_node)
+            
             else:
-                args.append(list_access_node)
+                actual_args.append(ASTNode("Value", full_access, line=line))
 
 
         elif (
@@ -2036,8 +2039,11 @@ def parse_print(tokens, index):
                 arg_node, index = parse_expression(tokens, start_index)
                 actual_args.append(arg_node)
                 
-            else:
+            elif is_list:
                 actual_args.append(list_access_node)
+            
+            else:
+                actual_args.append(ASTNode("Value", full_access, line=line))
 
         elif tokens[index].type == "IDENTIFIER" and tokens[index + 1].type == "OPBRA":
             print(tokens[index].type)
@@ -2068,8 +2074,11 @@ def parse_print(tokens, index):
                 arg_node, index = parse_expression(tokens, start_index)
                 actual_args.append(arg_node)
                 
-            else:
+            elif is_list:
                 actual_args.append(list_access_node)
+            
+            else:
+                actual_args.append(ASTNode("Value", full_access, line=line))
             
         elif tokens[index].type == "IDENTIFIER":
             arg_name = tokens[index].value
@@ -2085,7 +2094,9 @@ def parse_print(tokens, index):
                 actual_args.append(arg_node)
 
             else:
-                actual_args.append(ASTNode("Value", arg_name, line=line))   
+                actual_args.append(ASTNode("Value", arg_name, line=line))
+            
+            index += 1
             
 
         else:
