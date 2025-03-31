@@ -1391,9 +1391,10 @@ class Lexer:
                 if self.current_char is not None and self.current_char in ALPHA:
                     tokens.append(Token(TT_DOT, ident_str, line))
                     continue
+
                 elif self.current_char is not None and self.current_char in NUM:
                     fractional_part = ""
-                    while self.current_char is NUM:
+                    while self.current_char in NUM:
                         fractional_part += self.current_char
                         self.advance()
 
