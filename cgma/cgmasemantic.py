@@ -1418,6 +1418,9 @@ def parse_expression_lwk(tokens, index):
     line = tokens[index].line
     left_node, index, left_type = parse_equality(tokens, index)
 
+    if left_type in {"chungus", "chudeluxe"} and tokens[index].type not in {"EQ", "NEQ", "LT", "LTE", "GT", "GTE"}:
+        raise SemanticError(f"Type Error: Expected a logical or comparison operator in lwk expression.", line)
+
     while tokens[index].type in {"AND", "OR"}:
         operator = tokens[index].value
         index += 1
@@ -1448,7 +1451,9 @@ def parse_equality(tokens, index):
             raise SemanticError(f"Type Error: Cannot compare '{left_type}' with '{right_type}'.", line)
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
-        left_type = "lwk"
+
+        if operator in {"EQ", "NEQ"}:
+            left_type = "lwk"
 
     return left_node, index, left_type
 
@@ -1481,7 +1486,11 @@ def parse_relational(tokens, index):
             raise SemanticError(f"Type Error: Relational operators only apply to arithmetic types.", line)
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
-        return left_node, index, "lwk"
+
+        if operator in {"LT", "LTE", "GT", "GTE"}:
+            left_type = "lwk"
+
+        return left_node, index, left_type
     
     return left_node, index, left_type
 
@@ -1963,6 +1972,13 @@ def parse_print(tokens, index):
         expr_node, index = parse_expression_lwk(tokens, index)
         args.append(expr_node)
 
+    elif tokens[index].type in {"FORSEN_LIT"}:
+        expr_node, index = parse_expression_forsen(tokens, index)
+        args.append(expr_node)
+
+    else:
+        raise SemanticError(f"Semantic Error: Expected valid argument in yap statement.", line)
+
     actual_args = []
     while tokens[index].type == "COMMA":
         index += 1
@@ -2089,14 +2105,15 @@ def parse_print(tokens, index):
             if arg_info["is_list"]:
                 if tokens[index + 1].type != "OPBRA":
                     raise SemanticError(f"Type Error: List '{arg_name}' must be indexed with '[]' in expressions.", line)
+                
             if arg_info["type"] in {"chungus", "chudeluxe"}:
                 arg_node, index = parse_expression(tokens, index)
                 actual_args.append(arg_node)
+                
 
             else:
                 actual_args.append(ASTNode("Value", arg_name, line=line))
-            
-            index += 1
+                index += 1
             
 
         else:
