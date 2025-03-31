@@ -3,6 +3,7 @@ from cfg import cfg, predict_sets
 from cgmaparser import LL1Parser
 from flask import Flask, request, jsonify  
 from flask_cors import CORS 
+import re
 
 ##### ERROR ######
 class SemanticError(Exception):
@@ -2119,8 +2120,11 @@ def parse_print(tokens, index):
         else:
             raise SemanticError(f"Semantic Error: Expected valid argument after ',' in yap statement.", line)
 
+    if placeholder_count > 15:
+        raise SemanticError(f"Semantic Error: Exceeded maximum amount of 15 arguments in yap statement.", line)
+
     if placeholder_count != len(actual_args):
-        raise SemanticError(f"Type Error: Expected {placeholder_count} arguments, but got {len(actual_args)}.", line)
+        raise SemanticError(f"Type Error: Found {len(actual_args)} argument(s). Expected {placeholder_count} argument(s).", line)
     
     args.extend(actual_args)
 
@@ -2140,9 +2144,12 @@ def parse_string_concatenation(tokens, index):
     if "{" in raw_string or "}" in raw_string:
         if raw_string.count("{") != raw_string.count("}"):
             raise SemanticError(f"Semantic Error: Invalid string literal '{format_string}' in yap().", line)
-        if "{}" not in raw_string:
-            raise SemanticError(f"Syntax Error: Placeholders {{}} must be adjacent within the string literal.", line)
-        
+        matches = re.findall(r"\{[^}]*\}", raw_string)
+
+        for match in matches:
+            if match != "{}":
+                raise SemanticError(f"Syntax Error: Placeholders {{}} must be adjacent within the string literal.", line)
+
     placeholder_count = raw_string.count("{}")
     left_node = ASTNode("FormattedString", tokens[index].value, line=line)
     index += 1
@@ -2150,7 +2157,15 @@ def parse_string_concatenation(tokens, index):
     while index < len(tokens) and tokens[index].type == "PLUS":
         index += 1
         if tokens[index].type not in {"FORSENCD_LIT", "IDENTIFIER"}:
-            raise SemanticError(f"Semantic Error: Only string literals can be concatenated in yap().", line)
+            raise SemanticError(f"Semantic Error: Only values of type forsencd can be concatenated in yap().", line)
+
+        if tokens[index].type == "IDENTIFIER":
+            var_name = tokens[index].value
+            var_info = symbol_table.lookup_variable(var_name)
+            if isinstance(var_info, str):
+                raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
+            if var_info["type"] != "forsencd":
+                raise SemanticError(f"Semantic Error: Variable '{var_name}' with type {var_info["type"]} cannot be concatenated in yap().", line)
 
         format_string = tokens[index].value
         raw_string = format_string.replace("\\{", "").replace("\\}", "")
