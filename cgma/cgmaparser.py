@@ -1,3 +1,11 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from cgmalexer import Lexer
+from cfg import cfg, predict_sets
+
+app = Flask(__name__)
+CORS(app)
+
 # LL(1) Parser Class
 class LL1Parser:
     def __init__(self, cfg, predict_sets):
