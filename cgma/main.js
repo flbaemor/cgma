@@ -7,13 +7,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         monaco.languages.setMonarchTokensProvider("cgma", {
         tokenizer: {
             root: [
-                // 'append', 'aura', 'back', 'caseoh', 'chat', 'chudeluxe', 'chungus', 'false', 'forsen', 'getout', 'gng', 'hawk', 'hawk tuah', 'insert', 'jit', 'lethimcook', 'lwk', 'nocap', 'npc', 'pause', 'plug', 'remove', 'skibidi', 'sturdy', 'true', 'tuah', 'yap']
                 [/\b(chungus|chudeluxe|forsen|forsencd|lwk|nocap|aura|sturdy)\b/, "type"],
                 [/\b(hawk|tuah|lethimcook|jit|lil|plug)\b/, "control"],
                 [/\b(yap|chat)\b/, "io"],
                 [/\b(append|insert|remove|ts|taper)\b/, "function"],
                 [/\b(continue|getout|back)\b/, "control1"],
-                [/\b(skibidi|npc|caseoh)\b/, "keyword"],
+                [/\b(npc|caseoh)\b/, "keyword"],
                 [/\b(true|false)\b/, "boolean"],
                 [/\/\/.*/, "comment"], // Single-line comment
                 [/\/\*[\s\S]*?\*\//, "comment"], // Multi-line comment
@@ -21,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 [/"[^"]*"/, "string"],
                 [/'[^']*'/, "string"],
                 [/[+\-*/<>!,&|]+/, "operator"],
+                [/\b[a-zA-Z_]\w*(?=\()/, "functionIdentifier"],
                 [/\b[a-zA-Z_]\w*\b/, "identifier"], // Identifiers
                 [/[\[\]\{\}\(\)\/]/, "container"],
             ],
@@ -41,7 +41,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             { token: "number", foreground: "#FFDCCC"},
             { token: "string", foreground: "#FFDCCC"},
             { token: "operator", foreground: "#FFDCCC"},
-            { token: "identifier", foreground: "#FDB7EA"}, 
+            { token: "identifier", foreground: "#FDB7EA", fontStyle: "bold"},
+            { token: "functionIdentifier", foreground: "#ffb070", fontStyle: "bold"},
             { token: "container", foreground: "#00ffe5"},
             { token: "comment", foreground: "#946893", fontStyle: "italic" },
         ],

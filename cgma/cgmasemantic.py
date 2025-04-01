@@ -610,6 +610,18 @@ def parse_statement(tokens, index, func_type = None):
         return node, index
 
     elif token.type == "IDENTIFIER":
+
+        if tokens[index + 1].type == "OPPAR":
+            func_name = token.value
+            error = symbol_table.lookup_function(func_name)
+            if isinstance(error, str):
+                error = symbol_table.lookup_function(func_name)
+                raise SemanticError(error, token.line)
+            func_type = symbol_table.lookup_function(func_name)["return_type"]
+            func_params = symbol_table.lookup_function(func_name)["params"]
+            func_call_node, index = parse_function_call(tokens, index, func_name, func_type, func_params)
+            return func_call_node, index
+
         var_info = symbol_table.lookup_variable(token.value)
         if isinstance(var_info, str):
             raise SemanticError(var_info, line)
@@ -624,17 +636,6 @@ def parse_statement(tokens, index, func_type = None):
                 return node, index
             else:
                 raise SemanticError(f"Syntax Error: Expected '=' after list '{var_name}'.", line)
-
-        if tokens[index + 1].type == "OPPAR":
-            func_name = token.value
-            error = symbol_table.lookup_function(func_name)
-            if isinstance(error, str):
-                error = symbol_table.lookup_function(func_name)
-                raise SemanticError(error, token.line)
-            func_type = symbol_table.lookup_function(func_name)["return_type"]
-            func_params = symbol_table.lookup_function(func_name)["params"]
-            func_call_node, index = parse_function_call(tokens, index, func_name, func_type, func_params)
-            return func_call_node, index
 
         elif tokens[index + 1].type == "IS":
             var_name = token.value
