@@ -21,7 +21,7 @@ OPER = ARITH_OPER + RELAT_OPER
 
 clbra_dlm = ' =\n)\t,' + OPER
 clcur_dlm = ' \n)}\t' + ALPHANUM
-clpar_dlm = ' \n}{)&|}\t.,(' + ARITH_OPER + ALPHANUM
+clpar_dlm = ' \n}{)&|}\t.,(]' + ARITH_OPER + ALPHANUM
 com_dlm   = ' ('
 comma_dlm = ' "\t-!\'(' + ALPHANUM
 convert_dlm = ' )\t,\n' + OPER
@@ -1453,7 +1453,8 @@ class Lexer:
                         line += 1
                         self.advance()
 
-                tokens.append(Token(TT_NL, "\\n", line))
+                if len(tokens) == 0 or tokens[-1].type != TT_NL:
+                    tokens.append(Token(TT_NL, "\\n", line))
                 continue
                 
 

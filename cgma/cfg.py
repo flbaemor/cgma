@@ -71,7 +71,6 @@ def compute_follow(cfg, first):
     return follow
 
 
-
 def compute_predict(cfg, first, follow):
     predict = {}
     epsilon = "ε"
@@ -101,7 +100,7 @@ def compute_predict(cfg, first, follow):
     
 
 cfg = {
-    "<program>": [["<nl1>", "<start>"]],
+    "<program>": [["<start>"]],
     "<start>":[["<global_declaration>", "<nl>", "<start>"],
         ["chungus", "<chungus_follow>"]],
     "<chungus_follow>":[["<identifier>", "<declaration_tail>", "<nl>", "<start>"], 
@@ -246,21 +245,20 @@ cfg = {
         ["[", "<list_content>", "]"]],
     "<list_content>":[["ε"],
         ["<arg>"]],
-    "<nl>":[["NL", "<nl1>"]],
-    "<nl1>":[["ε"],["NL", "<nl1>"]],
+    "<nl>":[["NL"]],
+    #"<nl1>":[["ε"],["NL", "<nl1>"]],
     "<id1>":[["<prepost_operator>", "<identifier>"],
         ["<identifier>", "<id1_follow>"]],
     "<id1_follow>":[["<post_operand>"],
         ["<var_initialization>"]]
 }
-                
 
 
 first_sets = compute_first(cfg)
 follow_sets = compute_follow(cfg, first_sets)
 predict_sets = compute_predict(cfg, first_sets, follow_sets)
 
-'''print("Context-Free Grammar (CFG):\n")
+print("Context-Free Grammar (CFG):\n")
 for non_terminal, productions in cfg.items():
     non_terminal = non_terminal.strip("<>").upper() 
     for production in productions:
@@ -283,4 +281,4 @@ print("\n\nPREDICT SET:")
 for (lhs, prod), predict_set in predict_sets.items():
     prod_str = " ".join(prod).replace("''", "")  # Remove '' in productions
     predict_set_str = ", ".join(predict_set).replace("''", "")  # Remove '' in predict set
-    print(f"Predict({lhs} → {prod_str}) -> {{{predict_set_str}}}")'''
+    print(f"Predict({lhs} → {prod_str}) -> {{{predict_set_str}}}")

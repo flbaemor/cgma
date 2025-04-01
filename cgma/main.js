@@ -4,8 +4,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     require(['vs/editor/editor.main'], function () {
 
         monaco.languages.register({ id: "cgma" });
+
         monaco.languages.setMonarchTokensProvider("cgma", {
         tokenizer: {
+            
             root: [
                 [/\b(chungus|chudeluxe|forsen|forsencd|lwk|nocap|aura|sturdy)\b/, "type"],
                 [/\b(hawk|tuah|lethimcook|jit|lil|plug)\b/, "control"],
@@ -14,8 +16,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 [/\b(continue|getout|back)\b/, "control1"],
                 [/\b(npc|caseoh)\b/, "keyword"],
                 [/\b(true|false)\b/, "boolean"],
-                [/\/\/.*/, "comment"], // Single-line comment
-                [/\/\*[\s\S]*?\*\//, "comment"], // Multi-line comment
+                [/\/\/.*/, "comment"],
+                [/\/\*/, 'comment', '@comment'],
                 [/\d+/, "number"],
                 [/"[^"]*"/, "string"],
                 [/'[^']*'/, "string"],
@@ -24,9 +26,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 [/\b[a-zA-Z_]\w*\b/, "identifier"], // Identifiers
                 [/[\[\]\{\}\(\)\/]/, "container"],
             ],
+
+            comment: [
+            [/[^*]+/, 'comment'],
+            [/\*\//, 'comment', '@pop'],
+            [/\*/, 'comment'],
+            ],
         },
     });
 
+    monaco.languages.setLanguageConfiguration("cgma", {
+        comments: {
+            blockComment: ["/*", "*/"],
+            lineComment: "//"          
+        }
+    });
+    
         monaco.editor.defineTheme("myCustomTheme", {
         base: "vs-dark",
         inherit: true,

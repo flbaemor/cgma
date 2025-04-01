@@ -1,11 +1,3 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from cgmalexer import Lexer
-from cfg import cfg, predict_sets
-
-app = Flask(__name__)
-CORS(app)
-
 # LL(1) Parser Class
 class LL1Parser:
     def __init__(self, cfg, predict_sets):
@@ -56,7 +48,8 @@ class LL1Parser:
 
             if top == token_type or top == token_value:
                 #print(f"Matched: {top}")
-                index += 1  
+                index += 1 
+                
             elif top in self.parsing_table:
                 if token_type in self.parsing_table[top]:
                     production = self.parsing_table[top][token_type]
