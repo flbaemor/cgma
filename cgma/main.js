@@ -131,7 +131,7 @@ async function runLexer() {
             const row = tokensTableBody.insertRow();
             const cellType = row.insertCell(0);
             const cellValue = row.insertCell(1);
-            cellType.textContent = token.type;
+            cellType.textContent = token.type === "EOF" ? token.type : token.type.toLowerCase();
             cellValue.textContent = token.value;
             cellValue.style.whiteSpace = 'pre';
         });

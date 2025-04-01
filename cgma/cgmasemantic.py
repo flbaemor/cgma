@@ -135,7 +135,7 @@ class PrintNode(ASTNode):
             self.add_child(arg)
 
 class UnaryOpNode(ASTNode):
-    def __init__(self, operator, operand):
+    def __init__(self, operator, operand, line=None):
         super().__init__("UnaryOp", operator)
         self.add_child(operand)
 
@@ -1246,7 +1246,7 @@ def parse_factor(tokens, index):
         index += 1  
         return node, index  
     
-    if token.type in {"CHU_LIT", "CHUDEL_LIT"}:
+    if token.type in {"CHUNGUS_LIT", "CHUDELUXE_LIT"}:
         node = ASTNode("Value", token.value)
         index += 1
         return node, index
@@ -1516,7 +1516,7 @@ def parse_operand(tokens, index):
         return expr_node, index, "lwk"
 
     # Chungus or Chudeluxe (arithmetic types)
-    if token.type in {"CHU_LIT", "CHUDEL_LIT"}:
+    if token.type in {"CHUNGUS_LIT", "CHUDELUXE_LIT"}:
         expr_node, index = parse_expression(tokens, index)
         return expr_node, index, infer_literal_type(token.type)
 
@@ -1655,7 +1655,7 @@ def parse_operand(tokens, index):
 
 
     # Chungus or Chudeluxe (arithmetic types)
-    if token.type in {"CHU_LIT", "CHUDEL_LIT"}:
+    if token.type in {"CHUNGUS_LIT", "CHUDELUXE_LIT"}:
         expr_node, index = parse_expression(tokens, index)
         return expr_node, index, infer_literal_type(token.type)
 
@@ -1704,9 +1704,9 @@ def parse_operand(tokens, index):
 
 def infer_literal_type(token_type):
     """Returns the type string for a given literal token type."""
-    if token_type == "CHU_LIT":
+    if token_type == "CHUNGUS_LIT":
         return "chungus"
-    if token_type == "CHUDEL_LIT":
+    if token_type == "CHUDELUXE_LIT":
         return "chudeluxe"
     if token_type == "FORSEN_LIT":
         return "forsen"
@@ -1796,7 +1796,7 @@ def parse_print(tokens, index):
     index += 1
 
     if tokens[index].type != "OPPAR":
-        raise SemanticError(f"Syntax Error: Expected '(' after yep statement.", line)
+        raise SemanticError(f"Syntax Error: Expected '(' after yap statement.", line)
     index += 1
     token = tokens[index]
 
@@ -1965,7 +1965,7 @@ def parse_print(tokens, index):
             else:
                 args.append(ASTNode("Value", identif_name, line=line))
                 
-    elif tokens[index].type in {"CHU_LIT", "CHUDEL_LIT"}:
+    elif tokens[index].type in {"CHUNGUS_LIT", "CHUDELUXE_LIT"}:
         expr_node, index = parse_expression(tokens, index)
         args.append(expr_node)
 
@@ -1984,7 +1984,7 @@ def parse_print(tokens, index):
     while tokens[index].type == "COMMA":
         index += 1
         
-        if tokens[index].type in {"CHU_LIT", "CHUDEL_LIT"}:
+        if tokens[index].type in {"CHUNGUS_LIT", "CHUDELUXE_LIT"}:
             arg_node, index = parse_expression(tokens, index)
             actual_args.append(arg_node)
 
@@ -2096,6 +2096,26 @@ def parse_print(tokens, index):
             
             else:
                 actual_args.append(ASTNode("Value", full_access, line=line))
+
+        elif tokens[index].type == "IDENTIFIER" and tokens[index+1].type == "OPPAR":
+            func_name = tokens[index].value
+            func_info = symbol_table.lookup_function(func_name)
+            index_start = index
+
+            if isinstance(func_info, str):
+                raise SemanticError(f"Semantic Error: Function '{func_name}' is not declared.", line)
+            
+            func_return_type = func_info["return_type"]
+            func_params = func_info["params"]
+
+            func_node, index = parse_function_call(tokens, index, func_name, func_return_type, func_params)
+            if func_return_type in {"chungus", "chudeluxe"}:
+                expr_node, index = parse_expression(tokens, index_start)
+                actual_args.append(expr_node)
+
+            else:
+                actual_args.append(func_node)
+            
             
         elif tokens[index].type == "IDENTIFIER":
             arg_name = tokens[index].value
@@ -2148,7 +2168,7 @@ def parse_string_concatenation(tokens, index):
 
         for match in matches:
             if match != "{}":
-                raise SemanticError(f"Syntax Error: Placeholders {{}} must be adjacent within the string literal.", line)
+                raise SemanticError(f"Syntax Error: Placeholders {{}} must be adjacent to each other within the string literal.", line)
 
     placeholder_count = raw_string.count("{}")
     left_node = ASTNode("FormattedString", tokens[index].value, line=line)
@@ -2206,8 +2226,8 @@ def parse_sturdy(tokens, index):
     index += 1
 
     expected_literals = {
-        "chungus": "CHU_LIT",
-        "chudeluxe": "CHUDEL_LIT",
+        "chungus": "CHUNGUS_LIT",
+        "chudeluxe": "CHUDELUXE_LIT",
         "forsen": "FORSEN_LIT",
         "forsencd": "FORSENCD_LIT",
         "lwk": "LWK_LIT"
@@ -2635,7 +2655,7 @@ def parse_switch(tokens, index, func_type):
         index += 1
         line = tokens[index].line
 
-        if tokens[index].type not in {"FORSENCD_LIT", "FORSEN_LIT", "LWK_LIT", "CHU_LIT", "CHUDEL_LIT"}:
+        if tokens[index].type not in {"FORSENCD_LIT", "FORSEN_LIT", "LWK_LIT", "CHUNGUS_LIT", "CHUDELUXE_LIT"}:
             raise SemanticError(f"Semantic Error: Expected a valid literal value after 'caseoh'.", line)
         
         case_value = ASTNode("CaseValue", tokens[index].value, line=case_line)
@@ -2772,7 +2792,7 @@ def parse_insert(tokens, index, var_name, expected_type):
         raise SemanticError(f"Syntax Error: Expected '(' after 'insert'.", line)
     index += 1
 
-    if tokens[index].type != "CHU_LIT":
+    if tokens[index].type != "CHUNGUS_LIT":
         raise SemanticError(f"Semantic Error: Expected chungus literal as index in 'insert'.", line)
     index_value = tokens[index].value
     index += 1
@@ -2807,7 +2827,7 @@ def parse_remove(tokens, index, var_name, expected_type):
         raise SemanticError(f"Syntax Error: Expected '(' after 'remove'.", line)
     index += 1
 
-    if tokens[index].type == "CHU_LIT":
+    if tokens[index].type == "CHUNGUS_LIT":
         value = tokens[index].value
         index += 1
         

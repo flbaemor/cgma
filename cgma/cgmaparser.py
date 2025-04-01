@@ -46,7 +46,7 @@ class LL1Parser:
                 token_type = token.type
                 token_value = token.value
 
-            if token_type in {"IDENTIFIER", "CHU_LIT", "CHUDEL_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
+            if token_type in {"IDENTIFIER", "CHUNGUS_LIT", "CHUDELUXE_LIT", "FORSEN_LIT", "FORSENCD_LIT"}:
                 pass
 
             elif token_value in self.parsing_table.get(top, {}):
@@ -66,7 +66,7 @@ class LL1Parser:
                     #print(f"Updated Stack: {self.stack}")
                 else:
                     expected_tokens = list(set(self.parsing_table[top].keys()) - {'$', 'ε'})
-                    error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected one of: {expected_tokens}"
+                    error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: {expected_tokens}"
                     #print(error_message)
                     error_messages.append(error_message)
                     return False, error_messages
