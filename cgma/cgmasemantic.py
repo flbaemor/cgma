@@ -799,7 +799,7 @@ def parse_list_assignment(tokens, index):
         value_node, index = parse_list(tokens, index, var_type)
 
     else:
-        raise SemanticError(f"Syntax Error: Invalid list assignment or operation.", line)
+        raise SemanticError(f"Semantic Error: Invalid list assignment.", line)
 
     return AssignmentNode(var_name, value_node, line=line), index
 

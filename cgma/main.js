@@ -24,7 +24,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 [/[+\-*/<>!,&|]+/, "operator"],
                 [/\b[a-zA-Z_]\w*(?=\()/, "functionIdentifier"],
                 [/\b[a-zA-Z_]\w*\b/, "identifier"], // Identifiers
-                [/[\[\]\{\}\(\)\/]/, "container"],
+                [/[\{\}]/, "braces"],
+                [/[\[\]]/, "bracket"],
+                [/[\(\)]/, "parenthesis"],
             ],
 
             comment: [
@@ -55,10 +57,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             { token: "boolean", foreground: "#FFDCCC"},
             { token: "number", foreground: "#FFDCCC"},
             { token: "string", foreground: "#FFDCCC"},
-            { token: "operator", foreground: "#FFDCCC"},
+            { token: "operator", foreground: "#FFFFFF"},
             { token: "identifier", foreground: "#FDB7EA", fontStyle: "bold"},
             { token: "functionIdentifier", foreground: "#ffb070", fontStyle: "bold"},
-            { token: "container", foreground: "#00ffe5"},
+            { token: "braces", foreground: "#00ffe5", fontStyle: "bold"},
+            { token: "bracket", foreground: "#47ff69"},
+            { token: "parenthesis", foreground: "#47ff69"},
             { token: "comment", foreground: "#946893", fontStyle: "italic" },
         ],
             colors: {
@@ -69,6 +73,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 "editorLineNumber.foreground": "#8e7b8b",
                 "editorindentGuide.background": "#8e7b8b",
                 "editorindentGuide.activebackground": "#946893",
+                "scrollbarSlider.background": "#3c043c", 
+                "scrollbarSlider.hoverBackground": "#5e045e", 
+                "scrollbarSlider.activeBackground": "#90037b"
             }
         });
 
@@ -84,7 +91,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 filterGraceful: false,
                 showWords: false,
                 enabled: false,
-            }
+            },
+            scrollbar: {
+                vertical: "auto",
+                horizontal: "auto",
+                alwaysConsumeMouseWheel: false,
+                verticalScrollbarSize: 10,
+                horizontalScrollbarSize: 10,
+            },
+
         });
 
         editor.onDidScrollChange(() => {
