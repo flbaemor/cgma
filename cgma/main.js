@@ -1,89 +1,85 @@
-document.addEventListener('DOMContentLoaded', (event) => {
-    const editor = document.getElementById('editor');
-    const lineNumbers = document.getElementById('lineNumbers');
+document.addEventListener('DOMContentLoaded', async () => {
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs' } });
 
-    // Function to update line numbers
-    function updateLineNumbers() {
-        const lines = editor.value.split('\n').length;
-        lineNumbers.innerHTML = ''; // Clear existing line numbers
-        for (let i = 1; i <= lines; i++) {
-            lineNumbers.innerHTML += `<div>${i}</div>`;
-        }
-    }
+    require(['vs/editor/editor.main'], function () {
 
-    // Update line numbers on input
-    editor.addEventListener('input', updateLineNumbers);
-
-    // Synchronize scrolling of line numbers with textarea
-    editor.addEventListener('scroll', () => {
-        lineNumbers.scrollTop = editor.scrollTop;
+        monaco.languages.register({ id: "cgma" });
+        monaco.languages.setMonarchTokensProvider("cgma", {
+        tokenizer: {
+            root: [
+                // 'append', 'aura', 'back', 'caseoh', 'chat', 'chudeluxe', 'chungus', 'false', 'forsen', 'getout', 'gng', 'hawk', 'hawk tuah', 'insert', 'jit', 'lethimcook', 'lwk', 'nocap', 'npc', 'pause', 'plug', 'remove', 'skibidi', 'sturdy', 'true', 'tuah', 'yap']
+                [/\b(chungus|chudeluxe|forsen|forsencd|lwk|nocap|aura|sturdy)\b/, "type"],
+                [/\b(hawk|tuah|lethimcook|jit|lil|plug)\b/, "control"],
+                [/\b(yap|chat)\b/, "io"],
+                [/\b(append|insert|remove|ts|taper)\b/, "function"],
+                [/\b(continue|getout|back)\b/, "control1"],
+                [/\b(skibidi|npc|caseoh)\b/, "keyword"],
+                [/\b(true|false)\b/, "boolean"],
+                [/\/\/.*/, "comment"], // Single-line comment
+                [/\/\*[\s\S]*?\*\//, "comment"], // Multi-line comment
+                [/\d+/, "number"],
+                [/"[^"]*"/, "string"],
+                [/'[^']*'/, "string"],
+                [/[+\-*/<>!,&|]+/, "operator"],
+                [/\b[a-zA-Z_]\w*\b/, "identifier"], // Identifiers
+                [/[\[\]\{\}\(\)\/]/, "container"],
+            ],
+        },
     });
 
-    // Initial update of line numbers
-    updateLineNumbers();
-
-    document.getElementById('editor').addEventListener('keydown', function(event) {
-        if (event.key === 'Tab') {
-            event.preventDefault();
-            const start = this.selectionStart;
-            const end = this.selectionEnd;
-    
-            this.value = this.value.substring(0, start) + '\t' + this.value.substring(end);
-            this.selectionStart = this.selectionEnd = start + 1;
-        } else if (event.key === 'Enter') {
-            event.preventDefault();
-            const start = this.selectionStart;
-            const textBeforeCursor = this.value.substring(0, start);
-            const textAfterCursor = this.value.substring(start);
-            
-            // Get the previous line's indentation
-            const previousLine = textBeforeCursor.split('\n').pop();
-            const indentation = previousLine.match(/^\s*/)[0];
-    
-            // Insert newline with the same indentation
-            this.value = textBeforeCursor + '\n' + indentation + textAfterCursor;
-            this.selectionStart = this.selectionEnd = start + indentation.length + 1;
-    
-            // **Trigger line number update**
-            updateLineNumbers();
-        }
-    });
-    
-    const navLinks = document.querySelectorAll('.nav-links a');
-
-    // Add event listeners for navigation links
-    navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-
-            // Remove active class from all links
-            navLinks.forEach(l => l.classList.remove('active'));
-
-            // Add active class to the clicked link
-            this.classList.add('active');
-
-            // Run the corresponding function based on the link's ID
-            if (this.id === 'lexerLink') {
-                runLexer();
-            } else if (this.id === 'syntaxLink') {
-                runSyntax();
-            } else if (this.id === 'semanticLink') {
-                runSemantic();
+        monaco.editor.defineTheme("myCustomTheme", {
+        base: "vs-dark",
+        inherit: true,
+        rules: [
+            { token: "keyword", foreground: "#B7B1F2"}, 
+            { token: "type", foreground: "#75b4e0"},
+            { token: "control", foreground: "#B7B1F2"},
+            { token: "control1", foreground: "#ff79c6"},
+            { token: "function", foreground: "#ff79c6"},
+            { token: "io", foreground: "#8be9fd"},
+            { token: "boolean", foreground: "#FFDCCC"},
+            { token: "number", foreground: "#FFDCCC"},
+            { token: "string", foreground: "#FFDCCC"},
+            { token: "operator", foreground: "#FFDCCC"},
+            { token: "identifier", foreground: "#FDB7EA"}, 
+            { token: "container", foreground: "#00ffe5"},
+            { token: "comment", foreground: "#946893", fontStyle: "italic" },
+        ],
+            colors: {
+                "editor.foreground": "#FFFFFF",
+                "editor.background": "#4f134e",
+                "editorCursor.foreground": "#FFFFFF",
+                "editor.lineHighlightBackground": "#4a2949",
+                "editorLineNumber.foreground": "#8e7b8b",
+                "editorindentGuide.background": "#8e7b8b",
+                "editorindentGuide.activebackground": "#946893",
             }
         });
-    });
 
-    // Add event listener for the run button
+        window.editor = monaco.editor.create(document.getElementById('editor'), {
+            value: `chungus skibidi(){\n\t//your code here\n\t\n\tback 0\n}`,
+            language: 'cgma',
+            theme: 'myCustomTheme',
+            minimap: { enabled: false },
+            overviewRulerLanes: 0,
+            automaticLayout: true,
+            newLineCharacter: "\n",
+            suggest: {
+                filterGraceful: false,
+                showWords: false,
+                enabled: false,
+            }
+        });
+
+        editor.onDidScrollChange(() => {
+            document.getElementById('lineNumbers').scrollTop = editor.getScrollTop();
+        });
+    });
     document.querySelector('.run').addEventListener('click', runLexer);
+
 });
 
-
-const widthResizer = document.querySelector(".widthResizer");
-const textFieldCont = document.querySelector(".textFieldCont");
-const heightResizer = document.querySelector(".heightResizer");
-const mainCont = document.querySelector(".mainCont");
-
-widthResizer.addEventListener("mousedown", (e) => {
+document.querySelector(".widthResizer").addEventListener("mousedown", (e) => {
     e.preventDefault();
     document.addEventListener("mousemove", widthResize);
     document.addEventListener("mouseup", () => {
@@ -92,11 +88,12 @@ widthResizer.addEventListener("mousedown", (e) => {
 });
 
 function widthResize(e) {
-    let newWidth = e.clientX - textFieldCont.getBoundingClientRect().left;
-    textFieldCont.style.width = `${newWidth}px`;
-};
+    let newWidth = e.clientX - document.querySelector(".textFieldCont").getBoundingClientRect().left;
+    document.querySelector(".textFieldCont").style.width = `${newWidth}px`;
+}
 
-heightResizer.addEventListener("mousedown", (e) => {
+// Resizable Height
+document.querySelector(".heightResizer").addEventListener("mousedown", (e) => {
     e.preventDefault();
     document.addEventListener("mousemove", heightResize);
     document.addEventListener("mouseup", () => {
@@ -105,45 +102,37 @@ heightResizer.addEventListener("mousedown", (e) => {
 });
 
 function heightResize(e) {
-    let newHeight = e.clientY - mainCont.getBoundingClientRect().top;
-    mainCont.style.height = `${newHeight}px`;
-};
+    let newHeight = e.clientY - document.querySelector(".mainCont").getBoundingClientRect().top;
+    document.querySelector(".mainCont").style.height = `${newHeight}px`;
+}
 
 async function runLexer() {
-    const sourceCode = document.getElementById('editor').value;
+    const sourceCode = editor.getValue();
     console.log("Running lexer with source code:", sourceCode);
+    
     try {
         const response = await fetch('/api/lex', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ source_code: sourceCode })
         });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
         const data = await response.json();
         console.log("Lexer response:", data);
+        
         const tokensTableBody = document.getElementById('tokenBody');
         tokensTableBody.innerHTML = '';
+
         data.tokens.forEach(token => {
             const row = tokensTableBody.insertRow();
-            const cellType = row.insertCell(0);
-            const cellValue = row.insertCell(1);
-            cellType.textContent = token.type === "EOF" ? token.type : token.type.toLowerCase();
-            cellValue.textContent = token.value;
-            cellValue.style.whiteSpace = 'pre';
+            row.insertCell(0).textContent = token.type.toLowerCase();
+            row.insertCell(1).textContent = token.value;
         });
-        
+
         const errorBox = document.getElementById('errorText');
-        if (data.errors.length > 0) {
-            errorBox.value = data.errors.join('\n');
-            //errorBox.style.color = 'red';
-        } else {
-            errorBox.value = 'Lexical analysis successful!';
-            //errorBox.style.color = 'green';
-        }
+        errorBox.value = data.errors.length > 0 ? data.errors.join('\n') : 'Lexical analysis successful!';
     } catch (error) {
         console.error("Error running lexer:", error);
         document.getElementById('errorText').value = 'Error running lexical analysis.';
@@ -151,34 +140,25 @@ async function runLexer() {
 }
 
 async function runSyntax() {
-    const sourceCode = document.getElementById('editor').value;
+    const sourceCode = editor.getValue();
     console.log("Running syntax with source code:", sourceCode);
-    runLexer();
+    await runLexer();
+
     try {
         const response = await fetch('/api/parse', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ source_code: sourceCode })
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const data = await response.json();
         console.log("Syntax response:", data);
-        
-        const errorBox = document.getElementById('errorText');
-        
-        if (data.success) {
-            errorBox.value = 'Syntax analysis successful!';
-            //errorBox.style.color = 'green';
-        } else {
-            errorBox.value = data.errors.join('\n');
-            //errorBox.style.color = 'red';
-        }
+
+        document.getElementById('errorText').value = data.success
+            ? 'Syntax analysis successful!'
+            : data.errors.join('\n');
     } catch (error) {
         console.error("Error running syntax:", error);
         document.getElementById('errorText').value = 'Error running syntax analysis.';
@@ -188,13 +168,13 @@ async function runSyntax() {
 async function runSemantic() {
     const errorBox = document.getElementById('errorText');
     errorBox.value = '';
+    
     await runSyntax();
-    if (errorBox.value != 'Syntax analysis successful!') {
-        return;
-    }
+    if (errorBox.value !== 'Syntax analysis successful!') return;
 
-    const sourceCode = document.getElementById('editor').value;
+    const sourceCode = editor.getValue();
     console.log("Running semantic analysis with source code:", sourceCode);
+    
     try {
         const response = await fetch('/api/semantic', {
             method: 'POST',
@@ -202,20 +182,24 @@ async function runSemantic() {
             body: JSON.stringify({ source_code: sourceCode })
         });
 
-        if (!response.ok) {
-            throw new Error(`Semantic HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Semantic HTTP error! status: ${response.status}`);
 
         const data = await response.json();
         console.log("Semantic response:", data);
 
-        if (!data.success) {
-            errorBox.value = data.errors.join('\n');
-        } else {
-            errorBox.value = 'Semantic analysis successful!';
-        }
+        errorBox.value = data.success ? 'Semantic analysis successful!' : data.errors.join('\n');
     } catch (error) {
         console.error("Error running semantic analysis:", error);
         errorBox.value = 'Error running semantic analysis.';
+    }
+}
+
+function updateLineNumbers() {
+    const lines = editor.getValue().split('\n').length;
+    const lineNumbers = document.getElementById('lineNumbers');
+    lineNumbers.innerHTML = '';
+
+    for (let i = 1; i <= lines; i++) {
+        lineNumbers.innerHTML += `<div>${i}</div>`;
     }
 }
