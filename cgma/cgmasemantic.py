@@ -2449,7 +2449,7 @@ def parse_return(tokens, index, func_type):
             if return_type != func_type:
                 raise SemanticError(f"Type Error: Function '{identifier}' returns '{return_type}', but expected '{func_type}'.", line)
 
-            return_expr, index = parse_function_call(tokens, index, identifier, return_type, func_info["params"])
+            return_expr, index = parse_expression_type(tokens, index, func_type)
 
         else:  # Variable case
             print(tokens[index])
