@@ -1676,7 +1676,7 @@ class Lexer:
                 continue
                 
         if self.current_char is None:
-            tokens.append(Token(TT_EOF, "EOF", line))
+            tokens.append(Token(TT_EOF, "", line))
         return tokens, errors
 
     
