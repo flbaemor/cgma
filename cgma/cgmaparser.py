@@ -62,12 +62,12 @@ class LL1Parser:
 
             ###########remove if error xd#############
             elif top == 'EOF':
-                while token_type == '\n':
+                while token_type == 'nl':
                     index += 1
                     token = tokens[index]
                     token_type = token.type
                     token_value = token.value
-                if token_type != '\n' and token_type != 'EOF':
+                if token_type != 'nl' and token_type != 'EOF':
                     error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: 'EOF'"
                     error_messages.append(error_message)
                     return False, error_messages
