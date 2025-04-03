@@ -401,7 +401,7 @@ def build_ast(tokens):
             
         elif tokens[index].value == "fein":
             index += 1
-            if tokens[index].value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
+            if tokens[index].value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk", "nocap"}:
                 id_type = tokens[index].value
                 index += 1
                 if tokens[index].type != "identifier":
