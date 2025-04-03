@@ -155,7 +155,7 @@ cfg = {
     "<if_tail>": [["ε"],
         ["hawk", "<hawk_follow>"]],
     "<hawk_follow>": [["<if_statement>"],
-        ["{", "<nl>", "<body>", "}"]],
+        ["{", "<nl>", "<body>", "}", "<nl>"]],
     "<switch_statement>": [["lethimcook", "(", "<expression>", ")", "{", "<nl>", "<case_statement>", "}"]],
     "<case_statement>": [["ε"],
         ["caseoh", "<constant>", ":", "<nl>", "<body>", "<case_statement>"],
