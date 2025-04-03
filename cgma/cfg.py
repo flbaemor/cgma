@@ -239,7 +239,7 @@ first_sets = compute_first(cfg)
 follow_sets = compute_follow(cfg, first_sets)
 predict_sets = compute_predict(cfg, first_sets, follow_sets)
 
-'''
+
 print("Context-Free Grammar (CFG):\n")
 for non_terminal, productions in cfg.items():
     non_terminal = non_terminal.strip("<>").upper() 
@@ -263,4 +263,4 @@ print("\n\nPREDICT SET:")
 for (lhs, prod), predict_set in predict_sets.items():
     prod_str = " ".join(prod).replace("''", "")  # Remove '' in productions
     predict_set_str = ", ".join(predict_set).replace("''", "")  # Remove '' in predict set
-    print(f"Predict({lhs} → {prod_str}) -> {{{predict_set_str}}}")'''
+    print(f"Predict({lhs} → {prod_str}) -> {{{predict_set_str}}}")

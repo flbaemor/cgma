@@ -266,6 +266,7 @@ class ListAccessNode(ASTNode):
 class SymbolTable:
     def __init__(self):
         self.variables = {}  # Stores variables
+        self.global_variables = {}  # Stores global variables
         self.functions = {}  # Stores function definitions
         self.scopes = [{}]   # Stack of scopes (for local/global tracking)
         self.structs = [{}]  # Stack of structs
@@ -311,7 +312,6 @@ class SymbolTable:
 
         return f"Semantic Error: Variable '{name}' used before declaration."
     
-
 
     ###### FUNCTION ######
     def declare_function(self, name, return_type, params):
@@ -374,24 +374,47 @@ def build_ast(tokens):
     while index < len(tokens):
         token = tokens[index]
         
-        if token.value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
-            node, index = parse_functionOrVariable(tokens, index)
+        if tokens[index].value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
+            id_type = token.value
+            index += 1
+            if tokens[index].type != "identifier":
+                raise SemanticError(f"Semantic Error: Invalid variable declaration.", token.line)
+            id_name = tokens[index].value
+            index += 1
+            node, index = parse_variable(tokens, index, id_name, id_type) 
 
             if node:
                 root.add_child(node)
 
-        elif token.value == "nocap":
+        elif tokens[index].value == "nocap":
             index += 1
             if tokens[index].type == "identifier":
                 func_name = tokens[index].value
                 func_type = "nocap"
                 node, index = parse_function(tokens, index, func_name, func_type)
             else:
-                raise SemanticError(f"Semantic Error: Invalid function declaration.", token.line)
+                raise SemanticError(f"Semantic Error: Invalid function declaration.", tokens[index].line)
             
             if node:
                 root.add_child(node)
             
+        elif tokens[index].value == "fein":
+            index += 1
+            if tokens[index].value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
+                id_type = tokens[index].value
+                index += 1
+                if tokens[index].type != "identifier":
+                    raise SemanticError(f"Semantic Error: Invalid function declaration.", tokens[index].line)
+                id_name = tokens[index].value
+                index += 1
+                node, index = parse_function(tokens, index, id_name, id_type)
+
+                if node:
+                    root.add_child(node)
+
+            else: 
+                raise SemanticError(f"Syntax Error: Expected data type for function declaration after 'fein'.", tokens[index].line)
+
         elif token.value == "sturdy":
             node, index = parse_sturdy(tokens, index)
             if node:
@@ -468,6 +491,9 @@ def parse_function(tokens, index, func_name, func_type):
         func_node = FunctionDeclarationNode(func_type, func_name, params_node)
 
     elif func_name != "skibidi":
+        if tokens[index].type != "(":
+            error = f"Syntax Error: Missing () for function declaration."
+            raise SemanticError(error, line)
         params_node = ASTNode("Parameters")
         line = tokens[index].line
         symbol_table.enter_scope()
