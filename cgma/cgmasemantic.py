@@ -1490,7 +1490,8 @@ def parse_expression_lwk(tokens, index):
     line = tokens[index].line
     left_node, index, left_type = parse_equality(tokens, index)
 
-    if left_type in {"chungus", "chudeluxe"} and tokens[index].type not in {"==", "!=", "<", "<=", ">", ">="}:
+    if left_type in {"chungus", "chudeluxe"} and tokens[index].type not in {"==", "!=", "<", "<=", ">", ">="} and tokens[index].type != ")":
+        print(tokens[index].type)
         raise SemanticError(f"Type Error: Expected a logical or comparison operator in lwk expression.", line)
 
     while tokens[index].type in {"&&", "||"}:
@@ -1567,6 +1568,17 @@ def parse_relational(tokens, index):
     return left_node, index, left_type
 
 
+def check_lwk(tokens, index):
+    start_index = index 
+    op_found = False
+
+    while tokens[index].type != ")":
+        index += 1
+        if tokens[index].type in {"<", "<=", ">", ">=", "==", "!=", "&&", "||"}:
+            op_found = True
+
+    return op_found, start_index
+
 def parse_operand(tokens, index):
     """Determines the parsing function based on the operand type."""
     token = tokens[index]
@@ -1578,13 +1590,24 @@ def parse_operand(tokens, index):
             expr_type = tokens[index+1].value
             expr_node, index = parse_expression(tokens, index)
             return expr_node, index, expr_type
+        
         else:
-            index += 1
-            expr_node, index = parse_expression_lwk(tokens, index)
+            is_lwk, index = check_lwk(tokens, index)
+            if not is_lwk:
+                expr_node, index = parse_expression(tokens, index)
+                index -= 1
+                expr_type = "chungus"
+                
+            else:
+                index += 1
+                expr_node, index = parse_expression_lwk(tokens, index)
+                expr_type = "lwk"
+
+            is_lwk, index = check_lwk(tokens, index)
         if tokens[index].type != ")":
             raise SemanticError(f"Syntax Error: Expected ')' to close expression.", line)
         index += 1
-        return expr_node, index, "lwk"
+        return expr_node, index, expr_type
 
     # Chungus or Chudeluxe (arithmetic types)
     if token.type in {"chungus_lit", "chudeluxe_lit"}:
