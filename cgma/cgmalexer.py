@@ -20,7 +20,7 @@ OPER = ARITH_OPER + RELAT_OPER
 #DELIMITERS
 
 clbra_dlm = ' =\n)\t,' + OPER
-clcur_dlm = ' \n)}\t' + ALPHANUM
+clcur_dlm = ' \n)}\t,' + ALPHANUM
 clpar_dlm = ' \n}{)&|}\t.,(]' + ARITH_OPER + ALPHANUM
 com_dlm   = ' ('
 comma_dlm = ' "\t-!\'(' + ALPHANUM
@@ -45,7 +45,7 @@ plus_dlm =  ' ("+)\t' + ALPHANUM
 relat_dlm = ' ("\t!' + ALPHANUM
 scolon_dlm = ' +-\t' + ALPHANUM
 spc_dlm =   ' \t'
-unary_dlm = ' )\t\n' + ALPHANUM
+unary_dlm = ' )\t\n,' + ALPHANUM
 
 #TOKENS
 
