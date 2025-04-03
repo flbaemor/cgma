@@ -95,7 +95,7 @@ TT_MUL          = '*'     # '*'
 TT_DIV          = '/'     # '/'
 TT_MOD          = '%'     # '%'
 TT_IS           = '='      # '='
-TT_NEGAT        = '-'   # '-'
+TT_NEGAT        = 'neg'   # '-'
 
 TT_EQ           = '=='      # '=='  
 TT_NEQ          = '!='     # '!='

@@ -173,7 +173,7 @@ cfg = {
     "<expression>": [["<expr_head>", "<expr_tail>"]],
     "<expr_head>": [["<term>", "<term_tail>"]],
     "<term>": [["<factor>", "<builtin_func>", "<factor_tail>"]],
-    "<factor>": [["-", "<factor1>"],
+    "<factor>": [["neg", "<factor1>"],
         ["!", "<factor1>"],
         ["<factor1>"]],
     "<factor1>": [["<literal>"],

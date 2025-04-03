@@ -158,7 +158,7 @@ async function runLexer() {
 
         data.tokens.forEach(token => {
             const row = tokensTableBody.insertRow();
-            row.insertCell(0).textContent = token.type.replace(/\n/g, "\\n");
+            row.insertCell(0).textContent = token.type.replace(/\n/g, "\\n").replace("neg", "- (negative)");
             row.insertCell(1).textContent = token.value;
         });
 
