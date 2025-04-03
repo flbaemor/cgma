@@ -1170,7 +1170,7 @@ class Lexer:
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
                 self.advance()
-                if self.current_char in {ALPHANUM, "("}:
+                if self.current_char in ALPHANUM or self.current_char == "(":
                     tokens.append(Token(TT_NEGAT, ident_str, line))
                     continue
                 elif self.current_char == "-":

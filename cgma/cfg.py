@@ -239,7 +239,7 @@ first_sets = compute_first(cfg)
 follow_sets = compute_follow(cfg, first_sets)
 predict_sets = compute_predict(cfg, first_sets, follow_sets)
 
-
+'''
 print("Context-Free Grammar (CFG):\n")
 for non_terminal, productions in cfg.items():
     non_terminal = non_terminal.strip("<>").upper() 
@@ -248,7 +248,7 @@ for non_terminal, productions in cfg.items():
         production_str = "''" if production_str == "ε" else production_str
         print(f"{non_terminal} ::= {production_str}")
 
-'''
+
 print("FIRST SET:")
 for non_terminal in first_sets.keys():
     first_set_str = ", ".join(first_sets[non_terminal]).replace("''", "")
