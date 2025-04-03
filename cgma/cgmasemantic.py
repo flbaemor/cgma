@@ -443,7 +443,7 @@ def build_ast(tokens):
                 root.add_child(node)
 
         else:
-            if token.value not in {"EOF"}:
+            if token.type not in {"EOF"}:
                 raise SemanticError(f"Semantic Error: Invalid token '{token.value}' used in global statement.", token.line)
             break
     
