@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         window.editor = monaco.editor.create(document.getElementById('editor'), {
-            value: `chungus skibidi(){\n\t//your code here\n\t\n\tback 0\n}`,
+            value: `skibidi{\n\t//your code here\n\t\n}`,
             language: 'cgma',
             theme: 'myCustomTheme',
             minimap: { enabled: false },
