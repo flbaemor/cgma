@@ -654,8 +654,16 @@ def parse_statement(tokens, index, func_type = None):
             if tokens[index + 1].type == "=":
                 node, index = parse_list_assignment(tokens, index)
                 return node, index
+            
+            elif tokens[index + 1].type == "[":
+                node, index = parse_list_access(tokens, index)
+                if tokens[index + 1].type == "=":
+                    index += 2
+                    node, index = parse_assignment(tokens, index, token.value, var_type)                    
+                return node, index
+                
             else:
-                raise SemanticError(f"Syntax Error: Expected '=' after list '{var_name}'.", line)
+                raise SemanticError(f"Semantic Error: Invalid assignment statement for list '{var_name}'.", line)
 
         elif tokens[index + 1].type == "=":
             var_name = token.value
