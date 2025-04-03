@@ -40,14 +40,20 @@ def parse():
     source_code = data.get('source_code', '')
     tokens, errors = lexer_run('<stdin>', source_code)
     if errors:
-        return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
+        modified_errors = [replace_tokens(error.as_string()) for error in errors]
+        return jsonify({'success': False, 'errors': modified_errors})
 
     parser = LL1Parser(cfg, predict_sets)
     success, parse_errors = parser.parse(tokens)
     if not success:
-        return jsonify({'success': False, 'errors': parse_errors})
+        modified_parse_errors = [replace_tokens(error) for error in parse_errors]
+        return jsonify({'success': False, 'errors': modified_parse_errors})
     return jsonify({'success': True, 'errors': []})
 
+
+def replace_tokens(error_message):
+    modified_message = error_message.replace("[')', ',', ']']", "[',', ']']")
+    return modified_message
 
 @app.route('/api/semantic', methods=['POST'])
 def semantic_analysis():

@@ -187,7 +187,7 @@ async function runSyntax() {
 
         const data = await response.json();
         console.log("Syntax response:", data);
-
+        
         document.getElementById('errorText').value = data.success
             ? 'Syntax analysis successful!'
             : data.errors.join('\n');

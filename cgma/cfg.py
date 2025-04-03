@@ -123,7 +123,7 @@ cfg = {
         ["chat", "(", ")"],
         ["<list_value>"]],
     "<list_value>": [["[", "<list_content>", "]"],
-        ["append", "(", "<arg>", ")"],
+        ["append", "(", "<expression>", ")"],
         ["insert", "(", "<expression>", ",", "<arg>", ")"],
         ["remove", "(", "<expression>", ")"]],
     "<list_content>": [["ε"],
