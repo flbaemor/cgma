@@ -49,92 +49,94 @@ unary_dlm = ' )\t\n' + ALPHANUM
 
 #TOKENS
 
-TT_RW_APPEND        = 'APPEND'
-TT_RW_AURA          = 'AURA'
-TT_RW_BACK          = 'BACK'
-TT_RW_CASEOH        = 'CASEOH'
-TT_RW_CHAT          = 'CHAT'
-TT_RW_CHUNGUS       = 'CHUNGUS'
-TT_RW_CHUDELUXE     = 'CHUDELUXE'
-TT_RW_FALSE         = 'FALSE'
-TT_RW_FORSEN        = 'FORSEN'
-TT_RW_FORSENCD      = 'FORSENCD'
-TT_RW_GETOUT        = 'GETOUT'
-TT_RW_GNG           = 'GNG'
-TT_RW_HAWK          = 'HAWK'
-TT_RW_HAWKTUAH      = 'HAWK_TUAH'
-TT_RW_INSERT        = 'INSERT'
-TT_RW_JIT           = 'JIT'
-TT_RW_LETHIMCOOK    = 'LETHIMCOOK'
-TT_RW_LIL           = 'LIL'
-TT_RW_LWK           = 'LWK'
-TT_RW_NOCAP         = 'NOCAP'
-TT_RW_NPC           = 'NPC'
-TT_RW_PAUSE         = 'PAUSE'
-TT_RW_PLUG          = 'PLUG'
-TT_RW_REMOVE        = 'REMOVE'
-TT_RW_SKIBIDI       = 'SKIBIDI'
-TT_RW_STURDY        = 'STURDY'
-TT_RW_TRUE          = 'TRUE'
-TT_RW_TUAH          = 'TUAH'
-TT_RW_TAPER         = 'TAPER'
-TT_RW_TS            = 'TS'
-TT_RW_YAP           = 'YAP'
+TT_RW_APPEND        = 'append'
+TT_RW_AURA          = 'aura'
+TT_RW_BACK          = 'back'
+TT_RW_CASEOH        = 'caseoh'
+TT_RW_CHAT          = 'chat'
+TT_RW_CHUNGUS       = 'chungus'
+TT_RW_CHUDELUXE     = 'chudeluxe'
+TT_RW_FALSE         = 'false'
+TT_RW_FEIN          = 'fein'
+TT_RW_FORSEN        = 'forsen'
+TT_RW_FORSENCD      = 'forsencd'
+TT_RW_GETOUT        = 'getout'
+TT_RW_GNG           = 'gng'
+TT_RW_HAWK          = 'hawk'
+TT_RW_HAWKTUAH      = 'hawktuah'
+TT_RW_INSERT        = 'insert'
+TT_RW_JIT           = 'jit'
+TT_RW_LETHIMCOOK    = 'lethimcook'
+TT_RW_LIL           = 'lil'
+TT_RW_LWK           = 'lwk'
+TT_RW_NOCAP         = 'nocap'
+TT_RW_NPC           = 'npc'
+TT_RW_PAUSE         = 'pause'
+TT_RW_PLUG          = 'plug'
+TT_RW_REMOVE        = 'remove'
+TT_RW_SKIBIDI       = 'skibidi'
+TT_RW_STURDY        = 'sturdy'
+TT_RW_TRUE          = 'true'
+TT_RW_TUAH          = 'tuah'
+TT_RW_TAPER         = 'taper'
+TT_RW_TS            = 'ts'
+TT_RW_YAP           = 'yap'
 
 
-TT_CHUNGUS      = 'CHUNGUS_LIT'     # Whole Numbers '3'
-TT_CHUDELUXE    = 'CHUDELUXE_LIT'   # Decimal Numbers '3.14'
-TT_FORSEN       = 'FORSEN_LIT'  # Strings 
-TT_FORSENCD     = 'FORSENCD_LIT' #Char
-TT_LWK          = 'LWK_LIT'     # Boolean 'true' or 'false'
+TT_CHUNGUS      = 'chungus_lit'     # Whole Numbers '3'
+TT_CHUDELUXE    = 'chudeluxe_lit'   # Decimal Numbers '3.14'
+TT_FORSEN       = 'forsen_lit'  # Strings 
+TT_FORSENCD     = 'forsencd_lit' #Char
+TT_LWK          = 'lwk_lit'     # Boolean 'true' or 'false'
 
-TT_PLUS         = 'PLUS'    # '+'
-TT_MINUS        = 'MINUS'   # '-'
-TT_MUL          = 'MUL'     # '*'
-TT_DIV          = 'DIV'     # '/'
-TT_MOD          = 'MOD'     # '%'
-TT_IS           = 'IS'      # '='
-TT_NEGAT        = 'NEGAT'   # '-'
+TT_PLUS         = '+'    # '+'
+TT_MINUS        = '- '   # '-'
+TT_MUL          = '*'     # '*'
+TT_DIV          = '/'     # '/'
+TT_MOD          = '%'     # '%'
+TT_IS           = '='      # '='
+TT_NEGAT        = '-'   # '-'
 
-TT_EQ           = 'EQ'      # '=='  
-TT_NEQ          = 'NEQ'     # '!='
-TT_INC          = 'INC'     # '++'
-TT_DEC          = 'DEC'     # '--'
+TT_EQ           = '=='      # '=='  
+TT_NEQ          = '!='     # '!='
+TT_INC          = '++'     # '++'
+TT_DEC          = '--'     # '--'
 
-TT_NOT          = 'NOT'     # '!'
-TT_AND          = 'AND'     # '&&'
-TT_OR           = 'OR'      # '||'
-TT_LT           = 'LT'      # '<'
-TT_GT           = 'GT'      # '>'
-TT_LTE          = 'LTE'     # '<='
-TT_GTE          = 'GTE'     # '>='
+TT_NOT          = '!'     # '!'
+TT_AND          = '&&'     # '&&'
+TT_OR           = '||'      # '||'
+TT_LT           = '<'      # '<'
+TT_GT           = '>'      # '>'
+TT_LTE          = '<='     # '<='
+TT_GTE          = '>='     # '>='
 
-TT_OPPAR        = 'OPPAR'   # '('
-TT_CLPAR        = 'CLPAR'   # ')'
-TT_OPBRA        = 'OPBRA'   # '['
-TT_CLBRA        = 'CLBRA'   # ']'
-TT_OPCUR        = 'OPCUR'   # '{'
-TT_CLCUR        = 'CLCUR'   # '}'
-TT_SEMICOL      = 'SEMICOL' # ';'
-TT_COL          = 'COLON'   # ':'
-TT_COMMA        = 'COMMA'   # ','
-TT_DOT          = 'DOT'     # '.'
-TT_DBLQT        = 'DBLQT'   # '"'
+TT_OPPAR        = '('   # '('
+TT_CLPAR        = ')'   # ')'
+TT_OPBRA        = '['   # '['
+TT_CLBRA        = ']'   # ']'
+TT_OPCUR        = '{'   # '{'
+TT_CLCUR        = '}'   # '}'
+TT_SEMICOL      = ';' # ';'
+TT_COL          = ':'   # ':'
+TT_COMMA        = ','   # ','
+TT_DOT          = '.'     # '.'
+TT_DBLQT        = '"'   # '"'
+TT_QT           = "'"   # "'"
 
-TT_SPC          = 'SPC'     # ' '
-TT_NL           = 'NL'      # New Line
-TT_TAB          = 'TAB'     # Tab
+TT_SPC          = ' '     # ' '
+TT_NL           = 'nl'      # New Line
+TT_TAB          = '\t'     # Tab
 TT_EOF          = 'EOF'     # End of File
 
-TT_KEYWORD      = 'KEYWORD' # Keywords
-TT_IDENTIFIER   = 'IDENTIFIER' # Identifiers
+TT_KEYWORD      = 'keyword' # Keywords
+TT_IDENTIFIER   = 'identifier' # Identifiers
 
-TT_ESCAPESEQUENCE = 'ESCAPESEQUENCE' # Escape Sequence
-TT_COMMENT      = 'COMMENT' # Comments
+TT_ESCAPESEQUENCE = 'escapesequence' # Escape Sequence
+TT_COMMENT      = 'comment' # Comments
 
 
 #reference only
-RESERVED_KEYWORDS = ['append', 'aura', 'back', 'caseoh', 'chat', 'chudeluxe', 'chungus', 'false', 'forsen', 'getout', 'gng', 'hawk', 'hawk tuah', 'insert', 'jit', 'lethimcook', 'lwk', 'nocap', 'npc', 'pause', 'plug', 'remove', 'skibidi', 'sturdy', 'true', 'tuah', 'yap']
+RESERVED_KEYWORDS = ['append', 'aura', 'back', 'caseoh', 'chat', 'chudeluxe', 'chungus', 'false', 'fein', 'forsen', 'getout', 'gng', 'hawk', 'hawk tuah', 'insert', 'jit', 'lethimcook', 'lwk', 'nocap', 'npc', 'pause', 'plug', 'remove', 'skibidi', 'sturdy', 'true', 'tuah', 'yap']
 RESERVED_SYMBOLS = [
     # Unary Operators
     '++', '--', '-',
@@ -449,6 +451,27 @@ class Lexer:
                                         errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                                         self.advance()
                                         continue
+
+                    if self.current_char == "e":
+                        ident_str += self.current_char
+                        ident_count += 1
+                        self.advance()
+                        if self.current_char == "i":
+                            ident_str += self.current_char
+                            ident_count += 1
+                            self.advance()
+                            if self.current_char == "n":
+                                ident_str += self.current_char
+                                ident_count += 1
+                                self.advance()
+                                if self.current_char is None or self.current_char in spc_dlm:
+                                    tokens.append(Token(TT_RW_FEIN, ident_str, line))
+                                    continue
+                                elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
+                                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                                    self.advance()
+                                    continue
+
                     if self.current_char == "o":
                         ident_str += self.current_char
                         ident_count += 1
@@ -881,10 +904,10 @@ class Lexer:
                                             ident_str += self.current_char
                                             ident_count+=1
                                             self.advance()
-                                            if self.current_char is not None and self.current_char in com_dlm:
+                                            if self.current_char is not None and self.current_char in hawk_dlm:
                                                 tokens.append(Token(TT_RW_SKIBIDI, ident_str, line))
                                                 continue
-                                            elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
+                                            elif self.current_char is not None and self.current_char not in hawk_dlm and self.current_char not in ALPHANUM:
                                                 errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                                                 self.advance()
                                                 continue
@@ -1147,7 +1170,7 @@ class Lexer:
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
                 self.advance()
-                if self.current_char in ALPHANUM:
+                if self.current_char in {ALPHANUM, "("}:
                     tokens.append(Token(TT_NEGAT, ident_str, line))
                     continue
                 elif self.current_char == "-":
@@ -1453,7 +1476,7 @@ class Lexer:
                         line += 1
                         self.advance()
 
-                if len(tokens) == 0 or tokens[-1].type != TT_NL:
+                if tokens and tokens[-1].type != TT_NL:
                     tokens.append(Token(TT_NL, "\\n", line))
                 continue
                 

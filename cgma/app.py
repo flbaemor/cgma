@@ -33,6 +33,7 @@ def lex():
     tokens, errors = lexer_run('<stdin>', source_code)
     return jsonify({'tokens': [{'type': token.type, 'value': token.value} for token in tokens], 'errors': [error.as_string() for error in errors]})
 
+
 @app.route('/api/parse', methods=['POST'])
 def parse():
     data = request.json
@@ -46,6 +47,7 @@ def parse():
     if not success:
         return jsonify({'success': False, 'errors': parse_errors})
     return jsonify({'success': True, 'errors': []})
+
 
 @app.route('/api/semantic', methods=['POST'])
 def semantic_analysis():
@@ -68,7 +70,7 @@ def semantic_analysis():
         return jsonify({'success': False, 'errors': ['Syntax errors found']})
 
     try:
-        semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"NL", "\n"}]
+        semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"nl", "\n"}]
         ast_root = build_ast(semantic_tokens)
         ast_root.print_tree()
         semantic_analyzer = SemanticAnalyzer(symbol_table)  
