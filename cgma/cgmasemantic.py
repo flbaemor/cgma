@@ -655,87 +655,90 @@ def parse_statement(tokens, index, func_type = None):
         node, index = parse_struct_instance(tokens, index)
         return node, index
 
-    elif token.type == "identifier":
-
-        if tokens[index + 1].type == "(":
-            func_name = token.value
-            error = symbol_table.lookup_function(func_name)
-            if isinstance(error, str):
+    elif token.type == "identifier" or tokens[index].type in {"++", "--"}:
+        if token.type == "identifier":
+            if tokens[index + 1].type == "(":
+                func_name = token.value
                 error = symbol_table.lookup_function(func_name)
-                raise SemanticError(error, token.line)
-            func_type = symbol_table.lookup_function(func_name)["return_type"]
-            func_params = symbol_table.lookup_function(func_name)["params"]
-            func_call_node, index = parse_function_call(tokens, index, func_name, func_type, func_params)
-            return func_call_node, index
+                if isinstance(error, str):
+                    error = symbol_table.lookup_function(func_name)
+                    raise SemanticError(error, token.line)
+                func_type = symbol_table.lookup_function(func_name)["return_type"]
+                func_params = symbol_table.lookup_function(func_name)["params"]
+                func_call_node, index = parse_function_call(tokens, index, func_name, func_type, func_params)
+                return func_call_node, index
 
-        var_info = symbol_table.lookup_variable(token.value)
-        if isinstance(var_info, str):
-            raise SemanticError(var_info, line)
-        
-        var_name = token.value
-        var_type = var_info["type"]
-        is_list = var_info.get("is_list", False)
-
-        if is_list:
-            if tokens[index + 1].type == "=":
-                node, index = parse_list_assignment(tokens, index)
-                return node, index
-            
-            elif tokens[index + 1].type == "[":
-                node, index = parse_list_access(tokens, index)
-                if tokens[index + 1].type == "=":
-                    index += 2
-                    node, index = parse_assignment(tokens, index, token.value, var_type)                    
-                return node, index
-                
-            else:
-                raise SemanticError(f"Semantic Error: Invalid assignment statement for list '{var_name}'.", line)
-
-        elif tokens[index + 1].type == "=":
-            var_name = token.value
-            error = symbol_table.lookup_variable(var_name)
-            if isinstance(error, str):
-                raise SemanticError(error, token.line)
-            
-            index += 2
-            node, index = parse_assignment(tokens, index, token.value, symbol_table.lookup_variable(token.value)["type"])
-            return node, index    
-        
-        elif tokens[index+1].type in {"++", "--"}:
             var_info = symbol_table.lookup_variable(token.value)
-            if var_info["type"] not in {"chungus", "chudeluxe"}:
-                raise SemanticError(f"Type Error: Cannot use '{token.value}' of type {var_info['type']} in expression.", line)
-            operand = ASTNode("Identifier", token.value, line=line)
-            operator = tokens[index + 1].value
-            index += 2
-            return UpdateNode(operator, operand, prefix = False, line=line), index
-        
-        elif tokens[index + 1].type == ".":
-            node, index = parse_struct_member_assignment(tokens, index)
-            return node, index
-        
-        else:
-            raise SemanticError(f"Semantic Error: Unexpected token '{tokens[index].value}' in statement.", line)
-    
-    elif tokens[index].type in {"++", "--"}:
-        operator = tokens[index].value
-        index += 1
-
-        if tokens[index].type == "identifier":
-            var_name = symbol_table.lookup_variable(tokens[index].value)
-            if var_name["type"] not in {"chungus", "chudeluxe"}:
-                raise SemanticError(f"Type Error: Cannot use '{tokens[index].value}' of type {var_name['type']} in expression.", line)
-            if isinstance(var_name, str):
-                raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
+            if isinstance(var_info, str):
+                raise SemanticError(var_info, line)
             
-            operand = ASTNode("Identifier", tokens[index].value, line=line)
+            var_name = token.value
+            var_type = var_info["type"]
+            is_list = var_info.get("is_list", False)
+
+            if is_list:
+                if tokens[index + 1].type == "=":
+                    node, index = parse_list_assignment(tokens, index)
+                    return node, index
+                
+                elif tokens[index + 1].type == "[":
+                    node, index = parse_list_access(tokens, index)
+                    if tokens[index + 1].type == "=":
+                        index += 2
+                        node, index = parse_assignment(tokens, index, token.value, var_type)                    
+                    return node, index
+                    
+                else:
+                    raise SemanticError(f"Semantic Error: Invalid assignment statement for list '{var_name}'.", line)
+
+            elif tokens[index + 1].type == "=":
+                var_name = token.value
+                error = symbol_table.lookup_variable(var_name)
+                if isinstance(error, str):
+                    raise SemanticError(error, token.line)
+                
+                index += 2
+                node, index = parse_assignment(tokens, index, token.value, symbol_table.lookup_variable(token.value)["type"])
+                return node, index    
+            
+            elif tokens[index+1].type in {"++", "--"}:
+                var_info = symbol_table.lookup_variable(token.value)
+                if var_info["type"] not in {"chungus", "chudeluxe"}:
+                    raise SemanticError(f"Type Error: Cannot use '{token.value}' of type {var_info['type']} in expression.", line)
+                operand = ASTNode("Identifier", token.value, line=line)
+                operator = tokens[index + 1].value
+                index += 2
+                return UpdateNode(operator, operand, prefix = False, line=line), index
+            
+            elif tokens[index + 1].type == ".":
+                node, index = parse_struct_member_assignment(tokens, index)
+                return node, index
+            
+            else:
+                raise SemanticError(f"Semantic Error: Unexpected token '{tokens[index].value}' in statement.", line)
+    
+        elif tokens[index].type in {"++", "--"}:
+            operator = tokens[index].value
             index += 1
 
-            return UpdateNode(operator, operand, prefix = True, line=line), index
-        
-        else:
-            raise SemanticError(f"Syntax Error: Expected identifier after '{operator}'.", line)
+            if tokens[index].type == "identifier":
+                var_name = symbol_table.lookup_variable(tokens[index].value)
+                if var_name["type"] not in {"chungus", "chudeluxe"}:
+                    raise SemanticError(f"Type Error: Cannot use '{tokens[index].value}' of type {var_name['type']} in expression.", line)
+                if isinstance(var_name, str):
+                    raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
+                
+                operand = ASTNode("Identifier", tokens[index].value, line=line)
+                index += 1
+
+                return UpdateNode(operator, operand, prefix = True, line=line), index
+            
+            else:
+                raise SemanticError(f"Syntax Error: Expected identifier after '{operator}'.", line)
     
+    elif tokens[index].type == ",":
+        index += 1
+
     elif token.value == "aura" and tokens[index + 1].type == "identifier" and tokens[index + 2].type == "identifier":
         node, index = parse_struct_instance(tokens, index)
         return node, index

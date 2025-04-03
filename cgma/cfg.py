@@ -118,7 +118,7 @@ cfg = {
         ["nocap"]],
     "<var_init>": [["=", "<value>", "<var_init_tail>"]],
     "<var_init_tail>": [["ε"],
-        [",", "identifier", "<var_init_tail>"]],
+        [",", "identifier", "<var_init>"]],
     "<value>": [["<expression>"],
         ["chat", "(", ")"],
         ["<list_value>"]],
