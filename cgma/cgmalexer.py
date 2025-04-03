@@ -19,9 +19,9 @@ OPER = ARITH_OPER + RELAT_OPER
 
 #DELIMITERS
 
-clbra_dlm = ' =\n)\t,' + OPER
+clbra_dlm = ' =\n)\t,;' + OPER
 clcur_dlm = ' \n)}\t,' + ALPHANUM
-clpar_dlm = ' \n}{)&|}\t.,(]' + ARITH_OPER + ALPHANUM
+clpar_dlm = ' \n}{)&|}\t.,(];' + ARITH_OPER + ALPHANUM
 com_dlm   = ' ('
 comma_dlm = ' "\t-!\'(' + ALPHANUM
 convert_dlm = ' )\t,\n' + OPER

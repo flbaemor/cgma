@@ -540,7 +540,7 @@ def parse_function(tokens, index, func_name, func_type):
                     return_found = True
         
         if (func_type != "nocap" and not return_found) and func_name != "skibidi":
-            raise SemanticError(f"Semantic Error: Function '{func_name}' must return a value of type '{func_type}'.", line)
+            raise SemanticError(f"Semantic Error: Function '{func_name}' must return a value of type '{func_type}' at the end.", line)
         
         index += 1
         func_node.add_child(block_node)
