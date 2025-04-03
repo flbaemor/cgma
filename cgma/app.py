@@ -51,8 +51,8 @@ def parse():
     return jsonify({'success': True, 'errors': []})
 
 
-def replace_tokens(error_message):
-    modified_message = error_message.replace("[')', ',', ']']", "[',', ']']")
+def replace_tokens(error_message):                              
+    modified_message = error_message.replace("[')', ',', ']']", "[',', ']']").replace("[')', ']', ',']", "[',', ']']").replace("[']', ')', ',']", "[',', ']']").replace("[',', ')', ']']", "[',', ']']").replace("[',', ']', ')']", "[',', ']']").replace("[',', ']', ')'", "[',', ']']")
     return modified_message
 
 @app.route('/api/semantic', methods=['POST'])
