@@ -53,11 +53,8 @@ def parse():
     return jsonify({'success': True, 'errors': []})
 
 def replace_tokens(error_message):
-    # Sort elements inside lists within the error message
     modified_message = error_message.replace("[')', ',', ']']", "[',', ']']").replace("[')', ']', ',']", "[',', ']']").replace("[']', ')', ',']", "[',', ']']").replace("[',', ')', ']']", "[',', ']']").replace("[',', ']', ')']", "[',', ']']").replace("[',', ']', ')'", "[',', ']']").replace("[',', 'nl', ';']", "[',', 'nl']").replace("[',', ';', 'nl']", "[',', 'nl']").replace("['nl', ',', ';']", "[',', 'nl']").replace("[';', ',', 'nl']", "[',', 'nl']").replace("['nl', ';', ',']", "[',', 'nl']").replace("[',', 'nl', ',']", "[',', 'nl']")
-    
-    # Regular expression to find lists inside the error message (e.g., ['a', 'b', 'c'])
-    # Using ast.literal_eval to safely parse the list in the message
+
     def sort_lists(match):
         list_str = match.group(0)  # Get the matched list string
         try:
@@ -76,7 +73,7 @@ def replace_tokens(error_message):
     # Find all the lists in the error message and sort their contents
     import re
     modified_message = re.sub(r'\[[^\]]*\]', sort_lists, modified_message)
-    modified_message = modified_message.replace("'back', 'caseoh',", "'back',").replace("neg", "-")
+    modified_message = modified_message.replace("'back', 'caseoh',", "'back',").replace("neg", "-").replace("[')', ',', ';', 'nl']", "[')', ',']").replace("'lwk', 'npc',", "'lwk',")
     
     return modified_message
 
@@ -109,6 +106,7 @@ def semantic_analysis():
         semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"nl", "\n"}]
         ast_root = build_ast(semantic_tokens)
         ast_root.print_tree()
+        
         semantic_analyzer = SemanticAnalyzer(symbol_table)  
         semantic_analyzer.analyze(ast_root)  
         return jsonify({'success': True, 'message': 'Semantic analysis completed successfully'})

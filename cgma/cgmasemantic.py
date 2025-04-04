@@ -309,11 +309,11 @@ class SymbolTable:
 
 
     def lookup_variable(self, name):
-        # Search from innermost scope to global
+        
         for i, scope in enumerate(reversed(self.scopes)):
             if name in scope:
                 return scope[name]
-        # Check global variables
+        
         if name in self.variables:
             return self.variables[name]
 
@@ -2575,7 +2575,13 @@ def parse_for(tokens, index, func_type):
         raise SemanticError(f"Syntax Error: Expected ';' after for loop condition.", line)
     index += 1
 
-    update, index = parse_update(tokens, index)
+    while True:
+        update, index = parse_update(tokens, index)
+        if tokens[index].type == ",":
+            index += 1
+            continue
+        else:
+            break
 
     if tokens[index].type != ")":
         raise SemanticError(f"Syntax Error: Expected ')' after for loop update.", line)
