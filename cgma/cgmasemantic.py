@@ -277,12 +277,15 @@ class SymbolTable:
     ###### VARIABLE ######
     def declare_variable(self, name, type_, value=None, is_list=False, is_struct=False, is_sturdy=False):
         scope = self.scopes[-1]
+        function_scope_index = 0
 
-        if name in scope:
-            return f"Semantic Error: Variable '{name}' already declared in this scope."
+        for scope in reversed(self.scopes[:function_scope_index + 1]):  
+            if name in scope:
+                return f"Semantic Error: Variable '{name}' already declared in this scope."
+
 
         if len(self.scopes) == 1:
-            if name in self.variables:
+            if name in self.global_variables:
                 return f"Semantic Error: Variable '{name}' already declared."
             if name in self.functions:
                 return f"Semantic Error: Variable '{name}' already declared as a function."
@@ -294,8 +297,8 @@ class SymbolTable:
                 "is_struct": is_struct,
                 "is_sturdy": is_sturdy
             }
-        else:
 
+        else:
             scope[name] = {
                 "type": type_,
                 "value": value,
