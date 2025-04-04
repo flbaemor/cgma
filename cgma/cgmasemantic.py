@@ -2743,7 +2743,26 @@ def parse_switch(tokens, index, func_type):
         raise SemanticError(f"Syntax Error: Expected '(' after 'switch'.", line)
     index += 1
 
-    switch_expr, index = parse_expression(tokens, index)
+    if tokens[index].type == "identifier":
+        var_info = symbol_table.lookup_variable(tokens[index].value)
+        if isinstance(var_info, str):
+            raise SemanticError(f"Semantic Error: Variable '{tokens[index].value}' used before declaration.", line)
+        var_type = var_info["type"]
+        if var_type in {"lwk"}:
+            raise SemanticError(f"Semantic Error: Variable '{tokens[index].value}' with type '{var_type}' cannot be used in switch statement.", line)
+        switch_expr, index = parse_expression_type(tokens, index, var_type)
+
+    if tokens[index].type in {"chungus_lit", "chudeluxe_lit"} or tokens[index].type in {"--", "++", "neg", "("}:
+        switch_expr, index = parse_expression(tokens, index)
+
+    elif tokens[index].type in {"forsen_lit"}:
+        switch_expr, index = parse_expression_forsen(tokens, index)
+
+    elif tokens[index].type in {"forsencd_lit"}:
+        switch_expr, index = parse_expression_forsencd(tokens, index)
+
+    else:
+        raise SemanticError(f"Semantic Error: Invalid token '{tokens[index].value}' used in expression inside switch expression.", line)
 
     if tokens[index].type != ")":
         raise SemanticError(f"Syntax Error: Expected ')' after 'switch' expression.", line)
