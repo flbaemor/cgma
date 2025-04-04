@@ -144,7 +144,7 @@ cfg = {
         ["<for_loop>", "nl", "<func_body>"],
         ["<while_loop>", "nl", "<func_body>"],
         ["<dowhile_loop>", "nl", "<func_body>"],
-        ["<return_statement>", "nl", "<func_body>"],
+        ["<return_statement>", "nl"],
         ["<id_stmt>", "nl", "<func_body>"],
         ["<constant_vardec>", "nl", "<func_body>"],],
 

@@ -36,7 +36,7 @@ lwk_dlm =   ' \n&|=)\t],:;' + OPER
 minus_dlm = ' -()\t' + ALPHANUM
 npc_dlm =   ' :\t' + ALPHANUM
 not_dlm =   '=(\t' + ALPHA
-opbra_dlm = ' "]\t!\'' + ALPHANUM 
+opbra_dlm = ' "]\t!\'+-' + ALPHANUM
 opcur_dlm = ' \n\t}' + ALPHANUM
 operator_dlm = ' (\t!' + ALPHANUM
 arith_operator_dlm = ' (\t' + ALPHANUM

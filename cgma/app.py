@@ -5,6 +5,7 @@ from cgmaparser import LL1Parser
 from cfg import cfg, predict_sets
 from cgmasemantic import SemanticAnalyzer
 import os
+import ast
 
 from cgmasemantic import build_ast
 from cgmasemantic import SemanticError
@@ -47,13 +48,42 @@ def parse():
     success, parse_errors = parser.parse(tokens)
     if not success:
         modified_parse_errors = [replace_tokens(error) for error in parse_errors]
+        modified_parse_errors
         return jsonify({'success': False, 'errors': modified_parse_errors})
     return jsonify({'success': True, 'errors': []})
 
+def replace_tokens(error_message):
+    # Sort elements inside lists within the error message
+    modified_message = error_message.replace("[')', ',', ']']", "[',', ']']").replace("[')', ']', ',']", "[',', ']']").replace("[']', ')', ',']", "[',', ']']").replace("[',', ')', ']']", "[',', ']']").replace("[',', ']', ')']", "[',', ']']").replace("[',', ']', ')'", "[',', ']']").replace("[',', 'nl', ';']", "[',', 'nl']").replace("[',', ';', 'nl']", "[',', 'nl']").replace("['nl', ',', ';']", "[',', 'nl']").replace("[';', ',', 'nl']", "[',', 'nl']").replace("['nl', ';', ',']", "[',', 'nl']").replace("[',', 'nl', ',']", "[',', 'nl']")
+    
+    # Regular expression to find lists inside the error message (e.g., ['a', 'b', 'c'])
+    # Using ast.literal_eval to safely parse the list in the message
+    def sort_lists(match):
+        list_str = match.group(0)  # Get the matched list string
+        try:
+            # Safely evaluate the string as a Python literal (a list in this case)
+            parsed_list = ast.literal_eval(list_str)
+            if isinstance(parsed_list, list):
+                # Sort the list alphabetically (assuming strings are inside)
+                parsed_list.sort()
+                # Return the sorted list back as a string
+                return str(parsed_list)
+        except Exception as e:
+            # In case the list is malformed or any error occurs
+            return list_str
+        return list_str
 
-def replace_tokens(error_message):                              
-    modified_message = error_message.replace("[')', ',', ']']", "[',', ']']").replace("[')', ']', ',']", "[',', ']']").replace("[']', ')', ',']", "[',', ']']").replace("[',', ')', ']']", "[',', ']']").replace("[',', ']', ')']", "[',', ']']").replace("[',', ']', ')'", "[',', ']']").replace("neg", "-")
+    # Find all the lists in the error message and sort their contents
+    import re
+    modified_message = re.sub(r'\[[^\]]*\]', sort_lists, modified_message)
+    modified_message = modified_message.replace("'back', 'caseoh',", "'back',").replace("neg", "-")
+    
     return modified_message
+
+
+#def replace_tokens(error_message):                              
+    #modified_message = error_message.replace("[')', ',', ']']", "[',', ']']").replace("[')', ']', ',']", "[',', ']']").replace("[']', ')', ',']", "[',', ']']").replace("[',', ')', ']']", "[',', ']']").replace("[',', ']', ')']", "[',', ']']").replace("[',', ']', ')'", "[',', ']']").replace("neg", "-").replace("[',', 'nl', ';']", "[',', 'nl']").replace("[',', ';', 'nl']", "[',', 'nl']").replace("['nl', ',', ';']", "[',', 'nl']").replace("[';', ',', 'nl']", "[',', 'nl']").replace("['nl', ';', ',']", "[',', 'nl']").replace("[',', 'nl', ',']", "[',', 'nl']")
+    #return modified_message
 
 @app.route('/api/semantic', methods=['POST'])
 def semantic_analysis():
