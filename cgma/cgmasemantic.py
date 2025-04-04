@@ -49,6 +49,8 @@ class SemanticAnalyzer:
         for child in node.children:
             self.analyze(child)
 
+    
+
 
 ##### AST NODES #####
 class ASTNode:
@@ -298,7 +300,8 @@ class SymbolTable:
                 "type": type_,
                 "value": value,
                 "is_list": is_list,
-                "is_struct": is_struct
+                "is_struct": is_struct,
+                "is_sturdy": is_sturdy
             }
 
 
@@ -358,6 +361,7 @@ class SymbolTable:
 
 symbol_table = SymbolTable()
 semantic_analyzer = SemanticAnalyzer(symbol_table)
+context_stack = []
 
 #######################
 ###### BUILD AST ######
@@ -370,6 +374,7 @@ def build_ast(tokens):
     symbol_table.functions = {}  # Stores function definitions
     symbol_table.scopes = [{}] 
     symbol_table.structs = [{}]
+    context_stack = []
     index = 0
     
     while index < len(tokens):
@@ -655,6 +660,10 @@ def parse_statement(tokens, index, func_type = None):
     elif token.value == "aura":
         node, index = parse_struct_instance(tokens, index)
         return node, index
+    
+    elif token.value == "sturdy":
+        node, index = parse_sturdy(tokens, index)
+        return node, index
 
     elif token.type == "identifier" and tokens[index + 1].type == "(":
         if tokens[index + 1].type == "(":
@@ -680,6 +689,11 @@ def parse_statement(tokens, index, func_type = None):
                 var_name = token.value
                 var_type = var_info["type"]
                 is_list = var_info.get("is_list", False)
+
+                is_sturdy = var_info.get("is_sturdy", False)
+
+                if is_sturdy:
+                    raise SemanticError(f"Semantic Error: Variable '{var_name}' is declared as sturdy and cannot be re-declared.", line)
 
                 if is_list:
                     if tokens[index + 1].type == "=":
@@ -788,9 +802,23 @@ def parse_statement(tokens, index, func_type = None):
     elif token.value == "lethimcook":
         node, index = parse_switch(tokens, index, func_type)
         return node, index
+    
+    elif token.value == "getout":
+        if not is_inside_loop_or_switch_stack():
+            raise SemanticError(f"Semantic Error: 'getout' statement used outside a loop or switch statement.", line)
+        node = BreakNode(line)
+        index += 1
+        return node, index
+        
+    elif token.value == "pause":
+        if not is_inside_loop_or_switch_stack():
+            raise SemanticError(f"Semantic Error: 'pause' statement used outside a loop or switch statement.", line)
+        node = ContinueNode(line)
+        index += 1
+        return node, index
 
     else:
-        raise SemanticError(f"Semantic Error: Unexpected token '{token.value}' in statement.", line)
+        raise SemanticError(f"Syntax Error: Unexpected token '{token.value}' in statement.", line)
 
 
 def parse_list_access(tokens, index):
@@ -1490,9 +1518,9 @@ def parse_expression_lwk(tokens, index):
     line = tokens[index].line
     left_node, index, left_type = parse_equality(tokens, index)
 
-    if left_type in {"chungus", "chudeluxe"} and tokens[index].type not in {"==", "!=", "<", "<=", ">", ">="} and tokens[index].type != ")":
+    if left_type in {"chungus", "chudeluxe"} and tokens[index].type not in {"==", "!=", "<", "<=", ">", ">="}:
         print(tokens[index].type)
-        raise SemanticError(f"Type Error: Expected a logical or comparison operator in lwk expression.", line)
+        raise SemanticError(f"Type Error: Expected a logical or comparison operator after an arithmetic expression.", line)
 
     while tokens[index].type in {"&&", "||"}:
         operator = tokens[index].value
@@ -1574,8 +1602,18 @@ def check_lwk(tokens, index):
 
     while tokens[index].type != ")":
         index += 1
-        if tokens[index].type in {"<", "<=", ">", ">=", "==", "!=", "&&", "||"}:
+        if tokens[index].type in {"<", "<=", ">", ">=", "==", "!=", "&&", "||", "lwk_lit"}:
             op_found = True
+        if tokens[index].type == "identifier":
+            var_info = symbol_table.lookup_variable(tokens[index].value)
+            if isinstance(var_info, str):
+                raise SemanticError(f"Semantic Error: Variable '{tokens[index].value}' used before declaration.", tokens[index].line)
+            if var_info["type"] == "lwk":
+                op_found = True
+        
+
+    if tokens[index].type in {"<", "<=", ">", ">=", "==", "!=", "&&", "||"}:
+        op_found = True
 
     return op_found, start_index
 
@@ -1813,10 +1851,10 @@ def infer_literal_type(token_type):
 def parse_assignment(tokens, index, var_name, var_type):
     line = tokens[index].line
 
-    global_var = symbol_table.variables.get(var_name)
-    if global_var and global_var["is_sturdy"]:
+    var_info = symbol_table.lookup_variable(var_name)
+    if var_info and var_info["is_sturdy"]:
         raise SemanticError(f"Semantic Error: Variable '{var_name}' is declared as sturdy.", line)
-
+    
     if tokens[index].value == "chat":
         index += 1
         if tokens[index].type == "(":
@@ -2302,7 +2340,7 @@ def parse_string_concatenation(tokens, index):
 def parse_sturdy(tokens, index):
     token = tokens[index]
     line = token.line
-    index += 1 
+    index += 1
     if tokens[index].value not in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
         raise SemanticError(f"Semantic Error: Invalid sturdy variable type '{tokens[index].value}'.", line)
     
@@ -2333,7 +2371,10 @@ def parse_sturdy(tokens, index):
     value_node = ASTNode("Value", tokens[index].value, line=line)
     index += 1
 
-    error = symbol_table.declare_variable(var_name, var_type, value=value_node, is_list=False, is_sturdy=True)
+    if tokens[index].type == ",":
+        raise SemanticError(f"Semantic Error: Multiple sturdy declaration is not allowed.", line)
+
+    error = symbol_table.declare_variable(var_name, var_type, value=value_node, is_list=False, is_struct=False, is_sturdy=True)
     if isinstance(error, str):
         raise SemanticError(error, line)
 
@@ -2345,13 +2386,13 @@ def parse_if(tokens, index, func_type):
 
     if tokens[index].type != "(":
         raise SemanticError(f"Syntax Error: Expected '(' after 'tuah'.", line)
-    index += 1 
+    index += 1
 
     condition_expr, index = parse_expression_lwk(tokens, index)  # Parse lwk expression
 
 
     print(tokens[index].type)
-
+    
     if tokens[index].type != ")":
         raise SemanticError(f"Syntax Error: Expected ')' after 'tuah' condition.", line)
     
@@ -2495,7 +2536,7 @@ def parse_return(tokens, index, func_type):
 def parse_for(tokens, index, func_type):
     line = tokens[index].line
     index += 1
-
+    context_stack.append("ForNode")
     if tokens[index].type != "(":
         raise SemanticError(f"Syntax Error: Expected '(' after 'plug'.", line)
     index += 1
@@ -2548,25 +2589,16 @@ def parse_for(tokens, index, func_type):
 
         while tokens[index].type != "}":
             print(tokens[index].value)
-            if tokens[index].value == "pause":
-                index += 1
-                cont_node = ContinueNode(line)
-                block_node.add_child(cont_node)
 
-            elif tokens[index].value == "getout":
-                index +=1
-                break_node = BreakNode(line)
-                block_node.add_child(break_node)
-
-            else:
-                stmt, index = parse_statement(tokens, index, func_type)
-                if stmt:
-                    block_node.add_child(stmt)
+            stmt, index = parse_statement(tokens, index, func_type)
+            if stmt:
+                block_node.add_child(stmt)
 
         index += 1
         
 
         symbol_table.exit_scope()
+        context_stack.pop()
 
         for_node.add_child(block_node)
     
@@ -2610,11 +2642,11 @@ def parse_update(tokens, index):
 def parse_while(tokens, index, func_type):
     line = tokens[index].line
     index += 1
+    context_stack.append("WhileNode")
     
     if tokens[index].type != "(":
         raise SemanticError(f"Syntax Error: Expected '(' after 'while'.", line)
     index += 1
-
 
     condition, index = parse_expression_lwk(tokens, index)
 
@@ -2636,23 +2668,13 @@ def parse_while(tokens, index, func_type):
 
         while tokens[index].type != "}":
 
-            if tokens[index].value == "pause":
-                index += 1
-                cont_node = ContinueNode(line)
-                block_node.add_child(cont_node)
-
-            elif tokens[index].value == "getout":
-                index += 1
-                break_node = BreakNode(line)
-                block_node.add_child(break_node)
-
-            else:
-                stmt, index = parse_statement(tokens, index, func_type)
-                if stmt:
-                    block_node.add_child(stmt)
+            stmt, index = parse_statement(tokens, index, func_type)
+            if stmt:
+                block_node.add_child(stmt)
 
         index += 1
         symbol_table.exit_scope()
+        context_stack.pop()
 
         while_node.add_child(block_node)
     
@@ -2666,6 +2688,7 @@ def parse_do(tokens, index, func_type):
     index += 1
 
     symbol_table.enter_scope()
+    context_stack.append("DoWhileNode")
 
     if tokens[index].type != "{":
         raise SemanticError(f"Syntax Error: Expected '{{' after 'do'.", line)
@@ -2674,17 +2697,6 @@ def parse_do(tokens, index, func_type):
     block_node = ASTNode("Block", line=line)
 
     while tokens[index].type != "}":
-
-        if tokens[index].value == "pause":
-            index += 1
-            cont_node = ContinueNode(line)
-            block_node.add_child(cont_node)
-
-        elif tokens[index].value == "getout":
-            index += 1
-            break_node = BreakNode(line)
-            block_node.add_child(break_node)
-
 
         stmt, index = parse_statement(tokens, index, func_type)
         if stmt:
@@ -2718,12 +2730,14 @@ def parse_do(tokens, index, func_type):
     do_node.add_child(condition_node)
 
     symbol_table.exit_scope()
+    context_stack.pop()
     return do_node, index
 
 
 def parse_switch(tokens, index, func_type):
     line = tokens[index].line
     index += 1
+    context_stack.append("SwitchNode")
 
     if tokens[index].type != "(":
         raise SemanticError(f"Syntax Error: Expected '(' after 'switch'.", line)
@@ -2763,10 +2777,6 @@ def parse_switch(tokens, index, func_type):
         getout_node = None
 
         while tokens[index].value not in {"caseoh", "npc"} and tokens[index].type != "}":
-            if tokens[index].value == "getout":
-                getout_node = ASTNode("Break", "getout", line=tokens[index].line)
-                index += 1
-                break 
 
             stmt, index = parse_statement(tokens, index, func_type)
             if stmt:
@@ -2819,6 +2829,7 @@ def parse_switch(tokens, index, func_type):
     index += 1
 
     symbol_table.exit_scope()
+    context_stack.pop()
 
     return SwitchNode(switch_expr, case_nodes, default_case, line=line), index
 
@@ -3074,7 +3085,8 @@ def parse_struct_instance(tokens, index):
         struct_instances.append(StructInstanceNode(struct_name, instance_name, instance_values, line=line))
 
         if tokens[index].type == ",":
-            index += 1 
+            index += 1
+
         else:
             break
 
@@ -3162,3 +3174,7 @@ def parse_struct_member_assignment(tokens, index):
     struct_member_node = StructMemberAssignmentNode(struct_instance, full_access, value_node, line=line)
 
     return struct_member_node, index
+
+
+def is_inside_loop_or_switch_stack():
+    return any(ctx in {"WhileNode", "DoWhileNode", "SwitchNode", "ForNode"} for ctx in context_stack)
