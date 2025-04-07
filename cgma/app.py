@@ -106,13 +106,18 @@ def semantic_analysis():
         semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"nl", "\n"}]
         ast_root = build_ast(semantic_tokens)
         ast_root.print_tree()
-        
         semantic_analyzer = SemanticAnalyzer(symbol_table)  
         semantic_analyzer.analyze(ast_root)  
         return jsonify({'success': True, 'message': 'Semantic analysis completed successfully'})
 
     except SemanticError as e:
         return jsonify({'success': False, 'errors': [str(e)]})
+
+
+@app.route('/api/output', methods=['POST'])
+def output():
+    print("\nDEBUG: Run called\n")
+
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)

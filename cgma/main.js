@@ -137,6 +137,22 @@ function heightResize(e) {
     document.querySelector(".mainCont").style.height = `${newHeight}px`;
 }
 
+function toggleDropdown() {
+    const menu = document.getElementById("dropdown-menu");
+    menu.classList.toggle("hidden");
+  }
+  
+  // Hide dropdown if clicked outside
+  document.addEventListener("click", function (e) {
+    const dropdown = document.querySelector(".dropdown");
+    const menu = document.getElementById("dropdown-menu");
+  
+    if (!dropdown.contains(e.target)) {
+      menu.classList.add("hidden");
+    }
+  });
+  
+
 async function runLexer() {
     const sourceCode = editor.getValue();
     console.log("Running lexer with source code:", sourceCode);
@@ -226,12 +242,7 @@ async function runSemantic() {
     }
 }
 
-function updateLineNumbers() {
-    const lines = editor.getValue().split('\n').length;
-    const lineNumbers = document.getElementById('lineNumbers');
-    lineNumbers.innerHTML = '';
-
-    for (let i = 1; i <= lines; i++) {
-        lineNumbers.innerHTML += `<div>${i}</div>`;
-    }
+async function runCode() {
+    await runSemantic();
+    if (errorBox.value !== 'Semantic analysis successful!') return;
 }

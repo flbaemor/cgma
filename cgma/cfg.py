@@ -94,7 +94,6 @@ def compute_predict(cfg, first, follow):
                 predict[predict_key] |= follow[lhs]
     return predict
     
-
 cfg = {
     "<program>": [["<global>", "skibidi", "{", "nl", "<func_body>", "}"]],
     "<global>": [["<global_dec>", "<user_def_func>"]],

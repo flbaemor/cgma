@@ -10,15 +10,23 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class = "logoContainer"></div>
+        <div class = "logoContainer">
             <img src="https://i.imgur.com/xHMd81X.png" alt="CGMA" height="50px" width="50px">
             <h1 class="logoName">CGMA Compiler</h1>
         </div>
-        <ul class="nav-links">
-            <li><a href="#" onclick="runLexer()">LEXICAL</a></li>
-            <li><a href="#" onclick="runSyntax()">SYNTAX</a></li>
-            <li><a href="#" onclick="runSemantic()">SEMANTIC</a></li>
-        </ul>
+        
+        <div class="dropdown">
+            <div class="button-group">
+              <button onclick="runCode()">RUN</button>
+              <button class="dropdown-toggle" onclick="toggleDropdown()">▼</button>
+            </div>
+            <ul id="dropdown-menu" class="nav-links hidden">
+              <li><a href="#" onclick="runLexer()">LEXICAL</a></li>
+              <li><a href="#" onclick="runSyntax()">SYNTAX</a></li>
+              <li><a href="#" onclick="runSemantic()">SEMANTIC</a></li>
+            </ul>
+        </div>
+    
     </nav>
 
     <div class="mainCont">
