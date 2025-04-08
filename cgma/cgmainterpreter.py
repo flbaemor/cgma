@@ -1,4 +1,4 @@
-from cgmasemantic import ProgramNode, VariableDeclarationNode, AssignmentNode, BinaryOpNode, FunctionDeclarationNode, FunctionCallNode, IfStatementNode, ForLoopNode, WhileLoopNode, PrintNode, ListAccessNode
+from cgmasemantic import ProgramNode, VariableDeclarationNode, AssignmentNode, BinaryOpNode, FunctionDeclarationNode, FunctionCallNode, IfStatementNode, ForLoopNode, WhileLoopNode, PrintNode, UnaryOpNode, SturdyDeclarationNode, ReturnNode, UpdateNode, SwitchNode, ContinueNode, BreakNode, ListNode, TaperNode, TSNode, AppendNode, InsertNode, RemoveNode, CastNode, ListAccessNode
 
 class SemanticError(Exception):
     def __init__(self, message,  line):
@@ -8,6 +8,9 @@ class SemanticError(Exception):
     def __str__(self):
         return self.message
 
+class ReturnValue(Exception):
+    def __init__(self, value):
+        self.value = value
 
 class InterpreterError(Exception):
     def __init__(self, message, line):
@@ -37,17 +40,30 @@ class Interpreter:
             return self.visit_print(node)
         elif isinstance(node, ListAccessNode):
             return self.visit_list_access(node)
+        elif isinstance(node, ReturnNode):
+            return self.visit_return(node)
+        elif isinstance(node, FunctionCallNode):
+            return self.visit_function_call(node)
         elif node.node_type == "Value":
             value = self._parse_literal(node.value)
             return value
         elif node.node_type == "FormattedString":
             return self.visit_formatted_string(node)
+        elif node.node_type == "VariableDeclarationList":
+            for child in node.children:
+                self.visit_variable_declaration(child)
+        elif node.node_type == "AssignmentList":
+            for child in node.children:
+                self.visit_assignment(child)
         else:
             raise Exception(f"Unknown AST node type: {node.node_type}")
 
     def visit_program(self, node):
         for child in node.children:
             self.interpret(child)
+
+        main_call = FunctionCallNode("skibidi", [], node.line)
+        return self.interpret(main_call)
 
     def visit_variable_declaration(self, node):
         var_type = node.children[0].value
@@ -136,7 +152,7 @@ class Interpreter:
 
     def _parse_literal(self, value):
 
-        if isinstance(value, str) and value in self.symbol_table.variables:
+        if isinstance(value, str) and not isinstance(self.symbol_table.lookup_variable(value), str):
             value = self.symbol_table.lookup_variable(value)["value"]
 
         if isinstance(value, (int, float, bool)):
@@ -165,22 +181,21 @@ class Interpreter:
 
     def visit_function_declaration(self, node):
         return_type = node.children[0].value 
- 
         parameters_node = node.children[1]
+        func_name = node.value
+
+        params = []
         if parameters_node and len(parameters_node.children) > 0:
-            for param in parameters_node.children: 
-                if not isinstance(param, parameters_node):
+            for param in parameters_node.children:
+                if not hasattr(param, 'node_type') or param.node_type != 'Parameter':
                     raise Exception(f"Invalid parameter: {param.value}")
+                param_type = param.children[0].value
+                param_name = param.children[1].value
+                params.append({"name": param_name, "type": param_type})
 
-        self.current_function = node
-        self.visit_block(node.children[2])
-        return_value = None
+        self.symbol_table.declare_function(func_name, return_type, params, node)
 
-        if return_type != 'nocap':
-            return_value = self.get_return_value()
-
-        return return_value
-
+        return None
 
     def visit_block(self, block_node):
         for statement in block_node.children:
@@ -201,7 +216,7 @@ class Interpreter:
             values = []
             for arg in node.children[1:]:
                 value = self.interpret(arg)
-                if isinstance(value, str) and value in self.symbol_table.variables:
+                if isinstance(value, str) and not isinstance(self.symbol_table.lookup_variable(value), str):
                     value = self.symbol_table.lookup_variable(value)["value"]
                 values.append(value)
 
@@ -247,4 +262,52 @@ class Interpreter:
             raise InterpreterError(f"Semantic Error: Index '{index}' out of bounds for list '{list_name}'.", node.line)
 
         return list_value[index]
+    
+
+    def visit_return(self, node):
+        value = self.interpret(node.children[0]) if node.children else None
+        raise ReturnValue(value)
+    
+
+    def visit_function_call(self, node):
+        function_name = node.value
+        args = [self.interpret(arg.children[0]) for arg in node.children]
+
+        func_info = self.symbol_table.lookup_function(function_name)
+        if isinstance(func_info, str):
+            raise InterpreterError(func_info, node.line)
+
+        return_type = func_info["return_type"]
+        expected_params = func_info["params"]
+        function_node = func_info["node"]
+
+        if len(expected_params) != len(args):
+            raise InterpreterError(
+                f"Function '{function_name}' expects {len(expected_params)} argument(s), got {len(args)}.",
+                node.line
+            )
+
+        self.symbol_table.scopes.append({})
+        self.symbol_table.current_func_name = function_name
+
+        try:
+            for i, param in enumerate(expected_params):
+                param_name = param["name"]
+                param_type = param["type"]
+                arg_value = args[i]
+
+                self.symbol_table.declare_variable(param_name, param_type, arg_value)
+
+            try:
+                self.visit_block(function_node.children[2])  # Assuming block is always at index 2
+            except ReturnValue as ret:
+                return ret.value
+
+            return None
+
+        finally:
+            self.symbol_table.scopes.pop()
+            self.symbol_table.current_func_name = None
+
+
 

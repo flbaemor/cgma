@@ -258,6 +258,9 @@ class SymbolTable:
         scope = self.scopes[-1]
         current_func = self.current_func_name
 
+        if name in self.functions:
+                return f"Semantic Error: Variable '{name}' already declared as a function."
+
         if current_func:
             if current_func not in self.function_variables:
                 self.function_variables[current_func] = set()
@@ -275,8 +278,7 @@ class SymbolTable:
         if len(self.scopes) == 1:
             if name in self.global_variables:
                 return f"Semantic Error: Variable '{name}' already declared."
-            if name in self.functions:
-                return f"Semantic Error: Variable '{name}' already declared as a function."
+
             
             self.variables[name] = {
                 "type": type_,  
@@ -309,10 +311,10 @@ class SymbolTable:
     
 
     ###### FUNCTION ######
-    def declare_function(self, name, return_type, params):
+    def declare_function(self, name, return_type, params, node=None):
         if name in self.functions:
             return f"Semantic Error: Function '{name}' already declared."
-        self.functions[name] = {"return_type": return_type, "params": params}
+        self.functions[name] = {"return_type": return_type, "params": params, "node": node}
 
     def lookup_function(self, name):
         if name in self.functions:
@@ -628,9 +630,10 @@ def parse_variable(tokens, index, var_name, var_type):
             index += 1
         else:
             break
-
+    
     if len(var_nodes) == 1:
         return var_nodes[0], index
+    
     else:
         var_list_node = ASTNode("VariableDeclarationList")
         for node in var_nodes:
@@ -675,7 +678,7 @@ def parse_statement(tokens, index, func_type = None):
             return func_call_node, index
         
     elif token.type == "identifier" or tokens[index].type in {"++", "--"}: 
-        assignments_node = ASTNode("MultipleAssignment")
+        assignments_node = ASTNode("AssignmentList")
 
         while True:
             if token.type == "identifier":
