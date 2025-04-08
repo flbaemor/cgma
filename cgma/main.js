@@ -264,8 +264,7 @@ async function runCode() {
             return;
         }
 
-        // Display the output from the interpreter
-        errorBox.value = data.output;  // Set the output in the textarea
+        errorBox.value = data.output;
     } catch (error) {
         console.error("Error running interpreter:", error);
         errorBox.value = 'Runtime error.';

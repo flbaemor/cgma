@@ -13,6 +13,7 @@ from cgmasemantic import SemanticError
 from cgmasemantic import SymbolTable
 
 from cgmainterpreter import Interpreter
+from cgmainterpreter import InterpreterError
 
 app = Flask(__name__)
 CORS(app)
@@ -137,10 +138,13 @@ def output():
         interpreter.interpret(ast_root)
 
         # Return the output collected by the interpreter
-        return jsonify({'success': True, 'output': '\n'.join(str(item) for item in interpreter.output if item is not None)})
+        return jsonify({'success': True, 'output': ''.join(str(item) for item in interpreter.output if item is not None)})
 
-    except SemanticError as e:
-        return jsonify({'success': False, 'errors': [str(e)]})
+    except InterpreterError as e:
+        return jsonify({
+            "success": False,
+            "errors": [str(e)]
+        })
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)

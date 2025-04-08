@@ -1964,6 +1964,8 @@ def parse_print(tokens, index):
         elif tokens[index].type == "identifier" and tokens[index + 1].type == "[":
             list_name = token.value
             list_info = symbol_table.lookup_variable(list_name)
+            list_type = list_info["type"]
+            start_index = index
 
             if isinstance(list_info, str):
                 raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", tokens[index].line)
