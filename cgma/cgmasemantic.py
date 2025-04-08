@@ -27,27 +27,6 @@ class SemanticAnalyzer:
         
         self.visited_nodes.add(node)
 
-        """Recursively analyze AST nodes."""
-        if node.node_type == "VariableDeclaration":
-            var_type = node.children[0].value
-            var_name = node.children[1].value
-            self.symbol_table.declare_variable(var_name, var_type)
-
-        elif node.node_type == "Assignment":
-            var_name = node.children[0].value
-            
-        elif node.node_type == "FunctionDeclaration":
-            func_name = node.value
-            return_type = node.children[0].value
-            params = node.children[1].children
-            self.symbol_table.declare_function(func_name, return_type, params)
-
-        elif node.node_type == "FunctionCall":
-            func_name = node.value
-
-        for child in node.children:
-            self.analyze(child)
-
 
 ##### AST NODES #####
 class ASTNode:
@@ -127,6 +106,7 @@ class WhileLoopNode(ASTNode):
 class DoWhileLoopNode(ASTNode):
     def __init__(self, condition, line=None):
         super().__init__("DoWhileLoop", line=line)
+        #self.add_child(condition)
 
 class PrintNode(ASTNode):
     def __init__(self, args, line=None):
@@ -2724,8 +2704,6 @@ def parse_do(tokens, index, func_type):
         stmt, index = parse_statement(tokens, index, func_type)
         if stmt:
             block_node.add_child(stmt)
-        
-        
         
 
     index += 1

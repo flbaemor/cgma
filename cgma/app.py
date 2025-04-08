@@ -9,8 +9,10 @@ import ast
 
 from cgmasemantic import build_ast
 from cgmasemantic import SemanticError
-from cgmasemantic import symbol_table
+
 from cgmasemantic import SymbolTable
+
+from cgmainterpreter import Interpreter
 
 app = Flask(__name__)
 CORS(app)
@@ -58,19 +60,14 @@ def replace_tokens(error_message):
     def sort_lists(match):
         list_str = match.group(0)  # Get the matched list string
         try:
-            # Safely evaluate the string as a Python literal (a list in this case)
             parsed_list = ast.literal_eval(list_str)
             if isinstance(parsed_list, list):
-                # Sort the list alphabetically (assuming strings are inside)
                 parsed_list.sort()
-                # Return the sorted list back as a string
                 return str(parsed_list)
         except Exception as e:
-            # In case the list is malformed or any error occurs
             return list_str
         return list_str
 
-    # Find all the lists in the error message and sort their contents
     import re
     modified_message = re.sub(r'\[[^\]]*\]', sort_lists, modified_message)
     modified_message = modified_message.replace("'back', 'caseoh',", "'back',").replace("neg", "-").replace("[')', ',', ';', 'nl']", "[')', ',']").replace("'lwk', 'npc',", "'lwk',")
@@ -89,7 +86,7 @@ def semantic_analysis():
     data = request.json
     source_code = data.get('source_code', '')
 
-    global symbol_table
+
     symbol_table = SymbolTable()
 
     tokens, errors = lexer_run('<stdin>', source_code)
@@ -116,8 +113,34 @@ def semantic_analysis():
 
 @app.route('/api/output', methods=['POST'])
 def output():
-    print("\nDEBUG: Run called\n")
+    data = request.json
+    source_code = data.get('source_code', '')
 
+    tokens, errors = lexer_run('<stdin>', source_code)
+    if errors:
+        return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
+
+    parser = LL1Parser(cfg, predict_sets)
+    success, parse_errors = parser.parse(tokens)
+    if not success:
+        return jsonify({'success': False, 'errors': ['Syntax errors found']})
+
+    try:
+        semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"nl", "\n"}]
+        ast_root = build_ast(semantic_tokens)
+
+        symbol_table = SymbolTable()
+        semantic_analyzer = SemanticAnalyzer(symbol_table)
+        semantic_analyzer.analyze(ast_root)
+
+        interpreter = Interpreter(symbol_table)  
+        interpreter.interpret(ast_root)
+
+        # Return the output collected by the interpreter
+        return jsonify({'success': True, 'output': '\n'.join(str(item) for item in interpreter.output if item is not None)})
+
+    except SemanticError as e:
+        return jsonify({'success': False, 'errors': [str(e)]})
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)

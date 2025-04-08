@@ -243,6 +243,31 @@ async function runSemantic() {
 }
 
 async function runCode() {
-    await runSemantic();
+    const errorBox = document.getElementById('errorText');
+    errorBox.value = '';  // Clear previous output
+    await runSemantic();  // Ensure semantic analysis is done first
     if (errorBox.value !== 'Semantic analysis successful!') return;
+
+    const sourceCode = editor.getValue();
+
+    try {
+        const response = await fetch('/api/output', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source_code: sourceCode })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            errorText.value = data.errors.join('\n');  // Display errors if any
+            return;
+        }
+
+        // Display the output from the interpreter
+        errorBox.value = data.output;  // Set the output in the textarea
+    } catch (error) {
+        console.error("Error running interpreter:", error);
+        errorBox.value = 'Runtime error.';
+    }
 }
