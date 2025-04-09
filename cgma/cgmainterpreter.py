@@ -1,4 +1,4 @@
-from cgmasemantic import ProgramNode, VariableDeclarationNode, AssignmentNode, BinaryOpNode, FunctionDeclarationNode, FunctionCallNode, IfStatementNode, ForLoopNode, WhileLoopNode, PrintNode, UnaryOpNode, SturdyDeclarationNode, ReturnNode,  SwitchNode, ContinueNode, BreakNode, ListNode, TaperNode, TSNode, AppendNode, InsertNode, RemoveNode, CastNode, ListAccessNode
+from cgmasemantic import ProgramNode, VariableDeclarationNode, AssignmentNode, BinaryOpNode, FunctionDeclarationNode, FunctionCallNode, IfStatementNode, ForLoopNode, WhileLoopNode, PrintNode, UnaryOpNode, SturdyDeclarationNode, ReturnNode,  SwitchNode, ContinueNode, BreakNode, ListNode, TaperNode, TSNode, AppendNode, InsertNode, RemoveNode, CastNode, ListAccessNode, DoWhileLoopNode
 
 class SemanticError(Exception):
     def __init__(self, message,  line):
@@ -24,6 +24,8 @@ class Interpreter:
     def __init__(self, symbol_table):
         self.symbol_table = symbol_table
         self.output = []
+        self.loop_stack = []
+        self.break_flag = False
 
     def interpret(self, node):
         if isinstance(node, ProgramNode):
@@ -66,6 +68,12 @@ class Interpreter:
             return self.visit_if_statement(node)
         elif isinstance(node, ForLoopNode):
             return self.visit_for_loop(node)
+        elif isinstance(node, WhileLoopNode):
+            return self.visit_while_loop(node)
+        elif isinstance(node, DoWhileLoopNode):
+            return self.visit_do_while_loop(node)
+        elif isinstance(node, BreakNode):
+            return self.visit_break(node)
         elif node.node_type == "Value":
             value = self._parse_literal(node.value)
             return value
@@ -433,7 +441,6 @@ class Interpreter:
 
     def visit_unaryop(self, node):
         operand_node = node.children[0]
-        print(f"Unary operator: {node.value}, Operand: {operand_node.value}")
         operand_name = operand_node.value
         var_info = self.symbol_table.lookup_variable(operand_name)
 
@@ -530,3 +537,116 @@ class Interpreter:
                 current_node += 1
 
         return None
+    
+    def visit_for_loop(self, node):
+        self.enter_loop('for')
+        instantiate_node = node.children[0]
+        MAX_LOOP_ITERATIONS = 10000
+        LOOP_COUNTER = 0
+
+        if isinstance(instantiate_node, VariableDeclarationNode):
+            var_type = instantiate_node.children[0].value
+            var_name = instantiate_node.children[1].value
+            initial_value_node = self.interpret(instantiate_node.children[2])
+            self.symbol_table.declare_variable(var_name, var_type, initial_value_node)
+        
+        elif isinstance(instantiate_node, AssignmentNode):
+            var_name = instantiate_node.children[0].value
+            initial_value_node = self.interpret(instantiate_node.children[1])
+            self.symbol_table.lookup_variable(var_name)["value"] = initial_value_node
+
+
+        condition_node = node.children[1].children[0]
+        condition_result = self.interpret(condition_node)
+
+        if not isinstance(condition_result, bool):
+            raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+
+        while condition_result:
+            LOOP_COUNTER += 1
+            if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
+                raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
+
+            block_node = node.children[3]
+            self.visit_block(block_node)
+
+            update_statements = node.children[2].children
+            for update_expr in update_statements:
+                self.interpret(update_expr)
+            
+            condition_result = self.interpret(condition_node)
+
+        self.exit_loop()
+
+    def visit_while_loop(self, node):
+        self.enter_loop('while')
+        MAX_LOOP_ITERATIONS = 10000
+        LOOP_COUNTER = 0
+        condition_node = node.children[0].children[0]
+        condition_result = self.interpret(condition_node)
+
+        if not isinstance(condition_result, bool):
+            raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+
+        while condition_result:
+            LOOP_COUNTER += 1
+            if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
+                raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
+            
+            
+            block_node = node.children[1]
+            self.visit_block(block_node)
+
+            condition_result = self.interpret(condition_node)
+
+        self.exit_loop()
+
+    def visit_do_while_loop(self, node):
+        self.enter_loop('do-while')
+        MAX_LOOP_ITERATIONS = 10000
+        LOOP_COUNTER = 0
+        condition_node = node.children[1].children[0]
+        block_node = node.children[0]
+
+        while True:
+            self.visit_block(block_node)
+            LOOP_COUNTER += 1
+            if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
+                raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
+            
+            if self.break_triggered():
+                break
+
+            condition_result = self.interpret(condition_node)
+
+            if not isinstance(condition_result, bool):
+                raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+
+            if not condition_result:
+                break
+
+        self.exit_loop(node.line)
+    
+    def visit_break(self, line):
+        if self.loop_stack:
+            self.trigger_break()
+        else:
+            raise InterpreterError("Break statement outside of a loop", line)
+
+    def enter_loop(self, loop_type):
+        self.loop_stack.append(loop_type)
+        self.break_flag = False
+
+    def exit_loop(self, line):
+        if self.loop_stack:
+            loop_type = self.loop_stack.pop()
+            print(f"Exiting {loop_type} loop")
+            self.break_flag = False
+        else:
+            raise InterpreterError("Attempting to exit a loop when no loop is active", line)
+
+    def trigger_break(self):
+        self.break_flag = True
+
+    def break_triggered(self):
+        return self.break_flag

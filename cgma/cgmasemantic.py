@@ -2528,9 +2528,11 @@ def parse_for(tokens, index, func_type):
     if tokens[index].type != ";":
         raise SemanticError(f"Syntax Error: Expected ';' after for loop condition.", line)
     index += 1
-
+    update_node = ASTNode("Update", line=line)
+    
     while True:
         update, index = parse_update(tokens, index)
+        update_node.add_child(update)
         if tokens[index].type == ",":
             index += 1
             continue
@@ -2543,7 +2545,7 @@ def parse_for(tokens, index, func_type):
 
     symbol_table.enter_scope()
 
-    for_node = ForLoopNode(initialization, condition_node, update, line=line)
+    for_node = ForLoopNode(initialization, condition_node, update_node, line=line)
 
     if tokens[index].type == "{":
         index += 1
