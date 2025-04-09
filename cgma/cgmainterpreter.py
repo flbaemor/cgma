@@ -26,6 +26,7 @@ class Interpreter:
         self.output = []
         self.loop_stack = []
         self.break_flag = False
+        self.continue_flag = False
 
     def interpret(self, node):
         if isinstance(node, ProgramNode):
@@ -76,6 +77,10 @@ class Interpreter:
             return self.visit_break(node)
         elif isinstance(node, ContinueNode):
             return self.visit_continue(node)
+        elif isinstance(node, SwitchNode):
+            return self.visit_switch(node)
+        elif node.node_type == "Input":
+            return self.visit_input(node)
         elif node.node_type == "Value":
             value = self._parse_literal(node.value)
             return value
@@ -574,7 +579,7 @@ class Interpreter:
 
             if self.break_triggered():
                 break
-
+            
             update_statements = node.children[2].children
             for update_expr in update_statements:
                 self.interpret(update_expr)
@@ -624,36 +629,86 @@ class Interpreter:
             
             if self.break_triggered():
                 break
+            
 
             condition_result = self.interpret(condition_node)
-
+            
             if not isinstance(condition_result, bool):
                 raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
 
             if not condition_result:
                 break
 
-        self.exit_loop(node.line)
+        self.exit_loop()
     
     def visit_break(self, node):
         if self.loop_stack:
             self.trigger_break()
         else:
             raise InterpreterError("Runtime Error: Break statement used outside of a loop", node.line)
-
-    def enter_loop(self, loop_type):
-        self.loop_stack.append(loop_type)
-        self.break_flag = False
-
-    def exit_loop(self):
-        if self.loop_stack:
-            loop_type = self.loop_stack.pop()
-            self.break_flag = False
-
+        
     def trigger_break(self):
         self.break_flag = True
 
     def break_triggered(self):
         return self.break_flag
-    
+
+    def enter_loop(self, loop_type):
+        self.loop_stack.append(loop_type)
+        self.break_flag = False
+        self.continue_flag = False
+
+    def exit_loop(self):
+        if self.loop_stack:
+            self.loop_stack.pop()
+            self.break_flag = False
+            self.continue_flag = False
+
     def visit_continue(self, node):
+        if self.loop_stack:
+            self.trigger_continue()
+        else:
+            raise InterpreterError("Runtime Error: Continue statement used outside of a loop", node.line)
+        
+    def continue_triggered(self):
+        return self.continue_flag
+    
+    def trigger_continue(self):
+        self.continue_flag = True
+
+
+    def visit_switch(self, node):
+        self.enter_loop('switch')
+        switch_expr_node = node.children[0]
+        switch_value = self.interpret(switch_expr_node)
+
+        matched_case = False
+        break_found = False
+        default_case = None
+
+        for case_node in node.children[1:]:
+            label_type = case_node.node_type
+            if label_type == "Case":
+                case_value_node = case_node.children[0]
+                block_node = case_node.children[1]
+                case_value = self.interpret(case_value_node)
+
+                if switch_value == case_value or matched_case:
+                    matched_case = True
+                    self.visit_block(block_node)
+                    if self.break_triggered():
+                        break_found = True
+                        break
+            
+            elif label_type == "Default":
+                default_case = case_node.children[0]
+        
+        if not matched_case and not break_found and default_case:
+            self.visit_block(default_case)
+
+        self.exit_loop()
+
+    def visit_input(self, node):
+        var_name
+
+        

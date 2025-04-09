@@ -2529,7 +2529,7 @@ def parse_for(tokens, index, func_type):
         raise SemanticError(f"Syntax Error: Expected ';' after for loop condition.", line)
     index += 1
     update_node = ASTNode("Update", line=line)
-    
+
     while True:
         update, index = parse_update(tokens, index)
         update_node.add_child(update)
@@ -2749,7 +2749,7 @@ def parse_switch(tokens, index, func_type):
         if tokens[index].type not in {"forsencd_lit", "forsen_lit", "lwk_lit", "chungus_lit", "chudeluxe_lit"}:
             raise SemanticError(f"Semantic Error: Expected a valid literal value after 'caseoh'.", line)
         
-        case_value = ASTNode("CaseValue", tokens[index].value, line=case_line)
+        case_value = ASTNode("Value", tokens[index].value, line=case_line)
         index += 1
 
         if tokens[index].type != ":":
@@ -2803,7 +2803,7 @@ def parse_switch(tokens, index, func_type):
             default_block.add_child(getout_node)
 
 
-        default_case = ASTNode("DefaultCase", line=line)
+        default_case = ASTNode("Default", line=line)
         default_case.add_child(default_block)
 
     if tokens[index].type != "}":
