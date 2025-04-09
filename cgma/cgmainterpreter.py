@@ -1,4 +1,4 @@
-from cgmasemantic import ProgramNode, VariableDeclarationNode, AssignmentNode, BinaryOpNode, FunctionDeclarationNode, FunctionCallNode, IfStatementNode, ForLoopNode, WhileLoopNode, PrintNode, UnaryOpNode, SturdyDeclarationNode, ReturnNode, UpdateNode, SwitchNode, ContinueNode, BreakNode, ListNode, TaperNode, TSNode, AppendNode, InsertNode, RemoveNode, CastNode, ListAccessNode
+from cgmasemantic import ProgramNode, VariableDeclarationNode, AssignmentNode, BinaryOpNode, FunctionDeclarationNode, FunctionCallNode, IfStatementNode, ForLoopNode, WhileLoopNode, PrintNode, UnaryOpNode, SturdyDeclarationNode, ReturnNode,  SwitchNode, ContinueNode, BreakNode, ListNode, TaperNode, TSNode, AppendNode, InsertNode, RemoveNode, CastNode, ListAccessNode
 
 class SemanticError(Exception):
     def __init__(self, message,  line):
@@ -41,7 +41,6 @@ class Interpreter:
         elif isinstance(node, ListNode):
             return self.visit_list(node)
         elif isinstance(node, ListAccessNode):
-            print(f"List entry: {self.symbol_table.lookup_variable("num")}")
             return self.visit_list_access(node)
         elif isinstance(node, ReturnNode):
             return self.visit_return(node)
@@ -53,6 +52,20 @@ class Interpreter:
             return self.visit_insert(node)
         elif isinstance(node, RemoveNode):
             return self.visit_remove(node)
+        elif isinstance(node, UnaryOpNode):
+            return self.visit_unaryop(node)
+        elif isinstance(node, SturdyDeclarationNode):
+            return self.visit_sturdy_declaration(node)
+        elif isinstance(node, CastNode):
+            return self.visit_cast(node)
+        elif isinstance(node, TaperNode):
+            return self.visit_taper(node)
+        elif isinstance(node, TSNode):
+            return self.visit_ts(node)
+        elif isinstance(node, IfStatementNode):
+            return self.visit_if_statement(node)
+        elif isinstance(node, ForLoopNode):
+            return self.visit_for_loop(node)
         elif node.node_type == "Value":
             value = self._parse_literal(node.value)
             return value
@@ -78,6 +91,7 @@ class Interpreter:
         var_type = node.children[0].value
         var_name = node.children[1].value
         value_node = node.children[2]
+        is_list = False
         
         if value_node:
             if value_node.node_type == "List":
@@ -90,14 +104,25 @@ class Interpreter:
                     elif var_type == "chudeluxe":
                         item = float(item)
                     value.append(item)
+                
+                is_list = True
 
             else:
                 value = self.interpret(value_node)
+                if isinstance(value_node, TaperNode):
+                    is_list = True
                 if var_type == "chungus" and isinstance(value, float):
                     value = int(value)
 
         print(f"\nDeclaring variable '{var_name}' of type '{var_type}' with initial value: {value}")
-        self.symbol_table.declare_variable(var_name, var_type, value)
+        self.symbol_table.declare_variable(var_name, var_type, value, is_list=is_list)
+
+    def visit_sturdy_declaration(self, node):
+        var_type = node.children[0].value
+        var_name = node.children[1].value
+        value_node = node.children[2]
+        value = self.interpret(value_node)
+        self.symbol_table.declare_variable(var_name, var_type, value, is_list=False, is_struct=False,  is_sturdy=True)
 
     def visit_assignment(self, node):
         target_node = node.children[0]
@@ -331,7 +356,7 @@ class Interpreter:
 
         if len(expected_params) != len(args):
             raise InterpreterError(
-                f"Function '{function_name}' expects {len(expected_params)} argument(s), got {len(args)}.",
+                f"Semantic Error: Function '{function_name}' expects {len(expected_params)} argument(s), got {len(args)}.",
                 node.line
             )
 
@@ -375,10 +400,10 @@ class Interpreter:
         index = self.interpret(node.children[0].children[0])
 
         if not isinstance(index, int):
-            raise InterpreterError("Insert index must be an integer", node.line)
+            raise InterpreterError("Semantic Error: Insert index must be an integer", node.line)
 
         if index < 0 or index > len(list_info["value"]):
-            raise InterpreterError(f"Index {index} out of range for insert", node.line)
+            raise InterpreterError(f"Semantic Error: Index {index} out of range for insert", node.line)
 
         for child in node.children[1:]:
             value = self.interpret(child)
@@ -398,11 +423,110 @@ class Interpreter:
         index = self.interpret(index_node)
 
         if not isinstance(index, int):
-            raise InterpreterError("Remove index must be an integer", node.line)
+            raise InterpreterError("Semantic Error: Remove index must be an integer", node.line)
 
         if index < 0 or index >= len(list_info["value"]):
-            raise InterpreterError(f"Index {index} out of bounds", node.line)
+            raise InterpreterError(f"Semantic Error: Index {index} out of bounds for remove", node.line)
 
         removed = list_info["value"].pop(index)
         print(f"Removed value {removed} from list '{list_name}': {list_info['value']}")
 
+    def visit_unaryop(self, node):
+        operand_node = node.children[0]
+        print(f"Unary operator: {node.value}, Operand: {operand_node.value}")
+        operand_name = operand_node.value
+        var_info = self.symbol_table.lookup_variable(operand_name)
+
+        if isinstance(var_info, str):
+            raise InterpreterError(var_info, node.line)
+
+        if node.value == "++":
+            if node.position == "pre":
+                var_info["value"] += 1
+                return var_info["value"]
+            else:  # post
+                original = var_info["value"]
+                var_info["value"] += 1
+                return original
+
+        elif node.value == "--":
+            if node.position == "pre":
+                var_info["value"] -= 1
+                return var_info["value"]
+            else:  # post
+                original = var_info["value"]
+                var_info["value"] -= 1
+                return original
+
+        raise InterpreterError(f"Unknown unary operator {node.value}", node.line)
+    
+    def visit_cast(self, node):
+        value = self.interpret(node.children[1])
+        cast_type = node.children[0].value
+
+        if cast_type == "chungus":
+            return int(value)
+        elif cast_type == "chudeluxe":
+            return float(value)
+        else:
+            raise InterpreterError(f"Unknown cast type: {cast_type}", node.line)
+
+    def visit_taper(self, node):
+        var_name = node.children[0].value
+        var_info = self.symbol_table.lookup_variable(var_name)
+        
+        if var_info["type"] == "forsencd":
+            var_info["value"] = list(var_info["value"])
+            var_info["is_list"] = True
+            print(f"Tapered string '{var_name}' into list: {var_info['value']}")
+
+        return var_info["value"]
+
+    def visit_ts(self, node):
+        var_name = node.children[0].value
+        var_info = self.symbol_table.lookup_variable(var_name)
+
+        if var_info["is_list"]:
+            result = len(var_info["value"])
+            print(f"Tapered list '{var_name}' to its length: {result}")
+        
+        elif var_info["type"] == "forsencd":
+            result = len(var_info["value"])
+            print(f"Tapered string '{var_name}' to its length: {result}")
+        
+        return result
+
+    def visit_if_statement(self, node):
+        condition_result = self.interpret(node.children[0].children[0])
+
+        if not isinstance(condition_result, bool):
+            raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+        
+        if condition_result:
+            self.visit_block(node.children[1])
+        
+        else:
+            current_node = 2
+            while current_node < len(node.children):
+                
+                elif_node = node.children[current_node]
+
+                if elif_node.node_type == "ElseIfStatement":
+                    elif_condition_result = self.interpret(elif_node.children[0].children[0])
+
+                    if not isinstance(elif_condition_result, bool):
+                        raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+                    
+                    if elif_condition_result:
+                        print(f"Executing ElseIf block: {elif_node.line}")
+                        self.visit_block(elif_node.children[1])
+                        return
+                    
+                elif elif_node.node_type == "ElseStatement":
+                    print(f"Executing Else block: {elif_node.line}")
+                    self.visit_block(elif_node.children[0])
+                    return
+
+                current_node += 1
+
+        return None

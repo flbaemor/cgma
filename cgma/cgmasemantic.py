@@ -118,8 +118,9 @@ class PrintNode(ASTNode):
             self.add_child(arg)
 
 class UnaryOpNode(ASTNode):
-    def __init__(self, operator, operand, line=None):
-        super().__init__("UnaryOp", operator)
+    def __init__(self, operator, operand, position="pre", line=None):
+        super().__init__("UnaryOp", operator, line=line)
+        self.position = position
         self.add_child(operand)
 
 class SturdyDeclarationNode(ASTNode):
@@ -140,6 +141,7 @@ class UpdateNode(ASTNode):
         super().__init__("Update", line=line)
         self.prefix = prefix
         self.add_child(operand)
+        self.add_child(operator)
 
 class SwitchNode(ASTNode):
     def __init__(self, expression, cases, default_case, line=None):
@@ -594,7 +596,6 @@ def parse_variable(tokens, index, var_name, var_type):
                 taper_node = TaperNode(identifier, line=line)
                 var_node.add_child(taper_node)
 
-
             elif tokens[index].value == "chat":
                 index += 1
                 if tokens[index].type == "(":
@@ -682,21 +683,22 @@ def parse_statement(tokens, index, func_type = None):
         
     elif token.type == "identifier" or tokens[index].type in {"++", "--"}: 
         assignments_node = ASTNode("AssignmentList")
-
+        print(token.type)
         while True:
-            if token.type == "identifier":
-                var_info = symbol_table.lookup_variable(token.value)
+
+            if tokens[index].type == "identifier":
+                var_info = symbol_table.lookup_variable(tokens[index].value)
                 if isinstance(var_info, str):
                     raise SemanticError(var_info, line)
 
-                var_name = token.value
+                var_name = tokens[index].value
                 var_type = var_info["type"]
                 is_list = var_info.get("is_list", False)
 
                 is_sturdy = var_info.get("is_sturdy", False)
 
                 if is_sturdy:
-                    raise SemanticError(f"Semantic Error: Variable '{var_name}' is declared as sturdy and cannot be re-declared.", line)
+                    raise SemanticError(f"Semantic Error: Variable '{var_name}' is declared as sturdy and cannot be re-assigned a value.", line)
 
                 if is_list:
                     if tokens[index + 1].type == "=":
@@ -727,13 +729,17 @@ def parse_statement(tokens, index, func_type = None):
                     assignments_node.add_child(node)
 
                 elif tokens[index + 1].type in {"++", "--"}:
-                    var_info = symbol_table.lookup_variable(token.value)
+                    var_info = symbol_table.lookup_variable(tokens[index].value)
+                    
+                    if isinstance(var_info, str):
+                        raise SemanticError(var_info, line)
+                    
                     if var_info["type"] not in {"chungus", "chudeluxe"}:
                         raise SemanticError(f"Semantic Error (Type Error): Cannot use '{token.value}' of type {var_info['type']} in expression.", line)
                     operand = ASTNode("Identifier", token.value, line=line)
                     operator = tokens[index + 1].value
                     index += 2
-                    assignments_node.add_child(UpdateNode(operator, operand, prefix=False, line=line))
+                    assignments_node.add_child(UnaryOpNode(operator, operand, "post", line=line))
 
                 elif tokens[index + 1].type == ".":
                     node, index = parse_struct_member_assignment(tokens, index)
@@ -742,21 +748,22 @@ def parse_statement(tokens, index, func_type = None):
                 else:
                     raise SemanticError(f"Semantic Error: Unexpected token '{tokens[index].value}' in statement.", line)
 
-            elif tokens[index].type in {"++", "--"}:
+            elif tokens[index].value in {"++", "--"}:
                 operator = tokens[index].value
                 index += 1
-
                 if tokens[index].type == "identifier":
-                    var_name = symbol_table.lookup_variable(tokens[index].value)
-                    if var_name["type"] not in {"chungus", "chudeluxe"}:
-                        raise SemanticError(f"Semantic Error (Type Error): Cannot use '{tokens[index].value}' of type {var_name['type']} in expression.", line)
-                    if isinstance(var_name, str):
+                    var_name = tokens[index].value
+                    var_info = symbol_table.lookup_variable(var_name)
+                    if var_info["type"] not in {"chungus", "chudeluxe"}:
+                        raise SemanticError(f"Semantic Error (Type Error): Cannot use '{var_name}' of type {var_info['type']} in expression.", line)
+                    
+                    if isinstance(var_info, str):
                         raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
 
                     operand = ASTNode("Identifier", tokens[index].value, line=line)
                     index += 1
-
-                    assignments_node.add_child(UpdateNode(operator, operand, prefix=True, line=line))
+ 
+                    assignments_node.add_child(UnaryOpNode(operator, operand, "pre", line=line))
 
                 else:
                     raise SemanticError(f"Syntax Error: Expected identifier after '{operator}'.", line)
@@ -1315,14 +1322,21 @@ def parse_term(tokens, index):
     return left_node, index
 
 def parse_unary(tokens, index):
-    """Parses unary operators (++x, --x, -x) with right-to-left associativity."""
+
     if tokens[index].type in {"++", "--", "neg"}:
         op = tokens[index].value
         index += 1
         operand, index = parse_unary(tokens, index)
-        return UnaryOpNode(op, operand), index
+        return UnaryOpNode(op, operand, position="pre", line=tokens[index].line), index
 
-    return parse_factor(tokens, index)
+    node, index = parse_factor(tokens, index)
+
+    if index < len(tokens) and tokens[index].type in {"++", "--"} and tokens[index + 1].type != "identifier":
+        op = tokens[index].value
+        node = UnaryOpNode(op, node, position="post", line=tokens[index].line)
+        index += 1
+
+    return node, index
 
 def parse_cast(tokens, index):
     """Parses explicit type casting for the entire expression inside (type)."""
@@ -1437,10 +1451,10 @@ def parse_factor(tokens, index):
         node = ASTNode("Value", token.value)
         index += 1  
 
-        if tokens[index].type in {"++", "--"}:
+        if index < len(tokens) and tokens[index].type in {"++", "--"}:
             op = tokens[index].value
             index += 1
-            node = UnaryOpNode(op, node)
+            return UnaryOpNode(op, node, position="post", line=token.line), index
 
         return node, index
 
@@ -1926,11 +1940,11 @@ def parse_print(tokens, index):
                 expr_node, index = parse_expression(tokens, start_index)
                 args.append(expr_node)
 
-            elif is_list:
-                actual_args.append(list_access_node)
+            elif list_info["is_list"]:
+                args.append(list_access_node)
             
             else:
-                actual_args.append(ASTNode("Value", full_access, line=line))
+                args.append(ASTNode("Value", full_access, line=line))
 
 
         elif (
@@ -2043,6 +2057,10 @@ def parse_print(tokens, index):
 
     elif tokens[index].type in {"forsen_lit"}:
         expr_node, index = parse_expression_forsen(tokens, index)
+        args.append(expr_node)
+
+    elif tokens[index].type in {"("}:
+        expr_node, index = parse_expression(tokens, index)
         args.append(expr_node)
 
     else:
@@ -2204,6 +2222,9 @@ def parse_print(tokens, index):
                 actual_args.append(ASTNode("Value", arg_name, line=line))
                 index += 1
             
+        elif tokens[index].type in {"("}:
+            arg_node, index = parse_expression(tokens, index)
+            actual_args.append(arg_node)
 
         else:
             raise SemanticError(f"Semantic Error: Expected valid argument after ',' in yap statement.", line)
@@ -2563,7 +2584,7 @@ def parse_update(tokens, index):
         if tokens[index].type in {"++", "--"}:
             operator = tokens[index].value
             index += 1
-            return UpdateNode(operator, operand, prefix = False, line=line), index
+            return UnaryOpNode(operator, operand, "pre", line=line), index
     
     elif tokens[index].type in {"++", "--"}:
         operator = tokens[index].value
@@ -2577,7 +2598,7 @@ def parse_update(tokens, index):
             operand = ASTNode("Identifier", tokens[index].value, line=line)
             index += 1
 
-            return UpdateNode(operator, operand, prefix = True, line=line), index
+            return UnaryOpNode(operator, operand, "pre", line=line), index
         
     raise SemanticError(f"Semantic Error: Invalid update statement.", line)
     
