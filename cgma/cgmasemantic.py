@@ -184,7 +184,7 @@ class AppendNode(ASTNode):
 class InsertNode(ASTNode):
     def __init__(self, index, elements, line=None):
         super().__init__("Insert", line=line)
-        self.add_child(ASTNode("Index", index, line=line))
+        self.add_child(index)
         for elem in elements:
             self.add_child(elem)
 
@@ -192,7 +192,7 @@ class RemoveNode(ASTNode):
     def __init__(self, value, index, line=None):
         super().__init__("Remove", line=line)
         self.add_child(ASTNode("Identifier", value, line=line))
-        self.add_child(ASTNode("Index", index, line=line))
+        self.add_child(index)
 
 class CastNode(ASTNode):
     def __init__(self, target_type, expression, line=None):
@@ -2857,10 +2857,9 @@ def parse_insert(tokens, index, var_name, expected_type):
         raise SemanticError(f"Syntax Error: Expected '(' after 'insert'.", line)
     index += 1
 
-    if tokens[index].type != "chungus_lit":
-        raise SemanticError(f"Semantic Error: Expected chungus literal as index in 'insert'.", line)
-    index_value = tokens[index].value
-    index += 1
+    expr_node, index = parse_expression(tokens, index)
+    index_value = ASTNode("Index", line=tokens[index].line)
+    index_value.add_child(expr_node)
 
     if tokens[index].type != ",":
         raise SemanticError(f"Syntax Error: Expected ',' after index in 'insert'.", line)
@@ -2892,18 +2891,15 @@ def parse_remove(tokens, index, var_name, expected_type):
         raise SemanticError(f"Syntax Error: Expected '(' after 'remove'.", line)
     index += 1
 
-    if tokens[index].type == "chungus_lit":
-        value = tokens[index].value
-        index += 1
+    expr_node, index = parse_expression(tokens, index)
+    index_value = ASTNode("Index", line=tokens[index].line)
+    index_value.add_child(expr_node)
         
-    else:
-        raise SemanticError(f"Semantic Error: Expected chungus literal or identifier as argument to 'remove'.", line)
-
     if tokens[index].type != ")":
         raise SemanticError(f"Syntax Error: Expected ')' after remove argument.", line)
     index += 1
 
-    return RemoveNode(var_name, value, line=line), index
+    return RemoveNode(var_name, index_value, line=line), index
 
 
 def parse_struct(tokens, index):
