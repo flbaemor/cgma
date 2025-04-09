@@ -62,9 +62,12 @@ class VariableDeclarationNode(ASTNode):
             self.add_child(value)
 
 class AssignmentNode(ASTNode):
-    def __init__(self, var_name, value, line=None):
+    def __init__(self, target, value, line=None):
         super().__init__("Assignment", line=line)
-        self.add_child(ASTNode("Identifier", var_name, line=line))
+        if isinstance(target, str):
+            self.add_child(ASTNode("Identifier", target, line=line))
+        else:
+            self.add_child(target)
         self.add_child(value)
         
 
@@ -701,11 +704,17 @@ def parse_statement(tokens, index, func_type = None):
                         assignments_node.add_child(node)
 
                     elif tokens[index + 1].type == "[":
-                        node, index = parse_list_access(tokens, index)
+                        
+                        list_access_node, index = parse_list_access(tokens, index)
+                        
                         if tokens[index + 1].type == "=":
-                            index += 2
-                            node, index = parse_assignment(tokens, index, token.value, var_type)
-                            assignments_node.add_child(node)
+                            index += 2 
+                            value_node, index = parse_expression(tokens, index)
+                            assign_node = AssignmentNode(list_access_node, value_node, line=tokens[index].line)
+                            assignments_node.add_child(assign_node)
+                        else:
+                            raise SyntaxError("Expected '=' after list access", tokens[index + 1].line)
+
 
                 elif tokens[index + 1].type == "=":
                     var_name = token.value
@@ -840,7 +849,10 @@ def parse_list_access(tokens, index):
     if tokens[index].type != "]":
         raise SemanticError(f"Syntax Error: Expected ']' after list index.", line)
     
-    return ListAccessNode(list_name, index_node, line=line), index
+    index_wrapper = ASTNode("Index", line=line)
+    index_wrapper.add_child(index_node)
+
+    return ListAccessNode(list_name, index_wrapper, line=line), index
 
 
 def parse_list_assignment(tokens, index):
@@ -1382,81 +1394,6 @@ def parse_factor(tokens, index):
         ts_node, index = TSNode(identifier, line=token.line), index
         return ts_node, index
 
-    elif (
-        token.type == "identifier" and
-        tokens[index + 1].type == "." and
-        tokens[index + 2].type == "identifier"
-    ):
-        struct_instance = token.value 
-        member_chain = [struct_instance]  
-        index += 1 
-
-
-        instance_info = symbol_table.lookup_variable(struct_instance)
-        if isinstance(instance_info, str):
-            raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", token.line)
-
-        struct_name = instance_info["type"]
-        struct_info = symbol_table.lookup_struct(struct_name)
-
-        while tokens[index].type == ".":
-            index += 1
-
-            if tokens[index].type != "identifier":
-                raise SemanticError(f"Syntax Error: Expected member name after '.'.", tokens[index].line)
-
-            member_name = tokens[index].value
-            member_chain.append(member_name)
-            index += 1
-
-            if member_name not in struct_info:
-                full_chain = ".".join(member_chain)
-                raise SemanticError(f"Semantic Error: '{struct_name}' has no member '{member_name}' in '{full_chain}'.", token.line)
-
-            member_info = struct_info[member_name]
-            expected_type = struct_info[member_name]["type"]
-            is_list = member_info.get("is_list", False)
-
-            if symbol_table.lookup_struct(expected_type):
-                struct_name = expected_type 
-                struct_info = symbol_table.lookup_struct(expected_type)
-            else:
-                break 
-
-        final_member = member_chain.pop()
-        struct_instance = ".".join(member_chain)
-        full_access = f"{struct_instance}.{final_member}"
-
-        if expected_type not in {"chungus", "chudeluxe", "forsencd", "forsen", "lwk"}:
-            expected_type = "aura"
-
-        if is_list:
-            if tokens[index].type != "[":
-                raise SemanticError(f"Semantic Error: Missing index for list '{full_access}'.", tokens[index].line)
-
-            index += 1
-            expr_node, index = parse_expression(tokens, index)
-
-            if tokens[index].type != "]":
-                raise SemanticError("Syntax Error: Missing closing bracket.", tokens[index].line)
-
-            index_node = ASTNode("Index", line=tokens[index].line)
-            index_node.add_child(expr_node)
-
-            list_access_node = ListAccessNode(full_access, index_node, line=tokens[index].line)
-            index += 1
-
-        if tokens[index].type == "[":
-            raise SemanticError(f"Semantic Error: '{full_access}' is not a list.", tokens[index].line)
-
-        if expected_type not in {"chungus", "chudeluxe"}:
-            raise SemanticError(f"Semantic Error (Type Error): Cannot use '{struct_instance}.{final_member}' of type {expected_type} in this expression.", token.line)
-
-        struct_node = StructMemberAccessNode(struct_instance, final_member, member_type=expected_type, line=token.line)
-        if is_list:
-            struct_node.add_child(list_access_node)
-        return struct_node, index
-
 
     elif token.type == "identifier" and tokens[index + 1].type == "[":
         list_name = token.value
@@ -1866,9 +1803,6 @@ def parse_assignment(tokens, index, var_name, var_type):
         else:
             raise SemanticError(f"Syntax Error: Expected '()' after chat.", line)
 
-    elif tokens[index].type == "identifier" and tokens[index + 1].type == "(":
-        value_node, index = parse_function_call(tokens, index, tokens[index].value, var_type, [])
-
     else:
         value_node, index = parse_expression_type(tokens, index, var_type)
 
@@ -1887,7 +1821,7 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
     
     while tokens[index].type != ")":
         if len(provided_args) >= len(expected_params):
-            raise SemanticError(f"Semantic Error (Type Error): Too many arguments in function call '{func_name}'.", line)
+            raise SemanticError(f"Semantic Error: Too many arguments in function call '{func_name}'.", line)
 
         expected_type = expected_params[len(provided_args)].children[0].value 
         

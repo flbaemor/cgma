@@ -38,12 +38,20 @@ class Interpreter:
             return self.visit_function_declaration(node)
         elif isinstance(node, PrintNode):
             return self.visit_print(node)
+        elif isinstance(node, ListNode):
+            return self.visit_list(node)
         elif isinstance(node, ListAccessNode):
             return self.visit_list_access(node)
         elif isinstance(node, ReturnNode):
             return self.visit_return(node)
         elif isinstance(node, FunctionCallNode):
             return self.visit_function_call(node)
+        elif isinstance(node, AppendNode):
+            return self.visit_append(node)
+        elif isinstance(node, InsertNode):
+            return self.visit_insert(node)
+        elif isinstance(node, RemoveNode):
+            return self.visit_remove(node)
         elif node.node_type == "Value":
             value = self._parse_literal(node.value)
             return value
@@ -91,15 +99,51 @@ class Interpreter:
         self.symbol_table.declare_variable(var_name, var_type, value)
 
     def visit_assignment(self, node):
-        var_name = node.children[0].value
-        var_type = self.symbol_table.lookup_variable(var_name)["type"]
+        target_node = node.children[0]
         value_node = node.children[1]
-        value = self.interpret(value_node)
-        if var_type == "chungus":
-            if isinstance(value, float):
+        if value_node:
+            if value_node.node_type == "List":
+                value = []
+                for val in value_node.children:
+                    item = self.interpret(val)
+                    value.append(item)
+            else:
+                value = self.interpret(value_node)
+
+        if target_node.node_type == "ListAccess":
+            list_name = target_node.children[0].value
+            index_node = target_node.children[1]
+            index = self.interpret(index_node.children[0])
+
+            if not isinstance(index, int):
+                raise InterpreterError(f"Semantic Error: List index must be an integer. Got '{index}'", node.line)
+
+            list_entry = self.symbol_table.lookup_variable(list_name)
+            if isinstance(list_entry, str):
+                raise InterpreterError(list_entry, node.line)
+
+            list_value = list_entry["value"]
+            if not isinstance(list_value, list):
+                raise InterpreterError(f"Semantic Error: Variable '{list_name}' is not a list.", node.line)
+
+            if index < 0 or index >= len(list_value):
+                raise InterpreterError(f"Semantic Error: Index '{index}' out of bounds for list '{list_name}'.", node.line)
+
+            print(f"\nUpdating list '{list_name}' at index {index} with value: {value}")
+            list_value[index] = value
+
+        else:
+            var_name = target_node.value
+            var_info = self.symbol_table.lookup_variable(var_name)
+            if isinstance(var_info, str):
+                raise InterpreterError(var_info, node.line)
+
+            var_type = var_info["type"]
+            if var_type == "chungus" and isinstance(value, float):
                 value = int(value)
-        print(f"\nAssigning variable '{var_name}' of type '{var_type}' with value: {value}")
-        self.symbol_table.lookup_variable(var_name)["value"] = value
+
+            print(f"\nAssigning variable '{var_name}' of type '{var_type}' with value: {value}")
+            self.symbol_table.lookup_variable(var_name)["value"] = value
 
 
     def visit_binary_op(self, node):
@@ -236,16 +280,17 @@ class Interpreter:
             value = value[1:-1]
 
         # Escape sequences
-        value = value.replace(r'\\', '\\')  # handle double backslash first
+        value = value.replace(r'\\', '\\')
         value = value.replace(r'\n', '\n')
         value = value.replace(r'\t', '\t')
         value = value.replace(r'\"', '"')
         value = value.replace(r'\{', '{')
         value = value.replace(r'\}', '}')
-
+        value = value.replace(r'\/', '/')
         return value
 
-
+    #def visit_list(self, node):
+        
     def visit_list_access(self, node):
         list_name = node.children[0].value
         index_node = node.children[1]
@@ -299,7 +344,7 @@ class Interpreter:
                 self.symbol_table.declare_variable(param_name, param_type, arg_value)
 
             try:
-                self.visit_block(function_node.children[2])  # Assuming block is always at index 2
+                self.visit_block(function_node.children[2])
             except ReturnValue as ret:
                 return ret.value
 
@@ -310,4 +355,20 @@ class Interpreter:
             self.symbol_table.current_func_name = None
 
 
+    def visit_append(self, node):
+        list_name = node.parent.children[0].value
+        list_info = self.symbol_table.lookup_variable(list_name)
+        
+        if isinstance(list_info, str):
+            raise InterpreterError(list_info, node.line)
 
+        for child in node.children:
+            value = self.interpret(child)
+            list_info["value"].append(value)
+
+        print(f"Appended values to list '{list_name}': {list_info['value']}")
+
+        
+    #def visit_insert(self, node):
+
+    #def visit_remove(self, node):
