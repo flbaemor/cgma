@@ -263,8 +263,13 @@ class SymbolTable:
         scope = self.scopes[-1]
         current_func = self.current_func_name
 
+        
+    
+        for i, s in enumerate(self.scopes):
+            print(f"[SCOPE {i}] {s}")
+
         if name in self.functions:
-                return f"Semantic Error: Variable '{name}' already declared as a function."
+            return f"Semantic Error: Variable '{name}' already declared as a function."
 
         if current_func:
             if current_func not in self.function_variables:
@@ -273,38 +278,33 @@ class SymbolTable:
             if name in self.function_variables[current_func]:
                 return f"Semantic Error: Variable '{name}' already declared in this function."
 
-            if len(self.scopes) == 2:
-                self.function_variables[current_func].add(name)
+            self.function_variables[current_func].add(name)
 
-        for i in self.scopes[:-1]:
-            if name in i:
-                return f"Semantic Error: Variable '{name}' already declared in this scope."
-
-        if len(self.scopes) == 1:
-            if name in self.global_variables:
-                return f"Semantic Error: Variable '{name}' already declared."
-
+        if self.current_func_name:
             
-            self.variables[name] = {
+            scope[name] = {
                 "type": type_,  
                 "value": value,
                 "is_list": is_list,
                 "is_struct": is_struct,
                 "is_sturdy": is_sturdy
             }
-
         else:
-            scope[name] = {
+            if name in self.global_variables:
+                return f"Semantic Error: Variable '{name}' already declared."
+            
+            self.variables[name] = {
                 "type": type_,
                 "value": value,
                 "is_list": is_list,
                 "is_struct": is_struct,
                 "is_sturdy": is_sturdy
             }
+        
+        print(f"\n[DECLARE] In function: {current_func or 'GLOBAL'} — Declaring '{name}' of type '{type_}' with value: {value}")
 
 
     def lookup_variable(self, name):
-        
         for i, scope in enumerate(reversed(self.scopes)):
             if name in scope:
                 return scope[name]
@@ -314,6 +314,14 @@ class SymbolTable:
 
         return f"Semantic Error: Variable '{name}' used before declaration."
     
+    def set_variable(self, name, value):
+        current_scope = self.scopes[-1]
+
+        if name in current_scope:
+            current_scope[name]["value"] = value
+            print(f"\n[SET] In function: {self.current_func_name or 'GLOBAL'} — Setting '{name}' to {value}")
+        else:
+            return f"Semantic Error: Variable '{name}' not declared in the current scope."
 
     ###### FUNCTION ######
     def declare_function(self, name, return_type, params, node=None):
@@ -343,11 +351,13 @@ class SymbolTable:
     ###### SCOPE ######
     def enter_scope(self):
         self.scopes.append({})
+        print(f"\n[ENTER SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
         
 
     def exit_scope(self):
         if len(self.scopes) > 1:
             self.scopes.pop()
+            print(f"\n[EXIT SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
 
     def debug_scopes(self):
         print("\n====== SYMBOL TABLE DEBUG ======")
@@ -2060,6 +2070,10 @@ def parse_print(tokens, index):
         args.append(expr_node)
 
     elif tokens[index].type in {"("}:
+        expr_node, index = parse_expression(tokens, index)
+        args.append(expr_node)
+
+    elif tokens[index].type in {"++", "--"}:
         expr_node, index = parse_expression(tokens, index)
         args.append(expr_node)
 

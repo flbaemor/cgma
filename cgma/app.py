@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 from cgmalexer import run as lexer_run
 from cgmaparser import LL1Parser
 from cfg import cfg, predict_sets
@@ -137,7 +138,6 @@ def output():
         interpreter = Interpreter(symbol_table)  
         interpreter.interpret(ast_root)
 
-        # Return the output collected by the interpreter
         return jsonify({'success': True, 'output': ''.join(str(item) for item in interpreter.output if item is not None)})
 
     except InterpreterError as e:

@@ -185,7 +185,7 @@ class Interpreter:
             if var_type == "chungus" and isinstance(value, float):
                 value = int(value)
 
-            self.symbol_table.lookup_variable(var_name)["value"] = value
+            self.symbol_table.set_variable(var_name, value)
             print(f"\nUpdating variable '{var_name}' of type '{var_type}' with value: {value}")
 
 
@@ -374,8 +374,8 @@ class Interpreter:
                 f"Semantic Error: Function '{function_name}' expects {len(expected_params)} argument(s), got {len(args)}.",
                 node.line
             )
-
-        self.symbol_table.scopes.append({})
+        
+        self.symbol_table.enter_scope()
         self.symbol_table.current_func_name = function_name
 
         try:
@@ -394,7 +394,7 @@ class Interpreter:
             return None
 
         finally:
-            self.symbol_table.scopes.pop()
+            self.symbol_table.exit_scope()
             self.symbol_table.current_func_name = None
 
 
@@ -456,20 +456,24 @@ class Interpreter:
 
         if node.value == "++":
             if node.position == "pre":
-                var_info["value"] += 1
-                return var_info["value"]
+                new_value = var_info["value"] + 1
+                self.symbol_table.set_variable(operand_name, new_value)
+                return new_value
             else:  # post
                 original = var_info["value"]
-                var_info["value"] += 1
+                new_value = original + 1
+                self.symbol_table.set_variable(operand_name, new_value)
                 return original
 
         elif node.value == "--":
             if node.position == "pre":
-                var_info["value"] -= 1
-                return var_info["value"]
-            else:  # post
+                new_value = var_info["value"] - 1
+                self.symbol_table.set_variable(operand_name, new_value)
+                return new_value
+            else:
                 original = var_info["value"]
-                var_info["value"] -= 1
+                new_value = original - 1
+                self.symbol_table.set_variable(operand_name, new_value)
                 return original
 
         raise InterpreterError(f"Unknown unary operator {node.value}", node.line)
@@ -560,7 +564,7 @@ class Interpreter:
         elif isinstance(instantiate_node, AssignmentNode):
             var_name = instantiate_node.children[0].value
             initial_value_node = self.interpret(instantiate_node.children[1])
-            self.symbol_table.lookup_variable(var_name)["value"] = initial_value_node
+            self.symbol_table.set_variable(var_name, initial_value_node)
 
 
         condition_node = node.children[1].children[0]
