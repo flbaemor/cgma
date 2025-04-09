@@ -74,6 +74,8 @@ class Interpreter:
             return self.visit_do_while_loop(node)
         elif isinstance(node, BreakNode):
             return self.visit_break(node)
+        elif isinstance(node, ContinueNode):
+            return self.visit_continue(node)
         elif node.node_type == "Value":
             value = self._parse_literal(node.value)
             return value
@@ -570,6 +572,9 @@ class Interpreter:
             block_node = node.children[3]
             self.visit_block(block_node)
 
+            if self.break_triggered():
+                break
+
             update_statements = node.children[2].children
             for update_expr in update_statements:
                 self.interpret(update_expr)
@@ -596,6 +601,9 @@ class Interpreter:
             
             block_node = node.children[1]
             self.visit_block(block_node)
+
+            if self.break_triggered():
+                break
 
             condition_result = self.interpret(condition_node)
 
@@ -627,26 +635,25 @@ class Interpreter:
 
         self.exit_loop(node.line)
     
-    def visit_break(self, line):
+    def visit_break(self, node):
         if self.loop_stack:
             self.trigger_break()
         else:
-            raise InterpreterError("Break statement outside of a loop", line)
+            raise InterpreterError("Runtime Error: Break statement used outside of a loop", node.line)
 
     def enter_loop(self, loop_type):
         self.loop_stack.append(loop_type)
         self.break_flag = False
 
-    def exit_loop(self, line):
+    def exit_loop(self):
         if self.loop_stack:
             loop_type = self.loop_stack.pop()
-            print(f"Exiting {loop_type} loop")
             self.break_flag = False
-        else:
-            raise InterpreterError("Attempting to exit a loop when no loop is active", line)
 
     def trigger_break(self):
         self.break_flag = True
 
     def break_triggered(self):
         return self.break_flag
+    
+    def visit_continue(self, node):
