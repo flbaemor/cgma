@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
 from cgmalexer import run as lexer_run
 from cgmaparser import LL1Parser
 from cfg import cfg, predict_sets
