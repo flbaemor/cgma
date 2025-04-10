@@ -185,7 +185,7 @@ class Interpreter:
             if var_type == "chungus" and isinstance(value, float):
                 value = int(value)
 
-            self.symbol_table.set_variable(var_name, value)
+            self.symbol_table.lookup_variable(var_name)["value"] = value
             print(f"\nUpdating variable '{var_name}' of type '{var_type}' with value: {value}")
 
 
@@ -209,8 +209,12 @@ class Interpreter:
             elif operator == '*':
                 return left * right
             elif operator == '/':
+                if right == 0:
+                    raise InterpreterError("Runtime Error: Division by zero is undefined", "#")
                 return left / right
             elif operator == '%':
+                if right == 0:
+                    raise InterpreterError("Runtime Error: Division by zero is undefined", "#")
                 return left % right
             elif operator == '==':
                 return left == right
@@ -234,8 +238,11 @@ class Interpreter:
                 return -left
             else:
                 raise Exception(f"Unknown operator: {operator}")
-        except Exception as e:
-            raise Exception(f"Error applying operator '{operator}': {e}")
+        
+        except ZeroDivisionError:
+            raise InterpreterError("Runtime Error: Division by zero", "")
+
+
 
     def _parse_literal(self, value):
 
@@ -374,8 +381,8 @@ class Interpreter:
                 f"Semantic Error: Function '{function_name}' expects {len(expected_params)} argument(s), got {len(args)}.",
                 node.line
             )
-        
-        self.symbol_table.enter_scope()
+
+        self.symbol_table.scopes.append({})
         self.symbol_table.current_func_name = function_name
 
         try:
@@ -394,7 +401,7 @@ class Interpreter:
             return None
 
         finally:
-            self.symbol_table.exit_scope()
+            self.symbol_table.scopes.pop()
             self.symbol_table.current_func_name = None
 
 
@@ -456,24 +463,20 @@ class Interpreter:
 
         if node.value == "++":
             if node.position == "pre":
-                new_value = var_info["value"] + 1
-                self.symbol_table.set_variable(operand_name, new_value)
-                return new_value
+                var_info["value"] += 1
+                return var_info["value"]
             else:  # post
                 original = var_info["value"]
-                new_value = original + 1
-                self.symbol_table.set_variable(operand_name, new_value)
+                var_info["value"] += 1
                 return original
 
         elif node.value == "--":
             if node.position == "pre":
-                new_value = var_info["value"] - 1
-                self.symbol_table.set_variable(operand_name, new_value)
-                return new_value
-            else:
+                var_info["value"] -= 1
+                return var_info["value"]
+            else:  # post
                 original = var_info["value"]
-                new_value = original - 1
-                self.symbol_table.set_variable(operand_name, new_value)
+                var_info["value"] -= 1
                 return original
 
         raise InterpreterError(f"Unknown unary operator {node.value}", node.line)
@@ -551,46 +554,49 @@ class Interpreter:
     
     def visit_for_loop(self, node):
         self.enter_loop('for')
-        instantiate_node = node.children[0]
+        self.symbol_table.enter_scope()  # <- Enter new scope
         MAX_LOOP_ITERATIONS = 10000
         LOOP_COUNTER = 0
 
-        if isinstance(instantiate_node, VariableDeclarationNode):
-            var_type = instantiate_node.children[0].value
-            var_name = instantiate_node.children[1].value
-            initial_value_node = self.interpret(instantiate_node.children[2])
-            self.symbol_table.declare_variable(var_name, var_type, initial_value_node)
-        
-        elif isinstance(instantiate_node, AssignmentNode):
-            var_name = instantiate_node.children[0].value
-            initial_value_node = self.interpret(instantiate_node.children[1])
-            self.symbol_table.set_variable(var_name, initial_value_node)
+        try:
+            instantiate_node = node.children[0]
 
+            if isinstance(instantiate_node, VariableDeclarationNode):
+                var_type = instantiate_node.children[0].value
+                var_name = instantiate_node.children[1].value
+                initial_value_node = self.interpret(instantiate_node.children[2])
+                self.symbol_table.declare_variable(var_name, var_type, initial_value_node)
 
-        condition_node = node.children[1].children[0]
-        condition_result = self.interpret(condition_node)
+            elif isinstance(instantiate_node, AssignmentNode):
+                var_name = instantiate_node.children[0].value
+                initial_value_node = self.interpret(instantiate_node.children[1])
+                self.symbol_table.lookup_variable(var_name)["value"] = initial_value_node
 
-        if not isinstance(condition_result, bool):
-            raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
-
-        while condition_result:
-            LOOP_COUNTER += 1
-            if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
-                raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
-
-            block_node = node.children[3]
-            self.visit_block(block_node)
-
-            if self.break_triggered():
-                break
-            
-            update_statements = node.children[2].children
-            for update_expr in update_statements:
-                self.interpret(update_expr)
-            
+            condition_node = node.children[1].children[0]
             condition_result = self.interpret(condition_node)
 
-        self.exit_loop()
+            if not isinstance(condition_result, bool):
+                raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+
+            while condition_result:
+                LOOP_COUNTER += 1
+                if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
+                    raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
+
+                self.visit_block(node.children[3])
+
+                if self.break_triggered():
+                    break
+
+                for update_expr in node.children[2].children:
+                    self.interpret(update_expr)
+
+                condition_result = self.interpret(condition_node)
+
+        finally:
+            self.symbol_table.exit_scope()
+            self.exit_loop()
+
 
     def visit_while_loop(self, node):
         self.enter_loop('while')
@@ -612,6 +618,7 @@ class Interpreter:
             self.visit_block(block_node)
 
             if self.break_triggered():
+                
                 break
 
             condition_result = self.interpret(condition_node)
@@ -712,7 +719,6 @@ class Interpreter:
 
         self.exit_loop()
 
-    def visit_input(self, node):
-        var_name
+    
 
         

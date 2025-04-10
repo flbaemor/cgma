@@ -254,7 +254,6 @@ class SymbolTable:
         self.global_variables = {}  # Stores global variables
         self.functions = {}  # Stores function definitions
         self.scopes = [{}]   # Stack of scopes (for local/global tracking)
-        self.structs = [{}]  # Stack of structs
         self.current_func_name = None
         self.function_variables = {}
 
@@ -262,8 +261,6 @@ class SymbolTable:
     def declare_variable(self, name, type_, value=None, is_list=False, is_struct=False, is_sturdy=False):
         scope = self.scopes[-1]
         current_func = self.current_func_name
-
-        
     
         for i, s in enumerate(self.scopes):
             print(f"[SCOPE {i}] {s}")
@@ -357,7 +354,14 @@ class SymbolTable:
     def exit_scope(self):
         if len(self.scopes) > 1:
             self.scopes.pop()
-            print(f"\n[EXIT SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
+        
+        if self.current_func_name:
+            current_func = self.current_func_name
+
+            if current_func in self.function_variables:
+                self.function_variables[current_func].clear()
+
+        print(f"\n[EXIT SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
 
     def debug_scopes(self):
         print("\n====== SYMBOL TABLE DEBUG ======")
@@ -2802,10 +2806,6 @@ def parse_switch(tokens, index, func_type):
         getout_node = None
 
         while tokens[index].type != "}":
-            if tokens[index].value == "getout":
-                getout_node = ASTNode("Break", "getout", line=tokens[index].line)
-                index += 1
-                break
 
             stmt, index = parse_statement(tokens, index, func_type)
             if stmt:
