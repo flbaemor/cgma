@@ -107,7 +107,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
     document.querySelector('.run').addEventListener('click', runLexer);
-
 });
 
 document.querySelector(".widthResizer").addEventListener("mousedown", (e) => {
@@ -151,12 +150,14 @@ function toggleDropdown() {
       menu.classList.add("hidden");
     }
   });
-  
+
 
 async function runLexer() {
     const sourceCode = editor.getValue();
     console.log("Running lexer with source code:", sourceCode);
-    
+
+    const output = document.getElementById('terminal');
+
     try {
         const response = await fetch('/api/lex', {
             method: 'POST',
@@ -168,22 +169,28 @@ async function runLexer() {
 
         const data = await response.json();
         console.log("Lexer response:", data);
-        
+
         const tokensTableBody = document.getElementById('tokenBody');
         tokensTableBody.innerHTML = '';
 
         data.tokens.forEach(token => {
             const row = tokensTableBody.insertRow();
-            
             row.insertCell(0).textContent = token.type.replace(/\n/g, "\\n").replace("neg", "- (negative)");
             row.insertCell(1).textContent = token.value;
         });
 
-        const errorBox = document.getElementById('errorText');
-        errorBox.value = data.errors.length > 0 ? data.errors.join('\n') : 'Lexical analysis successful!';
+        if (data.errors.length > 0) {
+            output.innerHTML = `<div class="terminal-line">Lexical errors:</div>`;
+            data.errors.forEach(err => {
+                output.innerHTML = `<div class="terminal-line error">${err}</div>`;
+            });
+        } else {
+            output.innerHTML = `<div class="terminal-line success">Lexical analysis successful!</div>`;
+        }
+
     } catch (error) {
         console.error("Error running lexer:", error);
-        document.getElementById('errorText').value = 'Error running lexical analysis.';
+        output.innerHTML += `<div class="terminal-line error">Error running lexical analysis.</div>`;
     }
 }
 
@@ -203,26 +210,39 @@ async function runSyntax() {
 
         const data = await response.json();
         console.log("Syntax response:", data);
-        
-        document.getElementById('errorText').value = data.success
+
+        const outputDiv = document.getElementById('terminal');
+        outputDiv.innerHTML = '';
+
+        if (data.success) {
+            outputDiv.innerHTML = `<div class="text-green-500">Syntax analysis successful!</div>`;
+        } else {
+            data.errors.forEach(err => {
+                outputDiv.innerHTML = `<div class="text-red-500">${err}</div>`;
+            });
+        }
+
+        document.getElementById('terminal').value = data.success
             ? 'Syntax analysis successful!'
             : data.errors.join('\n');
     } catch (error) {
         console.error("Error running syntax:", error);
-        document.getElementById('errorText').value = 'Error running syntax analysis.';
+        document.getElementById('terminal').innerHTML = `<div class="text-red-500">Error running syntax analysis.</div>`;
+        document.getElementById('terminal').value = 'Error running syntax analysis.';
     }
 }
 
+
 async function runSemantic() {
-    const errorBox = document.getElementById('errorText');
-    errorBox.value = '';
-    
+    const outputDiv = document.getElementById('terminal');
+    outputDiv.value = '';
+    outputDiv.innerHTML = '';
+
     await runSyntax();
-    if (errorBox.value !== 'Syntax analysis successful!') return;
 
     const sourceCode = editor.getValue();
     console.log("Running semantic analysis with source code:", sourceCode);
-    
+
     try {
         const response = await fetch('/api/semantic', {
             method: 'POST',
@@ -235,18 +255,28 @@ async function runSemantic() {
         const data = await response.json();
         console.log("Semantic response:", data);
 
-        errorBox.value = data.success ? 'Semantic analysis successful!' : data.errors.join('\n');
+        if (data.success) {
+            outputDiv.innerHTML = `<div class="text-green-500">Semantic analysis successful!</div>`;
+            outputDiv.value = 'Semantic analysis successful!';
+        } else {
+            data.errors.forEach(err => {
+                outputDiv.innerHTML = `<div class="text-red-500">${err}</div>`;
+            });
+            outputDiv.value = data.errors.join('\n');
+        }
     } catch (error) {
         console.error("Error running semantic analysis:", error);
-        errorBox.value = 'Error running semantic analysis.';
+        outputDiv.innerHTML = `<div class="text-red-500">Error running semantic analysis.</div>`;
+        outputDiv.value = 'Error running semantic analysis.';
     }
 }
 
 async function runCode() {
-    const errorBox = document.getElementById('errorText');
-    errorBox.value = '';  // Clear previous output
-    await runSemantic();  // Ensure semantic analysis is done first
-    if (errorBox.value !== 'Semantic analysis successful!') return;
+    const outputDiv = document.getElementById('terminal');
+    outputDiv.value = '';
+    outputDiv.innerHTML = ''; // clear terminal output
+
+    await runSemantic(); // Ensure semantic analysis is done first
 
     const sourceCode = editor.getValue();
 
@@ -260,13 +290,90 @@ async function runCode() {
         const data = await response.json();
 
         if (!data.success) {
-            errorText.value = data.errors.join('\n');  // Display errors if any
+            outputDiv.innerHTML = `<div class="text-red-500">Runtime Error:</div>`;
+            data.errors.forEach(err => {
+                outputDiv.innerHTML = `<div class="text-red-500">${err}</div>`;
+            });
             return;
         }
 
-        errorBox.value = data.output;
+        const outputLines = data.output.split('\n');
+        if (outputLines.length > 0) {
+            let outputHTML = '';
+            outputLines.forEach(line => {
+                outputHTML += `<div class="text-white">${line}</div>`;
+            });
+            outputDiv.innerHTML = outputHTML;
+        }
+
+
     } catch (error) {
-        console.error("Error running interpreter:", error);
-        errorBox.value = 'Runtime error.';
+        console.error("Error running source code:", error);
+        outputDiv.innerHTML = `<div class="text-red-500">Error running source code.</div>`;
     }
+}
+
+
+const term = new Terminal();
+term.open(document.getElementById('terminal'));
+term.setOption('scrollback', 1000);
+term.write('CGMA Terminal Ready\n');
+
+function printToTerminal(text) {
+  term.write(text.replace(/\n/g, '\r\n'));
+}
+
+let userInput = '';
+let waitingForInput = false;
+let inputCallback = null;
+
+term.onData(e => {
+  if (!waitingForInput) return;
+
+  if (e === '\r') { // Enter key
+    term.write('\r\n');
+    waitingForInput = false;
+    if (inputCallback) inputCallback(userInput);
+    userInput = '';
+  } else if (e === '\u007f') { // Backspace
+    if (userInput.length > 0) {
+      userInput = userInput.slice(0, -1);
+      term.write('\b \b');
+    }
+  } else {
+    userInput += e;
+    term.write(e);
+  }
+});
+
+
+function getInput(prompt, callback) {
+  printToTerminal(prompt);
+  waitingForInput = true;
+  inputCallback = callback;
+}
+
+function waitForInput(promptText = '') {
+    return new Promise((resolve) => {
+        term.write(promptText);
+        let inputBuffer = '';
+
+        const onData = (data) => {
+            if (data === '\r') { // Enter key
+                term.write('\r\n');
+                term.offData(onData);
+                resolve(inputBuffer);
+            } else if (data === '\u007F') { // Backspace
+                if (inputBuffer.length > 0) {
+                    inputBuffer = inputBuffer.slice(0, -1);
+                    term.write('\b \b');
+                }
+            } else {
+                inputBuffer += data;
+                term.write(data);
+            }
+        };
+
+        term.onData(onData);
+    });
 }

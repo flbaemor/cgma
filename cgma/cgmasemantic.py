@@ -262,8 +262,8 @@ class SymbolTable:
         scope = self.scopes[-1]
         current_func = self.current_func_name
     
-        for i, s in enumerate(self.scopes):
-            print(f"[SCOPE {i}] {s}")
+        #for i, s in enumerate(self.scopes):
+            #print(f"[SCOPE {i}] {s}")
 
         if name in self.functions:
             return f"Semantic Error: Variable '{name}' already declared as a function."
@@ -298,7 +298,6 @@ class SymbolTable:
                 "is_sturdy": is_sturdy
             }
         
-        print(f"\n[DECLARE] In function: {current_func or 'GLOBAL'} — Declaring '{name}' of type '{type_}' with value: {value}")
 
 
     def lookup_variable(self, name):
@@ -316,7 +315,6 @@ class SymbolTable:
 
         if name in current_scope:
             current_scope[name]["value"] = value
-            print(f"\n[SET] In function: {self.current_func_name or 'GLOBAL'} — Setting '{name}' to {value}")
         else:
             return f"Semantic Error: Variable '{name}' not declared in the current scope."
 
@@ -331,24 +329,10 @@ class SymbolTable:
             return self.functions[name]
         return f"Semantic Error: Function '{name}' is not defined."
     
-    ###### STRUCT ######
-    def declare_struct(self, name, members):
-        for scope in self.structs:
-            if name in scope:
-                return f"Semantic Error: Struct '{name}' is already declared."
-        self.structs[-1][name] = members
-
-    def lookup_struct(self, name):
-        for scope in reversed(self.structs):
-            if name in scope:
-                return scope[name]
-        return None  # Return None instead of an error string
-
 
     ###### SCOPE ######
     def enter_scope(self):
         self.scopes.append({})
-        print(f"\n[ENTER SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
         
 
     def exit_scope(self):
@@ -361,7 +345,6 @@ class SymbolTable:
             if current_func in self.function_variables:
                 self.function_variables[current_func].clear()
 
-        print(f"\n[EXIT SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
 
     def debug_scopes(self):
         print("\n====== SYMBOL TABLE DEBUG ======")
@@ -2051,7 +2034,7 @@ def parse_print(tokens, index):
             if isinstance(arg_info, str):
                 raise SemanticError(f"Semantic Error: Variable '{identif_name}' used before declaration.", line)
             
-            if arg_info["type"] in {"forsencd"}:
+            if arg_info["type"] in {"forsencd"} and tokens[index + 1].type == "+":
                 expr_node, index = parse_string_concatenation(tokens, index)
                 args.append(expr_node)
             
@@ -2059,13 +2042,14 @@ def parse_print(tokens, index):
                 expr_node, index = parse_expression(tokens, index)
                 args.append(expr_node)
             else:
+                index += 1
                 args.append(ASTNode("Value", identif_name, line=line))
                 
     elif tokens[index].type in {"chungus_lit", "chudeluxe_lit"}:
         expr_node, index = parse_expression(tokens, index)
         args.append(expr_node)
 
-    elif tokens[index].type in {"lwk_lit"}:
+    elif tokens[index].type in {"lwk_lit", "!"}:
         expr_node, index = parse_expression_lwk(tokens, index)
         args.append(expr_node)
 
@@ -2077,7 +2061,7 @@ def parse_print(tokens, index):
         expr_node, index = parse_expression(tokens, index)
         args.append(expr_node)
 
-    elif tokens[index].type in {"++", "--"}:
+    elif tokens[index].type in {"++", "--", "neg"}:
         expr_node, index = parse_expression(tokens, index)
         args.append(expr_node)
 
@@ -2088,7 +2072,7 @@ def parse_print(tokens, index):
     while tokens[index].type == ",":
         index += 1
         
-        if tokens[index].type in {"chungus_lit", "chudeluxe_lit"}:
+        if tokens[index].type in {"chungus_lit", "chudeluxe_lit", "neg"}:
             arg_node, index = parse_expression(tokens, index)
             actual_args.append(arg_node)
 
@@ -2263,6 +2247,7 @@ def parse_print(tokens, index):
 
 def parse_string_concatenation(tokens, index):
     line = tokens[index].line
+
     if tokens[index].type != "forsencd_lit":
         raise SemanticError(f"Semantic Error: String concatenation must start with a string literal.", line)
     

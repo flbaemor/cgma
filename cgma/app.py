@@ -98,7 +98,7 @@ def semantic_analysis():
     success, parse_errors = parser.parse(tokens)
 
     if not success:
-        return jsonify({'success': False, 'errors': ['Syntax errors found']})
+        return jsonify({'success': False, 'errors': parse_errors})
 
     try:
         semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"nl", "\n"}]
@@ -124,7 +124,7 @@ def output():
     parser = LL1Parser(cfg, predict_sets)
     success, parse_errors = parser.parse(tokens)
     if not success:
-        return jsonify({'success': False, 'errors': ['Syntax errors found']})
+        return jsonify({'success': False, 'errors': parse_errors})
 
     try:
         semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"nl", "\n"}]

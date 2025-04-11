@@ -15,19 +15,128 @@ class ReturnValue(Exception):
 class InterpreterError(Exception):
     def __init__(self, message, line):
         super().__init__(f"[Line {line}] {message}")
-        self.message = f"Ln {line} {message}"
+        self.message = f"{message}"
     
     def __str__(self):
         return self.message
 
+
 class Interpreter:
-    def __init__(self, symbol_table):
+    def __init__(self, symbol_table, input_callback=None):
         self.symbol_table = symbol_table
+        self.input_callback = input_callback or (lambda prompt: input(prompt))
         self.output = []
         self.loop_stack = []
         self.break_flag = False
         self.continue_flag = False
 
+        self.variables = {}  # Stores variables
+        self.global_variables = {}  # Stores global variables
+        self.functions = {}  # Stores function definitions
+        self.scopes = [{}]   # Stack of scopes (for local/global tracking)
+        self.current_func_name = None
+        self.function_variables = {}
+
+
+    ###### VARIABLE ######
+    def declare_variable(self, name, type_, value=None, is_list=False, is_struct=False, is_sturdy=False):
+        scope = self.scopes[-1]
+        current_func = self.current_func_name
+    
+
+        if name in self.functions:
+            return f"Semantic Error: Variable '{name}' already declared as a function."
+
+        if current_func:
+            if current_func not in self.function_variables:
+                self.function_variables[current_func] = set()
+
+            if name in self.function_variables[current_func]:
+                return f"Semantic Error: Variable '{name}' already declared in this function."
+
+            self.function_variables[current_func].add(name)
+
+        if self.current_func_name:
+            
+            scope[name] = {
+                "type": type_,  
+                "value": value,
+                "is_list": is_list,
+                "is_struct": is_struct,
+                "is_sturdy": is_sturdy
+            }
+        else:
+            if name in self.global_variables:
+                return f"Semantic Error: Variable '{name}' already declared."
+            
+            self.variables[name] = {
+                "type": type_,
+                "value": value,
+                "is_list": is_list,
+                "is_struct": is_struct,
+                "is_sturdy": is_sturdy
+            }
+        
+        print(f"\n[DECLARE] In function: {current_func or 'GLOBAL'} — Declaring '{name}' of type '{type_}' with value: {value}")
+        #for i, s in enumerate(self.scopes):
+            #print(f"[SCOPE {i}] {s}")
+
+
+    def lookup_variable(self, name):
+        for i, scope in enumerate(reversed(self.scopes)):
+            if name in scope:
+                return scope[name]
+        
+        if name in self.variables:
+            return self.variables[name]
+
+        return f"Semantic Error: Variable '{name}' used before declaration."
+    
+    def set_variable(self, name, value):
+        for i in reversed(range(len(self.scopes))):
+            scope = self.scopes[i]
+            if name in scope:
+                scope[name]["value"] = value
+                #print(f"\n[SET] In function: {self.current_func_name or 'GLOBAL'} — Setting '{name}' to value: {value}")
+                #for j, s in enumerate(self.scopes):
+                    #print(f"[SCOPE {j}] {s}")
+                return  
+
+        return f"Semantic Error: Variable '{name}' not declared in any scope."
+
+
+    ###### FUNCTION ######
+    def declare_function(self, name, return_type, params, node=None):
+        if name in self.functions:
+            return f"Semantic Error: Function '{name}' already declared."
+        self.functions[name] = {"return_type": return_type, "params": params, "node": node}
+
+    def lookup_function(self, name):
+        if name in self.functions:
+            return self.functions[name]
+        return f"Semantic Error: Function '{name}' is not defined."
+    
+
+    ###### SCOPE ######
+    def enter_scope(self):
+        self.scopes.append({})
+        #print(f"\n[ENTER SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
+        
+
+    def exit_scope(self):
+        if len(self.scopes) > 1:
+            self.scopes.pop()
+        
+        if self.current_func_name:
+            current_func = self.current_func_name
+
+            if current_func in self.function_variables:
+                self.function_variables[current_func].clear()
+        #print(f"\n[EXIT SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
+
+
+
+    #INTERPRETER
     def interpret(self, node):
         if isinstance(node, ProgramNode):
             return self.visit_program(node)
@@ -130,14 +239,14 @@ class Interpreter:
                     value = int(value)
 
         print(f"\nDeclaring variable '{var_name}' of type '{var_type}' with initial value: {value}")
-        self.symbol_table.declare_variable(var_name, var_type, value, is_list=is_list)
+        self.declare_variable(var_name, var_type, value, is_list=is_list)
 
     def visit_sturdy_declaration(self, node):
         var_type = node.children[0].value
         var_name = node.children[1].value
         value_node = node.children[2]
         value = self.interpret(value_node)
-        self.symbol_table.declare_variable(var_name, var_type, value, is_list=False, is_struct=False,  is_sturdy=True)
+        self.declare_variable(var_name, var_type, value, is_list=False, is_struct=False,  is_sturdy=True)
 
     def visit_assignment(self, node):
         target_node = node.children[0]
@@ -161,7 +270,7 @@ class Interpreter:
             if not isinstance(index, int):
                 raise InterpreterError(f"Semantic Error: List index must be an integer. Got '{index}'", node.line)
 
-            list_entry = self.symbol_table.lookup_variable(list_name)
+            list_entry = self.lookup_variable(list_name)
             if isinstance(list_entry, str):
                 raise InterpreterError(list_entry, node.line)
 
@@ -177,7 +286,7 @@ class Interpreter:
 
         else:
             var_name = target_node.value
-            var_info = self.symbol_table.lookup_variable(var_name)
+            var_info = self.lookup_variable(var_name)
             if isinstance(var_info, str):
                 raise InterpreterError(var_info, node.line)
 
@@ -185,7 +294,7 @@ class Interpreter:
             if var_type == "chungus" and isinstance(value, float):
                 value = int(value)
 
-            self.symbol_table.lookup_variable(var_name)["value"] = value
+            self.set_variable(var_name, value)
             print(f"\nUpdating variable '{var_name}' of type '{var_type}' with value: {value}")
 
 
@@ -210,11 +319,11 @@ class Interpreter:
                 return left * right
             elif operator == '/':
                 if right == 0:
-                    raise InterpreterError("Runtime Error: Division by zero is undefined", "#")
+                    raise InterpreterError("Runtime Error: Division by zero is undefined", node.line)
                 return left / right
             elif operator == '%':
                 if right == 0:
-                    raise InterpreterError("Runtime Error: Division by zero is undefined", "#")
+                    raise InterpreterError("Runtime Error: Division by zero is undefined", node.line)
                 return left % right
             elif operator == '==':
                 return left == right
@@ -242,12 +351,10 @@ class Interpreter:
         except ZeroDivisionError:
             raise InterpreterError("Runtime Error: Division by zero", "")
 
-
-
     def _parse_literal(self, value):
 
-        if isinstance(value, str) and not isinstance(self.symbol_table.lookup_variable(value), str):
-            value = self.symbol_table.lookup_variable(value)["value"]
+        if isinstance(value, str) and not isinstance(self.lookup_variable(value), str):
+            value = self.lookup_variable(value)["value"]
 
         if isinstance(value, (int, float, bool)):
             return value
@@ -258,6 +365,9 @@ class Interpreter:
         value = value.strip()
 
         if value.startswith('"') and value.endswith('"'):
+            return value[1:-1]
+        
+        if value.startswith("'") and value.endswith("'"):
             return value[1:-1]
 
         if value == 'true':
@@ -287,13 +397,16 @@ class Interpreter:
                 param_name = param.children[1].value
                 params.append({"name": param_name, "type": param_type})
 
-        self.symbol_table.declare_function(func_name, return_type, params, node)
+        self.declare_function(func_name, return_type, params, node)
 
         return None
 
     def visit_block(self, block_node):
         for statement in block_node.children:
-            self.interpret(statement)
+            self.interpret(statement) 
+            if self.continue_flag:
+                return
+                
 
     def yap(self, num):
         self.output.append(str(num))
@@ -310,8 +423,8 @@ class Interpreter:
             values = []
             for arg in node.children[1:]:
                 value = self.interpret(arg)
-                if isinstance(value, str) and not isinstance(self.symbol_table.lookup_variable(value), str):
-                    value = self.symbol_table.lookup_variable(value)["value"]
+                if isinstance(value, str) and not isinstance(self.lookup_variable(value), str):
+                    value = self.lookup_variable(value)["value"]
                 values.append(value)
 
             try:
@@ -328,7 +441,7 @@ class Interpreter:
         value = node.value
         if value.startswith('"') and value.endswith('"'):
             value = value[1:-1]
-
+        
         # Escape sequences
         value = value.replace(r'\\', '\\')
         value = value.replace(r'\n', '\n')
@@ -344,7 +457,7 @@ class Interpreter:
         list_name = node.children[0].value
         index_node = node.children[1]
 
-        list_entry = self.symbol_table.lookup_variable(list_name)
+        list_entry = self.lookup_variable(list_name)
         
         list_value = list_entry["value"]
 
@@ -368,11 +481,10 @@ class Interpreter:
         function_name = node.value
         args = [self.interpret(arg.children[0]) for arg in node.children]
 
-        func_info = self.symbol_table.lookup_function(function_name)
+        func_info = self.lookup_function(function_name)
         if isinstance(func_info, str):
             raise InterpreterError(func_info, node.line)
 
-        return_type = func_info["return_type"]
         expected_params = func_info["params"]
         function_node = func_info["node"]
 
@@ -381,33 +493,34 @@ class Interpreter:
                 f"Semantic Error: Function '{function_name}' expects {len(expected_params)} argument(s), got {len(args)}.",
                 node.line
             )
-
-        self.symbol_table.scopes.append({})
-        self.symbol_table.current_func_name = function_name
-
+        
+        self.current_func_name = function_name
+        self.enter_scope()
+        
         try:
             for i, param in enumerate(expected_params):
                 param_name = param["name"]
                 param_type = param["type"]
                 arg_value = args[i]
 
-                self.symbol_table.declare_variable(param_name, param_type, arg_value)
+                self.declare_variable(param_name, param_type, arg_value)
 
             try:
                 self.visit_block(function_node.children[2])
+
             except ReturnValue as ret:
                 return ret.value
 
             return None
 
         finally:
-            self.symbol_table.scopes.pop()
-            self.symbol_table.current_func_name = None
+            self.exit_scope()
+            self.current_func_name = None
 
 
     def visit_append(self, node):
         list_name = node.parent.children[0].value
-        list_info = self.symbol_table.lookup_variable(list_name)
+        list_info = self.lookup_variable(list_name)
 
         for child in node.children:
             value = self.interpret(child)
@@ -417,7 +530,7 @@ class Interpreter:
         
     def visit_insert(self, node):
         list_name = node.parent.children[0].value
-        list_info = self.symbol_table.lookup_variable(list_name)
+        list_info = self.lookup_variable(list_name)
 
         index = self.interpret(node.children[0].children[0])
 
@@ -438,7 +551,7 @@ class Interpreter:
         list_name = node.children[0].value
         index_node = node.children[1].children[0]
 
-        list_info = self.symbol_table.lookup_variable(list_name)
+        list_info = self.lookup_variable(list_name)
         if isinstance(list_info, str):
             raise InterpreterError(list_info, node.line)
 
@@ -456,12 +569,11 @@ class Interpreter:
     def visit_unaryop(self, node):
         operand_node = node.children[0]
         operand_name = operand_node.value
-        var_info = self.symbol_table.lookup_variable(operand_name)
-
-        if isinstance(var_info, str):
-            raise InterpreterError(var_info, node.line)
+        var_info = self.lookup_variable(operand_name)
 
         if node.value == "++":
+            if isinstance(var_info, str):
+                raise InterpreterError(var_info, node.line)
             if node.position == "pre":
                 var_info["value"] += 1
                 return var_info["value"]
@@ -471,6 +583,8 @@ class Interpreter:
                 return original
 
         elif node.value == "--":
+            if isinstance(var_info, str):
+                raise InterpreterError(var_info, node.line)
             if node.position == "pre":
                 var_info["value"] -= 1
                 return var_info["value"]
@@ -478,6 +592,10 @@ class Interpreter:
                 original = var_info["value"]
                 var_info["value"] -= 1
                 return original
+        
+        elif node.value == "-":
+            value = self.interpret(operand_node)
+            return -value
 
         raise InterpreterError(f"Unknown unary operator {node.value}", node.line)
     
@@ -494,7 +612,7 @@ class Interpreter:
 
     def visit_taper(self, node):
         var_name = node.children[0].value
-        var_info = self.symbol_table.lookup_variable(var_name)
+        var_info = self.lookup_variable(var_name)
         
         if var_info["type"] == "forsencd":
             var_info["value"] = list(var_info["value"])
@@ -505,7 +623,7 @@ class Interpreter:
 
     def visit_ts(self, node):
         var_name = node.children[0].value
-        var_info = self.symbol_table.lookup_variable(var_name)
+        var_info = self.lookup_variable(var_name)
 
         if var_info["is_list"]:
             result = len(var_info["value"])
@@ -519,42 +637,54 @@ class Interpreter:
 
     def visit_if_statement(self, node):
         condition_result = self.interpret(node.children[0].children[0])
+        self.enter_scope()
 
         if not isinstance(condition_result, bool):
             raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
         
-        if condition_result:
-            self.visit_block(node.children[1])
-        
-        else:
-            current_node = 2
-            while current_node < len(node.children):
-                
-                elif_node = node.children[current_node]
-
-                if elif_node.node_type == "ElseIfStatement":
-                    elif_condition_result = self.interpret(elif_node.children[0].children[0])
-
-                    if not isinstance(elif_condition_result, bool):
-                        raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+        try:
+            if condition_result:
+                self.visit_block(node.children[1])
+            
+            else:
+                current_node = 2
+                while current_node < len(node.children):
                     
-                    if elif_condition_result:
-                        print(f"Executing ElseIf block: {elif_node.line}")
-                        self.visit_block(elif_node.children[1])
+                    elif_node = node.children[current_node]
+
+                    if elif_node.node_type == "ElseIfStatement":
+                        elif_condition_result = self.interpret(elif_node.children[0].children[0])
+
+                        if not isinstance(elif_condition_result, bool):
+                            raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+                        
+                        if elif_condition_result:
+                            try:
+                                self.enter_scope()
+                                print(f"Executing ElseIf block: {elif_node.line}")
+                                self.visit_block(elif_node.children[1])
+                            finally:
+                                self.exit_scope()
+                            return
+                        
+                    elif elif_node.node_type == "ElseStatement":
+                        print(f"Executing Else block: {elif_node.line}")
+                        try:
+                            self.enter_scope()
+                            self.visit_block(elif_node.children[0])
+                        finally:
+                            self.exit_scope()
                         return
-                    
-                elif elif_node.node_type == "ElseStatement":
-                    print(f"Executing Else block: {elif_node.line}")
-                    self.visit_block(elif_node.children[0])
-                    return
 
-                current_node += 1
+                    current_node += 1
+        finally:
+            self.exit_scope()
 
         return None
     
     def visit_for_loop(self, node):
         self.enter_loop('for')
-        self.symbol_table.enter_scope()  # <- Enter new scope
+        self.enter_scope()
         MAX_LOOP_ITERATIONS = 10000
         LOOP_COUNTER = 0
 
@@ -565,12 +695,12 @@ class Interpreter:
                 var_type = instantiate_node.children[0].value
                 var_name = instantiate_node.children[1].value
                 initial_value_node = self.interpret(instantiate_node.children[2])
-                self.symbol_table.declare_variable(var_name, var_type, initial_value_node)
+                self.declare_variable(var_name, var_type, initial_value_node)
 
             elif isinstance(instantiate_node, AssignmentNode):
                 var_name = instantiate_node.children[0].value
                 initial_value_node = self.interpret(instantiate_node.children[1])
-                self.symbol_table.lookup_variable(var_name)["value"] = initial_value_node
+                self.lookup_variable(var_name)["value"] = initial_value_node
 
             condition_node = node.children[1].children[0]
             condition_result = self.interpret(condition_node)
@@ -583,7 +713,11 @@ class Interpreter:
                 if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
                     raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
 
+                
                 self.visit_block(node.children[3])
+
+                if self.continue_flag:
+                    self.continue_flag = False
 
                 if self.break_triggered():
                     break
@@ -594,36 +728,43 @@ class Interpreter:
                 condition_result = self.interpret(condition_node)
 
         finally:
-            self.symbol_table.exit_scope()
+            self.exit_scope()
             self.exit_loop()
 
 
     def visit_while_loop(self, node):
         self.enter_loop('while')
+        self.enter_scope()
         MAX_LOOP_ITERATIONS = 10000
         LOOP_COUNTER = 0
         condition_node = node.children[0].children[0]
-        condition_result = self.interpret(condition_node)
 
-        if not isinstance(condition_result, bool):
-            raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
-
-        while condition_result:
-            LOOP_COUNTER += 1
-            if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
-                raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
-            
-            
-            block_node = node.children[1]
-            self.visit_block(block_node)
-
-            if self.break_triggered():
-                
-                break
-
+        try:
             condition_result = self.interpret(condition_node)
 
-        self.exit_loop()
+            if not isinstance(condition_result, bool):
+                raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+
+            while condition_result:
+                LOOP_COUNTER += 1
+                if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
+                    raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
+
+                block_node = node.children[1]
+                self.visit_block(block_node)
+
+                if self.continue_flag:
+                    self.continue_flag = False
+
+                if self.break_triggered():
+                    break
+
+                condition_result = self.interpret(condition_node)
+
+        finally:
+            self.exit_loop()
+            self.exit_scope()
+
 
     def visit_do_while_loop(self, node):
         self.enter_loop('do-while')
@@ -632,25 +773,30 @@ class Interpreter:
         condition_node = node.children[1].children[0]
         block_node = node.children[0]
 
-        while True:
-            self.visit_block(block_node)
-            LOOP_COUNTER += 1
-            if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
-                raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
-            
-            if self.break_triggered():
-                break
-            
+        try:
+            while True:
+                self.visit_block(block_node)
+                LOOP_COUNTER += 1
+                if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
+                    raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
 
-            condition_result = self.interpret(condition_node)
-            
-            if not isinstance(condition_result, bool):
-                raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+                if self.continue_flag:
+                    self.continue_flag = False
 
-            if not condition_result:
-                break
+                if self.break_triggered():
+                    break
 
-        self.exit_loop()
+                condition_result = self.interpret(condition_node)
+
+                if not isinstance(condition_result, bool):
+                    raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+
+                if not condition_result:
+                    break
+        finally:
+            self.exit_loop()
+            self.enter_scopex
+
     
     def visit_break(self, node):
         if self.loop_stack:
@@ -687,9 +833,9 @@ class Interpreter:
     def trigger_continue(self):
         self.continue_flag = True
 
-
     def visit_switch(self, node):
         self.enter_loop('switch')
+        self.enter_scope()
         switch_expr_node = node.children[0]
         switch_value = self.interpret(switch_expr_node)
 
@@ -697,28 +843,70 @@ class Interpreter:
         break_found = False
         default_case = None
 
-        for case_node in node.children[1:]:
-            label_type = case_node.node_type
-            if label_type == "Case":
-                case_value_node = case_node.children[0]
-                block_node = case_node.children[1]
-                case_value = self.interpret(case_value_node)
+        try:
+            for case_node in node.children[1:]:
+                label_type = case_node.node_type
+                if label_type == "Case":
+                    case_value_node = case_node.children[0]
+                    block_node = case_node.children[1]
+                    case_value = self.interpret(case_value_node)
 
-                if switch_value == case_value or matched_case:
-                    matched_case = True
-                    self.visit_block(block_node)
-                    if self.break_triggered():
-                        break_found = True
-                        break
+                    if switch_value == case_value or matched_case:
+                        matched_case = True
+                        try:
+                            self.enter_scope()
+                            self.visit_block(block_node)
+                            if self.break_triggered():
+                                break_found = True
+                                break
+                        finally:
+                            self.exit_scope()
+                    
+                elif label_type == "Default":
+                    default_case = case_node.children[0]
             
-            elif label_type == "Default":
-                default_case = case_node.children[0]
+            if not matched_case and not break_found and default_case:
+                try:
+                    self.enter_scope()
+                    self.visit_block(default_case)
+                finally:
+                    self.exit_scope()
+
+        finally:
+            self.exit_loop()
+            self.exit_scope()
+
+    def visit_input(self, node):
+        parent_node = node.parent
+
+        if isinstance(parent_node, VariableDeclarationNode):
+            var_name = node.parent.children[1].value
+            var_type = node.parent.children[0].value
         
-        if not matched_case and not break_found and default_case:
-            self.visit_block(default_case)
-
-        self.exit_loop()
-
-    
-
+        else:
+            var_name = node.parent.children[0].value
+            var_info = self.lookup_variable(var_name)
+            var_type = var_info["type"]
         
+        prompt = f"Input for {var_name}: "
+        user_input = self.input_callback(prompt)
+
+        if var_type in {"chungus", "chudeluxe"}:
+            try:
+                if var_type == "chungus":
+                    user_input = int(user_input)
+                elif var_type == "chudeluxe":
+                    user_input = float(user_input)
+            except ValueError:
+                raise InterpreterError(f"Invalid input type for variable '{var_name}'. Expected {var_type}.", node.line)
+        
+        elif var_type == "forsen":
+            if len(user_input) > 1:
+                raise InterpreterError(f"Exceeds maximum number of character for forsen literal.", node.line)
+        
+        elif var_type == "lwk":
+            if user_input not in {"true", "false"}:
+                raise InterpreterError(f"Invalid input type for variable '{var_name}'. Expected lwk literal.", node.line)
+        
+        return user_input
+

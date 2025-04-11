@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="https://i.imgur.com/Qz8R26l.png" sizes="image/png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+
 </head>
 <body>
     <nav class="navbar">
@@ -48,9 +51,9 @@
         </div>
     </div>
     <div class="heightResizer"></div>
-    <div class="errorBox">
-        <h4 id="errorTitle">OUTPUT</h4>
-        <textarea id="errorText" readonly></textarea>
+    <div class="terminalCont">
+        <h4 id="outputTitle">OUTPUT</h4>
+        <div id="terminal"></div>
     </div>
     <script src="main.js"></script>
 </body>

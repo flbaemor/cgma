@@ -232,7 +232,7 @@ body {
     border-radius: 20px;
 }
 
-.errorBox {
+.terminalCont {
     width: inherit;
     flex-grow: 1;
     background: #4f134e;
@@ -245,14 +245,14 @@ body {
     padding-top: 20px;
 }
 
-#errorTitle {
+#outputTitle {
     position: absolute;
     top: 10px;
     left: 10px;
     margin: 0;
 }
 
-#errorText {
+#terminal {
     width: calc(100% - 30px);
     height: calc(100% - 30px);
     background: #3c043c;
