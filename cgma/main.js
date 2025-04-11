@@ -1,5 +1,9 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs' } });
+
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs',
+        'xterm': 'https://cdn.jsdelivr.net/npm/xterm/lib',
+        'xterm-addon-fit': 'https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit',
+     } });
 
     require(['vs/editor/editor.main'], function () {
 
@@ -101,12 +105,247 @@ document.addEventListener('DOMContentLoaded', async () => {
             },
 
         });
-
-        editor.onDidScrollChange(() => {
-            document.getElementById('lineNumbers').scrollTop = editor.getScrollTop();
-        });
     });
-    document.querySelector('.run').addEventListener('click', runLexer);
+
+    require(['vs/editor/editor.main', 'xterm/xterm', 'xterm-addon-fit'], function (_, Xterm, FitAddon) {
+
+        const term = new Xterm.Terminal({
+          cursorBlink: true,
+          cursorStyle: 'bar',
+          scrollback: 1000,
+          theme: {
+            background: '#3c043c',
+            foreground: '#FFFFFF',
+            cursor: '#FFFFFF',
+            FontFace: 'monospace',
+            fontStyle: 'bold',
+          },
+        });
+        
+    
+        term.open(document.getElementById('terminal'));
+        const fitAddon = new FitAddon.FitAddon(); // ✅ Create the fit addon
+        term.loadAddon(fitAddon);                 // ✅ Load it into the terminal
+        fitAddon.fit(); 
+        setTimeout(() => term.focus(), 100);
+        term.write('Terminal Ready\r\n');
+      
+        let userInput = '';
+        let waitingForInput = false;
+        let inputCallback = null;
+      
+        term.onData(e => {
+          if (!waitingForInput) return;
+      
+          if (e === '\r') {
+            term.write('\r\n');
+            waitingForInput = false;
+            if (inputCallback) inputCallback(userInput);
+            userInput = '';
+          } else if (e === '\u007f') {
+            if (userInput.length > 0) {
+              userInput = userInput.slice(0, -1);
+              term.write('\b \b');
+            }
+          } else {
+            userInput += e;
+            term.write(e);
+          }
+        });
+      
+        function waitForInput(promptText = '') {
+          return new Promise(resolve => {
+            term.write(promptText);
+            term.focus();
+            waitingForInput = true;
+            userInput = '';
+            inputCallback = resolve;
+          });
+        }
+
+        window.runLexer = async function () {
+            const sourceCode = editor.getValue();
+            console.log("Running lexer with source code:", sourceCode);
+        
+            term.clear();
+            term.write('Running lexer...\r\n');
+        
+            try {
+                const response = await fetch('/api/lex', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ source_code: sourceCode })
+                });
+        
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+                const data = await response.json();
+                console.log("Lexer response:", data);
+        
+                const tokensTableBody = document.getElementById('tokenBody');
+                tokensTableBody.innerHTML = '';
+        
+                data.tokens.forEach(token => {
+                    const row = tokensTableBody.insertRow();
+                    row.insertCell(0).textContent = token.type.replace(/\n/g, "\\n").replace("neg", "- (negative)");
+                    row.insertCell(1).textContent = token.value;
+                });
+        
+                if (data.errors.length > 0) {
+                    term.write('Lexical Errors:\r\n');
+                    data.errors.forEach(err => {
+                        term.write(`[Error] ${err}\r\n`);
+                    });
+                } else {
+                    term.write('Lexical analysis successful!\r\n');
+                    return true;
+                }
+        
+            } catch (error) {
+                console.error("Error running lexer:", error);
+                term.write('Error running lexical analysis.\r\n');
+                return false;
+            }
+        };
+
+        window.runSyntax = async function () {
+            const sourceCode = editor.getValue();
+            console.log("Running syntax with source code:", sourceCode);
+          
+            const lexerSuccess = await runLexer();
+            if (!lexerSuccess) {
+                return;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 10));
+            term.clear();
+            term.write('\rRunning syntax analysis...\r\n');
+          
+            try {
+              const response = await fetch('/api/parse', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_code: sourceCode })
+              });
+          
+              if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          
+              const data = await response.json();
+              console.log("Syntax response:", data);
+          
+              if (data.success) {
+                term.write('Syntax analysis successful!\r\n');
+                return true;
+              } else {
+                term.write('Syntax Errors:\r\n');
+                data.errors.forEach(err => {
+                term.write(`[Error] ${err}\r\n`);
+                });
+              }
+          
+            } catch (error) {
+              console.error("Error running syntax:", error);
+              term.write('Error running syntax analysis.\r\n');
+              return false;
+            }
+        };
+
+        window.runSemantic = async function () {
+            const sourceCode = editor.getValue();
+            console.log("Running semantic analysis with source code:", sourceCode);
+          
+            const syntaxSuccess = await runSyntax();
+            
+            if (!syntaxSuccess) {
+                return;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+            term.clear();
+            term.write('\rRunning semantic analysis...\r\n');
+          
+            try {
+              const response = await fetch('/api/semantic', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_code: sourceCode })
+              });
+          
+              if (!response.ok) throw new Error(`Semantic HTTP error! status: ${response.status}`);
+          
+              const data = await response.json();
+              console.log("Semantic response:", data);
+          
+              if (data.success) {
+                term.write('Semantic analysis successful!\r\n');
+                return true;
+              } else {
+                term.write('Semantic Errors:\r\n');
+                data.errors.forEach(err => {
+                  term.write(`[Error] ${err}\r\n`);
+                });
+              }
+          
+            } catch (error) {
+              console.error("Error running semantic analysis:", error);
+              term.write('Error running semantic analysis.\r\n');
+              return false;
+            }
+        };
+          
+        runCode = async function () {
+            term.clear(); // ✅ Start with a clean terminal
+            term.write('Running program...\r\n');
+          
+            const semanticSuccess = await runSemantic(); // Run semantic analysis first
+            
+            if (!semanticSuccess) {
+                return;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 10));
+            term.clear();
+
+            const sourceCode = editor.getValue();
+          
+            try {
+              const response = await fetch('/api/output', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_code: sourceCode })
+              });
+          
+              const data = await response.json();
+          
+              if (!data.success) {
+                term.write('Runtime Error:\r\n');
+                if (data.errors) {
+                  data.errors.forEach(err => {
+                    term.write(`${err}\r\n`);
+                  });
+                }
+                return;
+              }
+          
+              if (data.input_required) {
+                const input = await waitForInput(data.prompt);
+                userInputs[data.prompt.trim()] = input;
+                return;
+              }
+          
+              if (data.output) {
+                const outputLines = data.output.split('\n');
+                outputLines.forEach(line => {
+                  term.write(line + '\r\n');
+                });
+              }
+          
+            } catch (error) {
+              console.error("Error running source code:", error);
+              term.write('Error running source code.\r\n');
+            }
+        };
+      });
 });
 
 document.querySelector(".widthResizer").addEventListener("mousedown", (e) => {
@@ -122,7 +361,6 @@ function widthResize(e) {
     document.querySelector(".textFieldCont").style.width = `${newWidth}px`;
 }
 
-// Resizable Height
 document.querySelector(".heightResizer").addEventListener("mousedown", (e) => {
     e.preventDefault();
     document.addEventListener("mousemove", heightResize);
@@ -152,228 +390,3 @@ function toggleDropdown() {
   });
 
 
-async function runLexer() {
-    const sourceCode = editor.getValue();
-    console.log("Running lexer with source code:", sourceCode);
-
-    const output = document.getElementById('terminal');
-
-    try {
-        const response = await fetch('/api/lex', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source_code: sourceCode })
-        });
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const data = await response.json();
-        console.log("Lexer response:", data);
-
-        const tokensTableBody = document.getElementById('tokenBody');
-        tokensTableBody.innerHTML = '';
-
-        data.tokens.forEach(token => {
-            const row = tokensTableBody.insertRow();
-            row.insertCell(0).textContent = token.type.replace(/\n/g, "\\n").replace("neg", "- (negative)");
-            row.insertCell(1).textContent = token.value;
-        });
-
-        if (data.errors.length > 0) {
-            output.innerHTML = `<div class="terminal-line">Lexical errors:</div>`;
-            data.errors.forEach(err => {
-                output.innerHTML = `<div class="terminal-line error">${err}</div>`;
-            });
-        } else {
-            output.innerHTML = `<div class="terminal-line success">Lexical analysis successful!</div>`;
-        }
-
-    } catch (error) {
-        console.error("Error running lexer:", error);
-        output.innerHTML += `<div class="terminal-line error">Error running lexical analysis.</div>`;
-    }
-}
-
-async function runSyntax() {
-    const sourceCode = editor.getValue();
-    console.log("Running syntax with source code:", sourceCode);
-    await runLexer();
-
-    try {
-        const response = await fetch('/api/parse', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source_code: sourceCode })
-        });
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const data = await response.json();
-        console.log("Syntax response:", data);
-
-        const outputDiv = document.getElementById('terminal');
-        outputDiv.innerHTML = '';
-
-        if (data.success) {
-            outputDiv.innerHTML = `<div class="text-green-500">Syntax analysis successful!</div>`;
-        } else {
-            data.errors.forEach(err => {
-                outputDiv.innerHTML = `<div class="text-red-500">${err}</div>`;
-            });
-        }
-
-        document.getElementById('terminal').value = data.success
-            ? 'Syntax analysis successful!'
-            : data.errors.join('\n');
-    } catch (error) {
-        console.error("Error running syntax:", error);
-        document.getElementById('terminal').innerHTML = `<div class="text-red-500">Error running syntax analysis.</div>`;
-        document.getElementById('terminal').value = 'Error running syntax analysis.';
-    }
-}
-
-
-async function runSemantic() {
-    const outputDiv = document.getElementById('terminal');
-    outputDiv.value = '';
-    outputDiv.innerHTML = '';
-
-    await runSyntax();
-
-    const sourceCode = editor.getValue();
-    console.log("Running semantic analysis with source code:", sourceCode);
-
-    try {
-        const response = await fetch('/api/semantic', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source_code: sourceCode })
-        });
-
-        if (!response.ok) throw new Error(`Semantic HTTP error! status: ${response.status}`);
-
-        const data = await response.json();
-        console.log("Semantic response:", data);
-
-        if (data.success) {
-            outputDiv.innerHTML = `<div class="text-green-500">Semantic analysis successful!</div>`;
-            outputDiv.value = 'Semantic analysis successful!';
-        } else {
-            data.errors.forEach(err => {
-                outputDiv.innerHTML = `<div class="text-red-500">${err}</div>`;
-            });
-            outputDiv.value = data.errors.join('\n');
-        }
-    } catch (error) {
-        console.error("Error running semantic analysis:", error);
-        outputDiv.innerHTML = `<div class="text-red-500">Error running semantic analysis.</div>`;
-        outputDiv.value = 'Error running semantic analysis.';
-    }
-}
-
-async function runCode() {
-    const outputDiv = document.getElementById('terminal');
-    outputDiv.value = '';
-    outputDiv.innerHTML = ''; // clear terminal output
-
-    await runSemantic(); // Ensure semantic analysis is done first
-
-    const sourceCode = editor.getValue();
-
-    try {
-        const response = await fetch('/api/output', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source_code: sourceCode })
-        });
-
-        const data = await response.json();
-
-        if (!data.success) {
-            outputDiv.innerHTML = `<div class="text-red-500">Runtime Error:</div>`;
-            data.errors.forEach(err => {
-                outputDiv.innerHTML = `<div class="text-red-500">${err}</div>`;
-            });
-            return;
-        }
-
-        const outputLines = data.output.split('\n');
-        if (outputLines.length > 0) {
-            let outputHTML = '';
-            outputLines.forEach(line => {
-                outputHTML += `<div class="text-white">${line}</div>`;
-            });
-            outputDiv.innerHTML = outputHTML;
-        }
-
-
-    } catch (error) {
-        console.error("Error running source code:", error);
-        outputDiv.innerHTML = `<div class="text-red-500">Error running source code.</div>`;
-    }
-}
-
-
-const term = new Terminal();
-term.open(document.getElementById('terminal'));
-term.setOption('scrollback', 1000);
-term.write('CGMA Terminal Ready\n');
-
-function printToTerminal(text) {
-  term.write(text.replace(/\n/g, '\r\n'));
-}
-
-let userInput = '';
-let waitingForInput = false;
-let inputCallback = null;
-
-term.onData(e => {
-  if (!waitingForInput) return;
-
-  if (e === '\r') { // Enter key
-    term.write('\r\n');
-    waitingForInput = false;
-    if (inputCallback) inputCallback(userInput);
-    userInput = '';
-  } else if (e === '\u007f') { // Backspace
-    if (userInput.length > 0) {
-      userInput = userInput.slice(0, -1);
-      term.write('\b \b');
-    }
-  } else {
-    userInput += e;
-    term.write(e);
-  }
-});
-
-
-function getInput(prompt, callback) {
-  printToTerminal(prompt);
-  waitingForInput = true;
-  inputCallback = callback;
-}
-
-function waitForInput(promptText = '') {
-    return new Promise((resolve) => {
-        term.write(promptText);
-        let inputBuffer = '';
-
-        const onData = (data) => {
-            if (data === '\r') { // Enter key
-                term.write('\r\n');
-                term.offData(onData);
-                resolve(inputBuffer);
-            } else if (data === '\u007F') { // Backspace
-                if (inputBuffer.length > 0) {
-                    inputBuffer = inputBuffer.slice(0, -1);
-                    term.write('\b \b');
-                }
-            } else {
-                inputBuffer += data;
-                term.write(data);
-            }
-        };
-
-        term.onData(onData);
-    });
-}

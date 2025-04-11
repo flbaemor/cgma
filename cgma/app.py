@@ -13,7 +13,7 @@ from cgmasemantic import SemanticError
 from cgmasemantic import SymbolTable
 
 from cgmainterpreter import Interpreter
-from cgmainterpreter import InterpreterError
+from cgmainterpreter import InterpreterError, InterpreterInputRequest
 
 app = Flask(__name__)
 CORS(app)
@@ -116,6 +116,7 @@ def semantic_analysis():
 def output():
     data = request.json
     source_code = data.get('source_code', '')
+    user_inputs = data.get('user_inputs', {})
 
     tokens, errors = lexer_run('<stdin>', source_code)
     if errors:
@@ -134,10 +135,19 @@ def output():
         semantic_analyzer = SemanticAnalyzer(symbol_table)
         semantic_analyzer.analyze(ast_root)
 
-        interpreter = Interpreter(symbol_table)  
+        interpreter = Interpreter(symbol_table, input_callback=lambda prompt: user_inputs.get(prompt.strip(), None))
         interpreter.interpret(ast_root)
 
         return jsonify({'success': True, 'output': ''.join(str(item) for item in interpreter.output if item is not None)})
+
+    except InterpreterInputRequest as req:
+        return jsonify({
+            'success': False,
+            'input_required': True,
+            'prompt': req.prompt,
+            'variable': req.variable_name,
+            'type': req.variable_type
+        })
 
     except InterpreterError as e:
         return jsonify({

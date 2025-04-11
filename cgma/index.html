@@ -1,60 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CGMA Compiler</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="https://i.imgur.com/Qz8R26l.png" sizes="image/png">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
-    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CGMA Compiler</title>
+        <link rel="icon" href="https://i.imgur.com/Qz8R26l.png" sizes="image/png">
 
-</head>
-<body>
-    <nav class="navbar">
-        <div class = "logoContainer">
-            <img src="https://i.imgur.com/xHMd81X.png" alt="CGMA" height="50px" width="50px">
-            <h1 class="logoName">CGMA Compiler</h1>
-        </div>
-        
-        <div class="dropdown">
-            <div class="button-group">
-              <button onclick="runCode()">RUN</button>
-              <button class="dropdown-toggle" onclick="toggleDropdown()">▼</button>
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.43.0/min/vs/loader.js"></script>
+
+    </head>
+    <body>
+        <nav class="navbar">
+            <div class = "logoContainer">
+                <img src="https://i.imgur.com/xHMd81X.png" alt="CGMA" height="50px" width="50px">
+                <h1 class="logoName">CGMA Compiler</h1>
             </div>
-            <ul id="dropdown-menu" class="nav-links hidden">
-              <li><a href="#" onclick="runLexer()">LEXICAL</a></li>
-              <li><a href="#" onclick="runSyntax()">SYNTAX</a></li>
-              <li><a href="#" onclick="runSemantic()">SEMANTIC</a></li>
-            </ul>
-        </div>
-    
-    </nav>
+            
+            <div class="dropdown">
+                <div class="button-group">
+                <button onclick="runCode()">RUN</button>
 
-    <div class="mainCont">
-        <div class="textFieldCont">
-            <div id="editor" style="width: 100%; height: 100%;"></div>
+                <button class="dropdown-toggle" onclick="toggleDropdown()">▼</button>
+                </div>
+                <ul id="dropdown-menu" class="nav-links hidden">
+                <li><a href="#" onclick="runLexer()">LEXICAL</a></li>
+                <li><a href="#" onclick="runSyntax()">SYNTAX</a></li>
+                <li><a href="#" onclick="runSemantic()">SEMANTIC</a></li>
+                </ul>
+            </div>
+        
+        </nav>
+
+        <div class="mainCont">
+            <div class="textFieldCont">
+                <div id="editor" style="width: 100%; height: 100%;"></div>
+            </div>
+            <div class="widthResizer"></div>        
+            <div class="outputCont">
+                <table class="tokenTable">
+                    <thead>
+                        <tr>
+                            <th>TOKEN</th>
+                            <th>LEXEME</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tokenBody">
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="widthResizer"></div>        
-        <div class="outputCont">
-            <table class="tokenTable">
-                <thead>
-                    <tr>
-                        <th>TOKEN</th>
-                        <th>LEXEME</th>
-                    </tr>
-                </thead>
-                <tbody id="tokenBody">
-                </tbody>
-            </table>
+        <div class="heightResizer"></div>
+        <div class="terminalCont">
+            <h4 id="outputTitle">OUTPUT</h4>
+            <div id="terminal"></div>
+            
         </div>
-    </div>
-    <div class="heightResizer"></div>
-    <div class="terminalCont">
-        <h4 id="outputTitle">OUTPUT</h4>
-        <div id="terminal"></div>
-    </div>
-    <script src="main.js"></script>
-</body>
+        <script src="main.js"></script>
+    </body>
 </html>

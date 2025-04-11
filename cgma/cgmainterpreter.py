@@ -20,6 +20,12 @@ class InterpreterError(Exception):
     def __str__(self):
         return self.message
 
+class InterpreterInputRequest(Exception):
+    def __init__(self, prompt, variable_name, variable_type, line):
+        self.prompt = prompt
+        self.variable_name = variable_name
+        self.variable_type = variable_type
+        self.line = line
 
 class Interpreter:
     def __init__(self, symbol_table, input_callback=None):
@@ -876,6 +882,7 @@ class Interpreter:
             self.exit_loop()
             self.exit_scope()
 
+
     def visit_input(self, node):
         parent_node = node.parent
 
@@ -889,8 +896,12 @@ class Interpreter:
             var_type = var_info["type"]
         
         prompt = f"Input for {var_name}: "
+
         user_input = self.input_callback(prompt)
 
+        if user_input is None:
+            raise InterpreterInputRequest(prompt, var_name, var_type, node.line)
+        
         if var_type in {"chungus", "chudeluxe"}:
             try:
                 if var_type == "chungus":
@@ -907,6 +918,6 @@ class Interpreter:
         elif var_type == "lwk":
             if user_input not in {"true", "false"}:
                 raise InterpreterError(f"Invalid input type for variable '{var_name}'. Expected lwk literal.", node.line)
-        
+            
         return user_input
 

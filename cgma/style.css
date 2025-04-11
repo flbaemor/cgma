@@ -115,7 +115,7 @@ body {
 
 .textFieldCont {
     display: flex;
-    width: 70%;
+    width: 100%;
     min-width: 50%;
     background: #4f134e;
     border-radius: 8px;
@@ -127,7 +127,7 @@ body {
 }
 
 .widthResizer {
-    width: 3px;
+    width: 5px;
     background: #4a2949;
     cursor: ew-resize;
     position: relative;
@@ -222,7 +222,7 @@ body {
 }
 
 .heightResizer {
-    height: 3px;
+    height: 6px;
     background: #4a2949;
     cursor: ns-resize;
     position: relative;

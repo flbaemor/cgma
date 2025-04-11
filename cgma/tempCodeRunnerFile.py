@@ -1,1 +1,1 @@
-emit
+interpreter = Interpreter(symbol_table)  
