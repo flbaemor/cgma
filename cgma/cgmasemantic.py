@@ -2481,7 +2481,7 @@ def parse_return(tokens, index, func_type):
             if isinstance(var_info, str):
                 raise SemanticError(f"Semantic Error: Variable '{identifier}' used before declaration.", line)
 
-            if var_info["type"] != func_type:
+            if var_info["type"] not in [func_type, "chungus", "chudeluxe"] and var_info["type"] != "chungus" and var_info["type"] != "chudeluxe":                
                 raise SemanticError(f"Semantic Error (Type Error): Variable '{identifier}' is of type '{var_info['type']}'. Expected return value: '{func_type}'.", line)
 
             return_expr, index = parse_expression_type(tokens, index, func_type)

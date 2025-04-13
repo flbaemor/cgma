@@ -937,9 +937,15 @@ class Interpreter:
         self.provide_input(var_name, input_value)  # Process the input **only once**
 
         if var_type == "chungus":
-            input_value = int(input_value)
+            try:
+                input_value = int(float(input_value))
+            except ValueError:
+                raise InterpreterError(f"Semantic Error: Expected integer value, got '{input_value}'", node.line)
         elif var_type == "chudeluxe":
-            input_value = float(input_value)
+            try:
+                input_value = float(input_value)
+            except ValueError:
+                raise InterpreterError(f"Semantic Error: Expected float value, got '{input_value}'", node.line)
         elif var_type == "lwk":
             if input_value == "true":
                 input_value = True
@@ -947,8 +953,12 @@ class Interpreter:
                 input_value = False
             else:
                 raise InterpreterError(f"Semantic Error: expected lwk value, got '{input_value}'", node.line)
+            
         elif var_type == "forsencd":
             input_value = str(input_value)
+
+        elif var_type == "forsen" and len(input_value) != 1:
+            raise InterpreterError(f"Semantic Error: Expected a single character for forsensd, got '{input_value}'", node.line)
 
         return input_value
 

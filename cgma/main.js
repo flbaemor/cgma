@@ -380,7 +380,6 @@
                 const data = await response.json();
             
                 if (!data.success) {
-                  term.write('Runtime Error:\r\n');
                   if (data.errors) {
                     data.errors.forEach(err => {
                       term.write(`${err}\r\n`);
