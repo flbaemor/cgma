@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_socketio import SocketIO, emit
 from cgmalexer import run as lexer_run
 from cgmaparser import LL1Parser
 from cfg import cfg, predict_sets
@@ -17,6 +18,7 @@ from cgmainterpreter import InterpreterError, InterpreterInputRequest
 
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app)
 
 @app.route('/')
 def index():
@@ -112,42 +114,37 @@ def semantic_analysis():
         return jsonify({'success': False, 'errors': [str(e)]})
 
 
+
 @app.route('/api/output', methods=['POST'])
 def output():
     data = request.json
     source_code = data.get('source_code', '')
     user_inputs = data.get('user_inputs', {})
 
+    # Lexical analysis
     tokens, errors = lexer_run('<stdin>', source_code)
     if errors:
         return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
+    # Syntax parsing
     parser = LL1Parser(cfg, predict_sets)
     success, parse_errors = parser.parse(tokens)
     if not success:
         return jsonify({'success': False, 'errors': parse_errors})
 
     try:
+        # Semantic analysis
         semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"nl", "\n"}]
         ast_root = build_ast(semantic_tokens)
 
         symbol_table = SymbolTable()
         semantic_analyzer = SemanticAnalyzer(symbol_table)
         semantic_analyzer.analyze(ast_root)
+        global runner
+        runner = Interpreter(symbol_table, socketio=socketio)
+        runner.interpret(ast_root)
 
-        interpreter = Interpreter(symbol_table, input_callback=lambda prompt: user_inputs.get(prompt.strip(), None))
-        interpreter.interpret(ast_root)
-
-        return jsonify({'success': True, 'output': ''.join(str(item) for item in interpreter.output if item is not None)})
-
-    except InterpreterInputRequest as req:
-        return jsonify({
-            'success': False,
-            'input_required': True,
-            'prompt': req.prompt,
-            'variable': req.variable_name,
-            'type': req.variable_type
-        })
+        return jsonify({'success': True})
 
     except InterpreterError as e:
         return jsonify({
@@ -155,5 +152,24 @@ def output():
             "errors": [str(e)]
         })
 
+
+@socketio.on('input_required')
+def handle_input_required(data):
+    """When the frontend requests input, send the prompt to the client."""
+    var_name = data.get('variable')
+    prompt = f"Input for {var_name}: "
+    
+    # Emit the prompt to the frontend
+    emit('input_required', {'prompt': prompt, 'variable': var_name})
+
+@socketio.on('capture_input')
+def handle_capture_input(data):
+    var_name = data.get('var_name')
+    user_input = data.get('input')
+
+    if var_name and user_input is not None:
+        runner.provide_input(var_name, user_input)  # Pass the input to the interpreter
+        emit('input_received', {'var_name': var_name, 'input': user_input})  # Acknowledge input received
+
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=True)
+    socketio.run(app, debug=True)   

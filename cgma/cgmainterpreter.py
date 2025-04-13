@@ -1,4 +1,9 @@
-from cgmasemantic import ProgramNode, VariableDeclarationNode, AssignmentNode, BinaryOpNode, FunctionDeclarationNode, FunctionCallNode, IfStatementNode, ForLoopNode, WhileLoopNode, PrintNode, UnaryOpNode, SturdyDeclarationNode, ReturnNode,  SwitchNode, ContinueNode, BreakNode, ListNode, TaperNode, TSNode, AppendNode, InsertNode, RemoveNode, CastNode, ListAccessNode, DoWhileLoopNode
+from cgmasemantic import (ProgramNode, VariableDeclarationNode, AssignmentNode, BinaryOpNode, FunctionDeclarationNode, 
+                          FunctionCallNode, IfStatementNode, ForLoopNode, WhileLoopNode, PrintNode, UnaryOpNode, 
+                          SturdyDeclarationNode, ReturnNode,  SwitchNode, ContinueNode, BreakNode, ListNode, TaperNode, 
+                          TSNode, AppendNode, InsertNode, RemoveNode, CastNode, ListAccessNode, DoWhileLoopNode)
+
+import threading
 
 class SemanticError(Exception):
     def __init__(self, message,  line):
@@ -21,25 +26,28 @@ class InterpreterError(Exception):
         return self.message
 
 class InterpreterInputRequest(Exception):
-    def __init__(self, prompt, variable_name, variable_type, line):
+    def __init__(self, prompt, line):
         self.prompt = prompt
-        self.variable_name = variable_name
-        self.variable_type = variable_type
         self.line = line
 
 class Interpreter:
-    def __init__(self, symbol_table, input_callback=None):
+    def __init__(self, symbol_table, socketio=None):
         self.symbol_table = symbol_table
-        self.input_callback = input_callback or (lambda prompt: input(prompt))
         self.output = []
         self.loop_stack = []
         self.break_flag = False
         self.continue_flag = False
+        self.input_required = False
+        self.socketio = socketio
+        self.input_events = {}
+        self.input_values = {}
+        self.current_node = None
+        self.current_parent = None
 
-        self.variables = {}  # Stores variables
-        self.global_variables = {}  # Stores global variables
-        self.functions = {}  # Stores function definitions
-        self.scopes = [{}]   # Stack of scopes (for local/global tracking)
+        self.variables = {} 
+        self.global_variables = {}
+        self.functions = {}
+        self.scopes = [{}]
         self.current_func_name = None
         self.function_variables = {}
 
@@ -412,9 +420,10 @@ class Interpreter:
             self.interpret(statement) 
             if self.continue_flag:
                 return
-                
-
+            
+            
     def yap(self, num):
+        self.socketio.emit('output', {'output': str(num)})
         self.output.append(str(num))
 
     def visit_print(self, node):
@@ -431,6 +440,7 @@ class Interpreter:
                 value = self.interpret(arg)
                 if isinstance(value, str) and not isinstance(self.lookup_variable(value), str):
                     value = self.lookup_variable(value)["value"]
+                
                 values.append(value)
 
             try:
@@ -883,41 +893,63 @@ class Interpreter:
             self.exit_scope()
 
 
+    def emit_input_request(self, var_name, prompt):
+        self.socketio.emit('input_required', {'prompt': prompt, 'variable': var_name})
+
+    # Method to capture input from the client
+    def provide_input(self, var_name, input_value):
+        self.input_values[var_name] = input_value  # Store the input value for the variable
+        if var_name in self.input_events:
+            self.input_events[var_name].set()  # Notify the waiting thread that input has been provided
+
+    # Method to wait for input asynchronously
+    def wait_for_input(self, var_name):
+        event = threading.Event()
+        self.input_events[var_name] = event  # Create an event to wait for this input
+        event.wait()  # Block until input is received
+        value = self.input_values.pop(var_name, None)  # Retrieve the input
+        self.input_events.pop(var_name, None)  # Clean up the event
+        return value
+
+    # Modify the visit_input method to use the new input handling
     def visit_input(self, node):
         parent_node = node.parent
-
         if isinstance(parent_node, VariableDeclarationNode):
-            var_name = node.parent.children[1].value
-            var_type = node.parent.children[0].value
+            var_name = parent_node.children[1].value
+            var_type = parent_node.children[0].value
         
-        else:
-            var_name = node.parent.children[0].value
-            var_info = self.lookup_variable(var_name)
-            var_type = var_info["type"]
-        
-        prompt = f"Input for {var_name}: "
+        elif isinstance(parent_node, AssignmentNode):
+            var_name = parent_node.children[0].value
+            var_type = self.lookup_variable(var_name)["type"]
 
-        user_input = self.input_callback(prompt)
+        prompt = f"Input for {var_name}: "  # Create a prompt message for the input
+        self.input_required = True
 
-        if user_input is None:
-            raise InterpreterInputRequest(prompt, var_name, var_type, node.line)
-        
-        if var_type in {"chungus", "chudeluxe"}:
-            try:
-                if var_type == "chungus":
-                    user_input = int(user_input)
-                elif var_type == "chudeluxe":
-                    user_input = float(user_input)
-            except ValueError:
-                raise InterpreterError(f"Invalid input type for variable '{var_name}'. Expected {var_type}.", node.line)
-        
-        elif var_type == "forsen":
-            if len(user_input) > 1:
-                raise InterpreterError(f"Exceeds maximum number of character for forsen literal.", node.line)
-        
+
+        # Emit the input request to the client
+        self.emit_input_request(var_name, prompt)
+
+        # Wait for the input asynchronously
+        input_value = self.wait_for_input(var_name)
+
+
+        self.input_required = False  # Reset the input flag
+        self.provide_input(var_name, input_value)  # Process the input **only once**
+
+        if var_type == "chungus":
+            input_value = int(input_value)
+        elif var_type == "chudeluxe":
+            input_value = float(input_value)
         elif var_type == "lwk":
-            if user_input not in {"true", "false"}:
-                raise InterpreterError(f"Invalid input type for variable '{var_name}'. Expected lwk literal.", node.line)
-            
-        return user_input
+            if input_value == "true":
+                input_value = True
+            elif input_value == "false":
+                input_value = False
+            else:
+                raise InterpreterError(f"Semantic Error: expected lwk value, got '{input_value}'", node.line)
+        elif var_type == "forsencd":
+            input_value = str(input_value)
+
+        return input_value
+
 

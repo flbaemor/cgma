@@ -105,7 +105,7 @@ body {
 
 .mainCont {
     display: flex;
-    height: 70%;
+    height: 50%;
     padding-right: 10px;
     padding-left: 10px;
     padding-top: 10px;
@@ -243,6 +243,7 @@ body {
     margin-bottom: 10px;
     position: relative;
     padding-top: 20px;
+    overflow: hidden;
 }
 
 #outputTitle {
@@ -263,6 +264,7 @@ body {
     border-radius: 5px;
     outline: none;
     padding: 5px;
+    overflow: auto;
 }
 
 .token-value {
