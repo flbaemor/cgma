@@ -287,45 +287,59 @@
           };
           
           
-          socket.on('output', function (data) {
-            term.write(data.output);  // Display the output in the terminal
-            term.cursorTo(term.cols, term.rows);
+        socket.on('output', function (data) {
+            const lines = data.output.split('\n');
+            lines.forEach((line, index) => {
+              term.write(line);
+      
+              if (index < lines.length - 1) {
+                  term.write('\r');
+                  term.write('\n');
+              }
+          });
             term.scrollToBottom();
             term.focus(); 
         });
           
         socket.on('input_required', function (data) {
             const prompt = data.prompt;
-            variable = data.variable;  // Set the variable name for which input is requested
+            variable = data.variable;
     
-            // Display the input prompt in the terminal
+
             waitingForInput = true;
-            userInput = '';  // Reset user input
+            userInput = '';  
 
             if (termDataListener) {
               term.offData(termDataListener);
             }
-    
-            // Listen for data typed by the user in the terminal
+            
+            const inputStartPosition = term.cols;
+
             termDataListener = function (e) {
-              if (!waitingForInput) return;  // Only process input if waiting for it
-              if (e === '\r') {  // Enter key pressed
+              if (!waitingForInput) return;
+
+              if (e === '\x1b[A' || e === '\x1b[B' || e === '\x1b[C' || e === '\x1b[D') {
+                return;
+              }
+
+              if (e === '\r') {
                 term.write('\r\n');
-                waitingForInput = false;  // Stop listening for input after receiving it
-                socket.emit('capture_input', { var_name: variable, input: userInput });  // Send input to backend
-                userInput = '';  // Reset input after sending
-              } else if (e === '\u007f') {  // Backspace key
+                waitingForInput = false;
+                socket.emit('capture_input', { var_name: variable, input: userInput });
+                userInput = '';
+              } else if (e === '\u007f') {
                 if (userInput.length > 0) {
-                    userInput = userInput.slice(0, -1);  // Remove last character
+                    userInput = userInput.slice(0, -1); 
                     term.write('\b \b');
                 }
               } else {
-                userInput += e;  // Add character to user input
-                term.write(e);  // Display character in terminal
+                userInput += e;
+                term.write(e);
               }
+
+              
           };
   
-          // Add the new event listener
           term.onData(termDataListener);
         });
 
@@ -334,10 +348,10 @@
             return new Promise(resolve => {
               console.log(`DEBUG: Prompting user for input: ${promptText}`);
               term.write(promptText);
-              term.focus();            // Focus the terminal so the user can type
-              waitingForInput = true;  // Set flag to wait for input
-              userInput = '';          // Reset the input variable
-              inputCallback = resolve; // Resolve the promise once input is captured
+              term.focus();            
+              waitingForInput = true;
+              userInput = '';        
+              inputCallback = resolve; 
             });
           }
           
@@ -373,36 +387,6 @@
                     });
                   }
                   return;
-                }
-            
-                if (data.input_required) {
-                  console.log(`DEBUG: Input required from backend: ${data.prompt}`);
-                  await waitForInput(data.prompt);  // Wait for user input here
-      
-                  // After capturing the input, store it
-                  const userInputs = {};
-                  userInputs[data.prompt.trim()] = userInput;  // Store the user input
-      
-                  // Send the input back to the backend for further processing
-                  const rerunResponse = await fetch('/api/output', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                          source_code: sourceCode,
-                          user_inputs: userInputs
-                      })
-                  });
-      
-                  const rerunData = await rerunResponse.json();
-                  term.write(rerunData.output);  // Display the output from the rerun
-                  return;
-                }
-                
-                if (data.output) {
-                  const outputLines = data.output.split('\n');
-                  outputLines.forEach(line => {
-                    term.write(line + '\r\n');
-                  });
                 }
             
               } catch (error) {
