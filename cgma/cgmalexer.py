@@ -1045,8 +1045,7 @@ class Lexer:
 
                             
                 maxIdentifierLength = 20
-
-                while self.current_char is not None and self.current_char in ALPHANUM:
+                while self.current_char is not None and self.current_char in ALPHANUM + "_":
                     ident_str += self.current_char
                     self.advance()
 
