@@ -298,6 +298,9 @@ class Interpreter:
             var_type = var_info["type"]
             if var_type == "chungus" and isinstance(value, float):
                 value = int(value)
+            
+            if var_type == "chudeluxe" and isinstance(value, int):
+                value = float(value)
 
             self.set_variable(var_name, value)
             print(f"\nUpdating variable '{var_name}' of type '{var_type}' with value: {value}")
