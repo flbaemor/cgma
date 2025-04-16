@@ -65,7 +65,15 @@
           comments: {
               blockComment: ["/*", "*/"],
               lineComment: "//"          
-          }
+          },
+          autoClosingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"'},
+            { open: "'", close: "'"},
+            { open: '/*', close: '*/'},
+          ],
       });
       
           monaco.editor.defineTheme("myCustomTheme", {
@@ -123,7 +131,7 @@
                   verticalScrollbarSize: 10,
                   horizontalScrollbarSize: 10,
               },
-
+              
           });
       });
       
