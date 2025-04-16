@@ -1,3 +1,5 @@
+  
+  let fitAddon;
   document.addEventListener('DOMContentLoaded', async () => {
 
     const socket = io.connect('http://localhost:5000');
@@ -142,7 +144,7 @@
             },
           });
           
-          const fitAddon = new FitAddon.FitAddon();
+          fitAddon = new FitAddon.FitAddon();
           term.loadAddon(fitAddon);
       
           term.open(document.getElementById('terminal'));
@@ -408,7 +410,8 @@
           debugTerminalInput(); // Call the debug function when the button is clicked
         });
   });
-
+  
+  
   document.querySelector(".widthResizer").addEventListener("mousedown", (e) => {
       e.preventDefault();
       document.addEventListener("mousemove", widthResize);
@@ -430,7 +433,7 @@
       }, { once: true });
       
   });
-
+  
   function heightResize(e) {
       let newHeight = e.clientY - document.querySelector(".mainCont").getBoundingClientRect().top;
       document.querySelector(".mainCont").style.height = `${newHeight}px`;
