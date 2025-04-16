@@ -57,28 +57,18 @@ class Interpreter:
         scope = self.scopes[-1]
         current_func = self.current_func_name
     
+        for i, scopes in enumerate(reversed(scope)):
+            if name in scopes:
+                raise SemanticError(f"Variable '{name}' already declared in this scope.", "")
 
-        if name in self.functions:
-            return f"Semantic Error: Variable '{name}' already declared as a function."
-
-        if current_func:
-            if current_func not in self.function_variables:
-                self.function_variables[current_func] = set()
-
-            if name in self.function_variables[current_func]:
-                return f"Semantic Error: Variable '{name}' already declared in this function."
-
-            self.function_variables[current_func].add(name)
-
-        if self.current_func_name:
-            
+        if name not in self.scopes[-1]:
             scope[name] = {
                 "type": type_,  
                 "value": value,
                 "is_list": is_list,
                 "is_struct": is_struct,
                 "is_sturdy": is_sturdy
-            }
+                }
         else:
             if name in self.global_variables:
                 return f"Semantic Error: Variable '{name}' already declared."
@@ -90,6 +80,7 @@ class Interpreter:
                 "is_struct": is_struct,
                 "is_sturdy": is_sturdy
             }
+            self.global_variables[name] = self.variables[name]
         
         print(f"\n[DECLARE] In function: {current_func or 'GLOBAL'} — Declaring '{name}' of type '{type_}' with value: {value}")
         #for i, s in enumerate(self.scopes):
@@ -510,7 +501,6 @@ class Interpreter:
                 node.line
             )
         
-        self.current_func_name = function_name
         self.enter_scope()
         
         try:
@@ -518,7 +508,7 @@ class Interpreter:
                 param_name = param["name"]
                 param_type = param["type"]
                 arg_value = args[i]
-
+                print(f"\n[CALL] In function: {function_name} — Argument '{param_name}' of type '{param_type}' with value: {arg_value}")
                 self.declare_variable(param_name, param_type, arg_value)
 
             try:
