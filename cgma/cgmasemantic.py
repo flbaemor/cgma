@@ -1144,6 +1144,28 @@ def parse_expression_forsencd(tokens, index):
         if is_list:
             node.add_child(list_access_node)
 
+    elif token.type == "identifier" and tokens[index + 1].type == "[":
+        list_name = token.value
+        list_info = symbol_table.lookup_variable(list_name)
+
+        if isinstance(list_info, str):
+            raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", token.line)
+
+        if not list_info["is_list"]:
+            raise SemanticError(f"Semantic Error (Type Error): '{list_name}' is not a list.", token.line)
+
+        index += 2
+        expr_node, index = parse_expression(tokens, index)
+
+        if tokens[index].type != "]":
+            raise SemanticError("Syntax Error: Missing closing bracket.", token.line)
+
+        index_node = ASTNode("Index", line=token.line)
+        index_node.add_child(expr_node)
+
+        index += 1
+        node = ListAccessNode(list_name, index_node, line=token.line)
+
     elif tokens[index].type == "identifier":
         var_name = tokens[index].value
         var_info = symbol_table.lookup_variable(var_name)
@@ -1187,6 +1209,28 @@ def parse_expression_forsencd(tokens, index):
                     raise SemanticError(f"Semantic Error (Type Error): Cannot use function '{func_name}' of type '{func_return_type}' in this expression.", line)
 
                 right_node, index = parse_function_call(tokens, index, func_name, func_return_type, func_info["params"])
+
+            elif tokens[index].type == "identifier" and tokens[index + 1].type == "[":
+                list_name = tokens[index].value
+                list_info = symbol_table.lookup_variable(list_name)
+
+                if isinstance(list_info, str):
+                    raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", token.line)
+
+                if not list_info["is_list"]:
+                    raise SemanticError(f"Semantic Error (Type Error): '{list_name}' is not a list.", token.line)
+
+                index += 2
+                expr_node, index = parse_expression(tokens, index)
+
+                if tokens[index].type != "]":
+                    raise SemanticError("Syntax Error: Missing closing bracket.", token.line)
+
+                index_node = ASTNode("Index", line=token.line)
+                index_node.add_child(expr_node)
+
+                index += 1
+                right_node = ListAccessNode(list_name, index_node, line=token.line)
 
             elif (
                 token.type == "identifier" and

@@ -243,7 +243,7 @@ class Interpreter:
                 if var_type == "chungus" and isinstance(value, float):
                     value = int(value)
 
-        print(f"\nDeclaring variable '{var_name}' of type '{var_type}' with initial value: {value}")
+        #print(f"\nDeclaring variable '{var_name}' of type '{var_type}' with initial value: {value}")
         self.declare_variable(var_name, var_type, value, is_list=is_list)
 
     def visit_sturdy_declaration(self, node):
@@ -286,7 +286,7 @@ class Interpreter:
             if index < 0 or index >= len(list_value):
                 raise InterpreterError(f"Semantic Error: Index '{index}' out of bounds for list '{list_name}'.", node.line)
 
-            print(f"\nUpdating list '{list_name}' at index {index} with value: {value}")
+            #print(f"\nUpdating list '{list_name}' at index {index} with value: {value}")
             list_value[index] = value
 
         else:
@@ -303,7 +303,7 @@ class Interpreter:
                 value = float(value)
 
             self.set_variable(var_name, value)
-            print(f"\nUpdating variable '{var_name}' of type '{var_type}' with value: {value}")
+            #print(f"\nUpdating variable '{var_name}' of type '{var_type}' with value: {value}")
 
 
     def visit_binary_op(self, node):
@@ -511,7 +511,7 @@ class Interpreter:
                 param_name = param["name"]
                 param_type = param["type"]
                 arg_value = args[i]
-                print(f"\n[CALL] In function: {function_name} — Argument '{param_name}' of type '{param_type}' with value: {arg_value}")
+                #print(f"\n[CALL] In function: {function_name} — Argument '{param_name}' of type '{param_type}' with value: {arg_value}")
                 self.declare_variable(param_name, param_type, arg_value)
 
             try:
@@ -534,7 +534,7 @@ class Interpreter:
         for child in node.children:
             value = self.interpret(child)
             list_info["value"].append(value)
-            print(f"\nAppending value '{value}' to list '{list_name}'")
+            #print(f"\nAppending value '{value}' to list '{list_name}'")
 
         
     def visit_insert(self, node):
@@ -553,7 +553,7 @@ class Interpreter:
             value = self.interpret(child)
             list_info["value"].insert(index, value)
             index += 1
-            print(f"Inserted {value} at index {index} in list '{list_name}': {list_info['value']}")
+            #print(f"Inserted {value} at index {index} in list '{list_name}': {list_info['value']}")
 
 
     def visit_remove(self, node):
@@ -573,7 +573,7 @@ class Interpreter:
             raise InterpreterError(f"Semantic Error: Index {index} out of bounds for remove", node.line)
 
         removed = list_info["value"].pop(index)
-        print(f"Removed value {removed} from list '{list_name}': {list_info['value']}")
+        #print(f"Removed value {removed} from list '{list_name}': {list_info['value']}")
 
     def visit_unaryop(self, node):
         operand_node = node.children[0]
@@ -626,7 +626,7 @@ class Interpreter:
         if var_info["type"] == "forsencd":
             var_info["value"] = list(var_info["value"])
             var_info["is_list"] = True
-            print(f"Tapered string '{var_name}' into list: {var_info['value']}")
+            #print(f"Tapered string '{var_name}' into list: {var_info['value']}")
 
         return var_info["value"]
 
@@ -636,11 +636,11 @@ class Interpreter:
 
         if var_info["is_list"]:
             result = len(var_info["value"])
-            print(f"Tapered list '{var_name}' to its length: {result}")
+            #print(f"Tapered list '{var_name}' to its length: {result}")
         
         elif var_info["type"] == "forsencd":
             result = len(var_info["value"])
-            print(f"Tapered string '{var_name}' to its length: {result}")
+            #print(f"Tapered string '{var_name}' to its length: {result}")
         
         return result
 
@@ -670,14 +670,14 @@ class Interpreter:
                         if elif_condition_result:
                             try:
                                 self.enter_scope()
-                                print(f"Executing ElseIf block: {elif_node.line}")
+                                #print(f"Executing ElseIf block: {elif_node.line}")
                                 self.visit_block(elif_node.children[1])
                             finally:
                                 self.exit_scope()
                             return
                         
                     elif elif_node.node_type == "ElseStatement":
-                        print(f"Executing Else block: {elif_node.line}")
+                        #print(f"Executing Else block: {elif_node.line}")
                         try:
                             self.enter_scope()
                             self.visit_block(elif_node.children[0])

@@ -1,1 +1,0 @@
-interpreter = Interpreter(symbol_table)  
