@@ -82,7 +82,7 @@ class Interpreter:
             }
             self.global_variables[name] = self.variables[name]
         
-        print(f"\n[DECLARE] In function: {current_func or 'GLOBAL'} — Declaring '{name}' of type '{type_}' with value: {value}")
+        #print(f"\n[DECLARE] In function: {current_func or 'GLOBAL'} — Declaring '{name}' of type '{type_}' with value: {value}")
         #for i, s in enumerate(self.scopes):
             #print(f"[SCOPE {i}] {s}")
 
