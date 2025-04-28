@@ -680,7 +680,6 @@ def parse_statement(tokens, index, func_type = None):
         
     elif token.type == "identifier" or tokens[index].type in {"++", "--"}: 
         assignments_node = ASTNode("AssignmentList")
-        print(token.type)
         while True:
 
             if tokens[index].type == "identifier":
@@ -1532,7 +1531,6 @@ def parse_expression_lwk(tokens, index):
     left_node, index, left_type = parse_equality(tokens, index)
 
     if left_type in {"chungus", "chudeluxe"} and tokens[index].type not in {"==", "!=", "<", "<=", ">", ">="}:
-        print(tokens[index].type)
         raise SemanticError(f"Semantic Error (Type Error): Expected a logical or comparison operator after an arithmetic expression.", line)
 
     while tokens[index].type in {"&&", "||"}:
@@ -1588,7 +1586,6 @@ def parse_relational(tokens, index):
     left_node, index, left_type = parse_operand(tokens, index)
 
     if tokens[index].type in {"<", "<=", ">", ">="}:
-        print(left_type)
         if left_type not in {"chungus", "chudeluxe"}:
             raise SemanticError(f"Semantic Error (Type Error): Relational operators only apply to arithmetic types.", line)
         
@@ -2415,8 +2412,6 @@ def parse_if(tokens, index, func_type):
 
     condition_expr, index = parse_expression_lwk(tokens, index)  # Parse lwk expression
 
-
-    print(tokens[index].type)
     
     if tokens[index].type != ")":
         raise SemanticError(f"Syntax Error: Expected ')' after 'tuah' condition.", line)
@@ -2541,7 +2536,6 @@ def parse_return(tokens, index, func_type):
             return_expr, index = parse_expression_type(tokens, index, func_type)
 
         else:  # Variable case
-            print(tokens[index])
             var_info = symbol_table.lookup_variable(identifier)
             if isinstance(var_info, str):
                 raise SemanticError(f"Semantic Error: Variable '{identifier}' used before declaration.", line)
@@ -2621,7 +2615,6 @@ def parse_for(tokens, index, func_type):
         block_node = ASTNode("Block", line=line)
 
         while tokens[index].type != "}":
-            print(tokens[index].value)
 
             stmt, index = parse_statement(tokens, index, func_type)
             if stmt:
