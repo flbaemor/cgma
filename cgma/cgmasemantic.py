@@ -894,19 +894,40 @@ def parse_list_assignment(tokens, index):
         source_info = symbol_table.lookup_variable(source_var)
         if isinstance(source_info, str):
             raise SemanticError(f"Semantic Error: Variable '{source_var}' used before declaration.", line)
-        
-        if not source_info.get("is_list", False):
-            raise SemanticError(f"Semantic Error (Type Error): Cannot assign non-list '{source_var}' to list '{var_name}'.", line)
+
+        if source_info["is_list"] == False and tokens[index + 1].type != ".":
+            raise SemanticError(f"Semantic Error: Cannot assign non-list '{source_var}' to list '{var_name}'.", line)
 
         source_type = source_info["type"]
-        if var_type != source_type:
+
+        if var_type == "forsen":
+            if source_type == "forsencd" and tokens[index + 1].type == ".":
+                if (
+                    tokens[index].type == "identifier" and
+                    tokens[index + 1].type == "." and
+                    tokens[index + 2].value == "taper"
+                ):
+                    if source_info["type"] != "forsencd":
+                        raise SemanticError(f"Semantic Error (Type Error): Cannot use taper function on '{source_var}'. Must be a forsencd type identifier.", line)
+
+                    index += 5
+                    is_list = True
+                    taper_node = TaperNode(source_var, line=line)
+                    value_node = ASTNode("Value", source_var, line=line)
+                    value_node.add_child(taper_node)
+
+            elif source_type == "forsencd" and tokens[index + 1].type != ".":
+                raise SemanticError(f"Semantic Error: Cannot assign non-list '{source_var}' to list '{var_name}'.", line)
+
+        elif var_type != source_type:
             if not (var_type in {"chungus", "chudeluxe"} and source_type in {"chungus", "chudeluxe"}):
                 raise SemanticError(
-                    f"Semantic Error (Type Error): Cannot assign list of '{source_type}' to list of '{var_type}'.", line
+                    f"Semantic Error (Type Error): Cannot assign list of '{source_type}' type to list of '{var_type}' type.", line
                 )
-
-        value_node = ASTNode("Identifier", source_var, line=line)
-        index += 1
+            
+        else:
+            value_node = ASTNode("Value", source_var, line=line)
+            index += 1
 
     # Assignment from list literal
     elif tokens[index].type == "[":
@@ -2255,6 +2276,7 @@ def parse_print(tokens, index):
             
             if isinstance(arg_info, str):
                 raise SemanticError(f"Semantic Error: Variable '{arg_name}' used before declaration.", line)
+            
             if arg_info["is_list"]:
                 if tokens[index + 1].type != "[":
                     raise SemanticError(f"Semantic Error (Type Error): List '{arg_name}' must be indexed with '[]' in expressions.", line)
@@ -2263,7 +2285,6 @@ def parse_print(tokens, index):
                 arg_node, index = parse_expression(tokens, index)
                 actual_args.append(arg_node)
                 
-
             else:
                 actual_args.append(ASTNode("Value", arg_name, line=line))
                 index += 1

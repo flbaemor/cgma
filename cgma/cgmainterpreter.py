@@ -624,11 +624,10 @@ class Interpreter:
         var_info = self.lookup_variable(var_name)
         
         if var_info["type"] == "forsencd":
-            var_info["value"] = list(var_info["value"])
-            var_info["is_list"] = True
+            value = list(var_info["value"])
             #print(f"Tapered string '{var_name}' into list: {var_info['value']}")
 
-        return var_info["value"]
+        return value
 
     def visit_ts(self, node):
         var_name = node.children[0].value
