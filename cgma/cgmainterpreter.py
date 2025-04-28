@@ -930,7 +930,7 @@ class Interpreter:
 
         if var_type == "chungus":
             try:
-                if len(input_value) > 10:
+                if len(input_value.strip('-')) > 10:
                     raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 10 digits", node.line)
                 input_value = int(float(input_value))
             except ValueError:
@@ -938,7 +938,7 @@ class Interpreter:
         elif var_type == "chudeluxe":
             try:
                 integer_part, decimal_part = str(input_value).split('.')
-                if len(integer_part) > 10:
+                if len(integer_part.strip('-')) > 10:
                     raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 10 digits", node.line)
                 if len(decimal_part) > 5:
                     raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 5 decimal numbers", node.line)
