@@ -930,21 +930,31 @@ class Interpreter:
 
         if var_type == "chungus":
             try:
-                if len(input_value.strip('-')) > 10:
+                if len(input_value.strip('-').lstrip('0')) > 10:
                     raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 10 digits", node.line)
                 input_value = int(float(input_value))
             except ValueError:
                 raise InterpreterError(f"Semantic Error: Expected integer value, got '{input_value}'", node.line)
+            
         elif var_type == "chudeluxe":
             try:
-                integer_part, decimal_part = str(input_value).split('.')
-                if len(integer_part.strip('-')) > 10:
-                    raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 10 digits", node.line)
-                if len(decimal_part) > 5:
-                    raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 5 decimal numbers", node.line)
+                if '.' in input_value:
+                    integer_part, decimal_part = str(input_value).split('.')
+                    if len(integer_part.strip('-').lstrip('0')) > 10:
+                        raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 10 digits", node.line)
+                    if len(decimal_part.rstrip('0')) > 5:
+                        raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 5 decimal numbers", node.line)
+                    
+                else:
+                    if len(input_value.strip('-').lstrip('0')) > 10:
+                        raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 10 digits", node.line)
+                
                 input_value = float(input_value)
+                
+                
             except ValueError:
                 raise InterpreterError(f"Semantic Error: Expected float value, got '{input_value}'", node.line)
+            
         elif var_type == "lwk":
             if input_value == "true":
                 input_value = True
