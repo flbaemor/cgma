@@ -202,42 +202,6 @@ class CastNode(ASTNode):
         self.add_child(ASTNode("TargetType", target_type, line=line))
         self.add_child(expression)
 
-class StructNode(ASTNode):
-    def __init__(self, name, members, line=None):
-        super().__init__("Struct", line=line)
-        self.add_child(ASTNode("Identifier", name, line=line))
-        for member in members:
-            self.add_child(member)
-
-class StructInstanceNode(ASTNode):
-    def __init__(self, struct_name, instance_name, initial_values=None, line=None):
-        super().__init__("StructInstance", line=line)
-        self.add_child(ASTNode("StructType", struct_name, line=line))
-        self.add_child(ASTNode("Identifier", instance_name, line=line))
-
-        if initial_values:
-            init_node = ASTNode("InitialValues", line=line)
-            for member_name, value_node in initial_values.items():
-                assign_node = ASTNode("Assignment", line=line)
-                assign_node.add_child(ASTNode("Member", member_name, line=line))
-                assign_node.add_child(value_node)
-                init_node.add_child(assign_node)
-            self.add_child(init_node)
-
-class StructMemberAssignmentNode(ASTNode):
-    def __init__(self, struct_instance, member_name, value_node, line=None):
-        super().__init__("StructMemberAssignment", line=line)
-        self.add_child(ASTNode("StructInstance", struct_instance, line=line))
-        self.add_child(ASTNode("Member", member_name, line=line))
-        self.add_child(value_node)
-
-
-class StructMemberAccessNode(ASTNode):
-    def __init__(self, struct_instance, member_name, member_type, line=None):
-        super().__init__("StructMemberAccess", line=line)
-        self.add_child(ASTNode("StructInstance", struct_instance, line=line))
-        self.add_child(ASTNode("Member", member_name, line=line))
-        self.member_type = member_type
 
 class ListAccessNode(ASTNode):
     def __init__(self, list_name, index_expr, line=None):
@@ -258,7 +222,7 @@ class SymbolTable:
         self.function_variables = {}
 
     ###### VARIABLE ######
-    def declare_variable(self, name, type_, value=None, is_list=False, is_struct=False, is_sturdy=False):
+    def declare_variable(self, name, type_, value=None, is_list=False, is_sturdy=False):
         scope = self.scopes[-1]
         current_func = self.current_func_name
     
@@ -283,7 +247,6 @@ class SymbolTable:
                 "type": type_,  
                 "value": value,
                 "is_list": is_list,
-                "is_struct": is_struct,
                 "is_sturdy": is_sturdy
             }
         else:
@@ -294,7 +257,6 @@ class SymbolTable:
                 "type": type_,
                 "value": value,
                 "is_list": is_list,
-                "is_struct": is_struct,
                 "is_sturdy": is_sturdy
             }
         
@@ -368,7 +330,6 @@ def build_ast(tokens):
     symbol_table.variables = {}  # Stores variables 
     symbol_table.functions = {}  # Stores function definitions
     symbol_table.scopes = [{}] 
-    symbol_table.structs = [{}]
     symbol_table.function_variables = {}
     context_stack = []
     index = 0
@@ -420,11 +381,6 @@ def build_ast(tokens):
 
         elif token.value == "sturdy":
             node, index = parse_sturdy(tokens, index)
-            if node:
-                root.add_child(node)
-
-        elif token.value == "aura":
-            node, index = parse_struct(tokens, index)
             if node:
                 root.add_child(node)
 
@@ -654,13 +610,6 @@ def parse_statement(tokens, index, func_type = None):
         node, index = parse_variable(tokens, index, var_name, var_type)
         return node, index
     
-    elif token.value == "aura" and tokens[index + 1].type == "identifier" and tokens[index + 2].type == "{":
-        node, index = parse_struct(tokens, index)
-        return node, index
-
-    elif token.value == "aura":
-        node, index = parse_struct_instance(tokens, index)
-        return node, index
     
     elif token.value == "sturdy":
         node, index = parse_sturdy(tokens, index)
@@ -737,9 +686,6 @@ def parse_statement(tokens, index, func_type = None):
                     index += 2
                     assignments_node.add_child(UnaryOpNode(operator, operand, "post", line=line))
 
-                elif tokens[index + 1].type == ".":
-                    node, index = parse_struct_member_assignment(tokens, index)
-                    assignments_node.add_child(node)
 
                 else:
                     raise SemanticError(f"Semantic Error: Unexpected token '{tokens[index].value}' in statement.", line)
@@ -777,14 +723,6 @@ def parse_statement(tokens, index, func_type = None):
         
         else:
             return assignments_node.children[0], index
-
-    elif token.value == "aura" and tokens[index + 1].type == "identifier" and tokens[index + 2].type == "identifier":
-        node, index = parse_struct_instance(tokens, index)
-        return node, index
-
-    elif token.value == "aura" and tokens[index + 1].type == "identifier" and tokens[index + 2].type == "{":
-        node, index = parse_struct(tokens, index)
-        return node, index
 
 
     elif token.value == "yap":
@@ -970,77 +908,6 @@ def parse_expression_forsen(tokens, index):
             raise SemanticError(error, line)
         index += 1
         return parse_function_call(tokens, index, func_name, func_return_type, func_params)
-
-    elif (
-        token.type == "identifier" and
-        tokens[index + 1].type == "." and
-        tokens[index + 2].type == "identifier"
-    ):
-        struct_instance = token.value
-        member_chain = [struct_instance]
-        index += 1
-
-        instance_info = symbol_table.lookup_variable(struct_instance)
-        if isinstance(instance_info, str):
-            raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", token.line)
-
-        struct_name = instance_info["type"]
-        struct_info = symbol_table.lookup_struct(struct_name)
-
-        while tokens[index].type == ".":
-            index += 1
-
-            if tokens[index].type != "identifier":
-                raise SemanticError(f"Syntax Error: Expected member name after '.'.", tokens[index].line)
-
-            member_name = tokens[index].value
-            member_chain.append(member_name)
-            index += 1
-
-            if member_name not in struct_info:
-                full_chain = ".".join(member_chain)
-                raise SemanticError(f"Semantic Error: '{struct_name}' has no member '{member_name}' in '{full_chain}'.", token.line)
-            member_info = struct_info[member_name]
-            expected_type = struct_info[member_name]["type"]
-            is_list = member_info.get("is_list", False)
-            if symbol_table.lookup_struct(expected_type):
-                struct_name = expected_type
-                struct_info = symbol_table.lookup_struct(expected_type)
-            else:
-                break
-
-        final_member = member_chain.pop()
-        struct_instance = ".".join(member_chain)
-        full_access = f"{struct_instance}.{final_member}"
-
-        if is_list:
-            if tokens[index].type != "[":
-                raise SemanticError(f"Semantic Error: Missing index for list '{full_access}'.", tokens[index].line)
-
-            index += 1
-            expr_node, index = parse_expression(tokens, index)
-
-            if tokens[index].type != "]":
-                raise SemanticError("Syntax Error: Missing closing bracket.", tokens[index].line)
-
-            index_node = ASTNode("Index", line=tokens[index].line)
-            index_node.add_child(expr_node)
-
-            list_access_node = ListAccessNode(full_access, index_node, line=tokens[index].line)
-            index += 1
-
-        if tokens[index].type == "[":
-            raise SemanticError(f"Semantic Error: '{full_access}' is not a list.", tokens[index].line)
-
-
-        if expected_type not in {"forsen"}:
-            raise SemanticError(f"Semantic Error (Type Error): Cannot use '{struct_instance}.{final_member}' of type {expected_type} in this expression.", token.line)
-
-        node = StructMemberAccessNode(struct_instance, final_member, member_type=expected_type, line=token.line)
-        if is_list:
-            node.add_child(list_access_node)
-
-        return node, index
     
     elif tokens[index].type == "identifier":
         variable_info = symbol_table.lookup_variable(tokens[index].value)
@@ -1093,76 +960,6 @@ def parse_expression_forsencd(tokens, index):
 
         node, index = parse_function_call(tokens, index, func_name, func_return_type, func_info["params"])
 
-    elif (
-        token.type == "identifier" and
-        tokens[index + 1].type == "." and
-        tokens[index + 2].type == "identifier"
-    ):
-        struct_instance = token.value
-        member_chain = [struct_instance]
-        index += 1
-
-        instance_info = symbol_table.lookup_variable(struct_instance)
-        if isinstance(instance_info, str):
-            raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", token.line)
-
-        struct_name = instance_info["type"]
-        struct_info = symbol_table.lookup_struct(struct_name)
-
-        while tokens[index].type == ".":
-            index += 1
-
-            if tokens[index].type != "identifier":
-                raise SemanticError(f"Syntax Error: Expected member name after '.'.", tokens[index].line)
-
-            member_name = tokens[index].value
-            member_chain.append(member_name)
-            index += 1
-
-            if member_name not in struct_info:
-                full_chain = ".".join(member_chain)
-                raise SemanticError(f"Semantic Error: '{struct_name}' has no member '{member_name}' in '{full_chain}'.", token.line)
-            
-            member_info = struct_info[member_name]
-            is_list = member_info.get("is_list", False)
-            expected_type = struct_info[member_name]["type"]
-
-            if symbol_table.lookup_struct(expected_type):
-                struct_name = expected_type
-                struct_info = symbol_table.lookup_struct(expected_type)
-            else:
-                break
-
-        final_member = member_chain.pop()
-        struct_instance = ".".join(member_chain)
-        full_access = f"{struct_instance}.{final_member}"
-
-        if is_list:
-            if tokens[index].type != "[":
-                raise SemanticError(f"Semantic Error: Missing index for list '{full_access}'.", tokens[index].line)
-
-            index += 1
-            expr_node, index = parse_expression(tokens, index)
-
-            if tokens[index].type != "]":
-                raise SemanticError("Syntax Error: Missing closing bracket.", tokens[index].line)
-
-            index_node = ASTNode("Index", line=tokens[index].line)
-            index_node.add_child(expr_node)
-
-            list_access_node = ListAccessNode(full_access, index_node, line=tokens[index].line)
-            index += 1
-
-        if tokens[index].type == "[":
-            raise SemanticError(f"Semantic Error: '{full_access}' is not a list.", tokens[index].line)
-
-
-        if expected_type not in {"forsen", "forsencd"}:
-            raise SemanticError(f"Semantic Error (Type Error): Cannot use '{struct_instance}.{final_member}' of type {expected_type} in this expression.", token.line)
-
-        node = StructMemberAccessNode(struct_instance, final_member, member_type=expected_type, line=token.line)
-        if is_list:
-            node.add_child(list_access_node)
 
     elif token.type == "identifier" and tokens[index + 1].type == "[":
         list_name = token.value
@@ -1252,76 +1049,6 @@ def parse_expression_forsencd(tokens, index):
                 index += 1
                 right_node = ListAccessNode(list_name, index_node, line=token.line)
 
-            elif (
-                token.type == "identifier" and
-                tokens[index + 1].type == "." and
-                tokens[index + 2].type == "identifier"
-            ):
-                struct_instance = token.value
-                member_chain = [struct_instance]
-                index += 1
-
-                instance_info = symbol_table.lookup_variable(struct_instance)
-                if isinstance(instance_info, str):
-                    raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", token.line)
-
-                struct_name = instance_info["type"]
-                struct_info = symbol_table.lookup_struct(struct_name)
-
-                while tokens[index].type == ".":
-                    index += 1
-
-                    if tokens[index].type != "identifier":
-                        raise SemanticError(f"Syntax Error: Expected member name after '.'.", tokens[index].line)
-
-                    member_name = tokens[index].value
-                    member_chain.append(member_name)
-                    index += 1
-
-                    if member_name not in struct_info:
-                        full_chain = ".".join(member_chain)
-                        raise SemanticError(f"Semantic Error: '{struct_name}' has no member '{member_name}' in '{full_chain}'.", token.line)
-                    
-                    member_info = struct_info[member_name]
-                    is_list = member_info.get("is_list", False)
-                    expected_type = struct_info[member_name]["type"]
-
-                    if symbol_table.lookup_struct(expected_type):
-                        struct_name = expected_type
-                        struct_info = symbol_table.lookup_struct(expected_type)
-                    else:
-                        break
-
-                final_member = member_chain.pop()
-                struct_instance = ".".join(member_chain)
-                full_access = f"{struct_instance}.{final_member}"
-
-                if is_list:
-                    if tokens[index].type != "[":
-                        raise SemanticError(f"Semantic Error: Missing index for list '{full_access}'.", tokens[index].line)
-
-                    index += 1
-                    expr_node, index = parse_expression(tokens, index)
-
-                    if tokens[index].type != "]":
-                        raise SemanticError("Syntax Error: Missing closing bracket.", tokens[index].line)
-
-                    index_node = ASTNode("Index", line=tokens[index].line)
-                    index_node.add_child(expr_node)
-
-                    list_access_node = ListAccessNode(full_access, index_node, line=tokens[index].line)
-                    index += 1
-
-                if tokens[index].type == "[":
-                    raise SemanticError(f"Semantic Error: '{full_access}' is not a list.", tokens[index].line)
-
-
-                if expected_type not in {"forsen", "forsencd"}:
-                    raise SemanticError(f"Semantic Error (Type Error): Cannot use '{struct_instance}.{final_member}' of type {expected_type} in this expression.", token.line)
-
-                left_node = StructMemberAccessNode(struct_instance, final_member, member_type=expected_type, line=token.line)
-                if is_list:
-                    left_node.add_child(list_access_node)
 
             elif tokens[index].type == "identifier":
                 var_name = tokens[index].value
@@ -1711,91 +1438,6 @@ def parse_operand(tokens, index):
         list_access_node = ListAccessNode(list_name, index_node, line=token.line)
         return list_access_node, index, list_info["type"]
 
-    if (
-        token.type == "identifier" and
-        tokens[index + 1].type == "." and
-        tokens[index + 2].type == "identifier"
-    ):
-        start_index = index
-        struct_instance = token.value 
-        member_chain = [struct_instance]  
-        index += 1 
-
-        instance_info = symbol_table.lookup_variable(struct_instance)
-        if isinstance(instance_info, str):
-            raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", token.line)
-
-        struct_name = instance_info["type"]
-        struct_info = symbol_table.lookup_struct(struct_name)
-
-        if isinstance(struct_info, str):
-            raise SemanticError(struct_info, token.line)
-
-        while tokens[index].type == ".":
-            index += 1
-            if tokens[index].type != "identifier":
-                raise SemanticError(f"Syntax Error: Expected member name after '.'.", token.line)
-
-            member_name = tokens[index].value
-            member_chain.append(member_name)
-            index += 1
-
-            if member_name not in struct_info:
-                full_chain = ".".join(member_chain)
-                raise SemanticError(f"Semantic Error: Struct '{struct_name}' has no member '{member_name}' in '{full_chain}'.", token.line)
-
-            member_info = struct_info[member_name]
-            member_type = struct_info[member_name]["type"]
-            is_list = member_info.get("is_list", False)
-
-            if symbol_table.lookup_struct(member_type):
-                struct_name = member_type
-                struct_info = symbol_table.lookup_struct(member_type)
-            else:
-                break
-
-        full_access = ".".join(member_chain)
-        final_member = member_chain[-1]
-        full_chain = f"{struct_instance}.{final_member}"
-
-        if is_list:
-            if tokens[index].type != "[":
-                raise SemanticError(f"Semantic Error: Missing index for list '{full_access}'.", tokens[index].line)
-
-            index += 1
-            expr_node, index = parse_expression(tokens, index)
-
-            if tokens[index].type != "]":
-                raise SemanticError("Syntax Error: Missing closing bracket.", tokens[index].line)
-
-            index_node = ASTNode("Index", line=tokens[index].line)
-            index_node.add_child(expr_node)
-
-            list_access_node = ListAccessNode(full_access, index_node, line=tokens[index].line)
-            index += 1
-
-        if tokens[index].type == "[":
-            raise SemanticError(f"Semantic Error: '{full_access}' is not a list.", tokens[index].line)
-
-        if member_type in {"chungus", "chudeluxe"}:
-            expr_node, index = parse_expression(tokens, start_index)
-            return expr_node, index, member_type
-
-        elif member_type == "forsencd":
-            expr_node, index = parse_expression_forsencd(tokens, start_index)
-            return expr_node, index, member_type
-
-        elif member_type in {"forsen", "lwk"}:
-            struct_node = StructMemberAccessNode(full_access, final_member, member_type, line=token.line)
-            if is_list:
-                struct_node.add_child(list_access_node)
-
-            return struct_node, index, member_type
-
-        else:
-            raise SemanticError(f"Semantic Error (Type Error): Unsupported type '{member_type}' in struct member access.", token.line)
-
-
     # Chungus or Chudeluxe (arithmetic types)
     if token.type in {"chungus_lit", "chudeluxe_lit"}:
         expr_node, index = parse_expression(tokens, index)
@@ -2006,91 +1648,6 @@ def parse_print(tokens, index):
                 args.append(ASTNode("Value", full_access, line=line))
 
 
-        elif (
-            tokens[index].type == "identifier" and
-            tokens[index + 1].type == "." and
-            tokens[index + 2].type == "identifier"
-        ):
-            struct_instance = token.value 
-            member_chain = [struct_instance]
-            start_index = index
-            index += 1 
-
-
-            instance_info = symbol_table.lookup_variable(struct_instance)
-            if isinstance(instance_info, str):
-                raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", tokens[index].line)
-
-            struct_name = instance_info["type"]
-            struct_info = symbol_table.lookup_struct(struct_name)
-
-            while tokens[index].type == ".":
-                index += 1
-
-                if tokens[index].type != "identifier":
-                    raise SemanticError(f"Syntax Error: Expected member name after '.'.", tokens[index].line)
-
-                member_name = tokens[index].value
-                member_chain.append(member_name)
-                index += 1
-
-                if member_name not in struct_info:
-                    full_chain = ".".join(member_chain)
-                    raise SemanticError(f"Semantic Error: '{struct_name}' has no member '{member_name}' in '{full_chain}'.", token.line)
-
-                member_info = struct_info[member_name]
-                expected_type = struct_info[member_name]["type"]
-                is_list = member_info.get("is_list", False)
-
-                if symbol_table.lookup_struct(expected_type):
-                    struct_name = expected_type 
-                    struct_info = symbol_table.lookup_struct(expected_type)
-                else:
-                    break 
-
-            final_member = member_chain.pop()
-            struct_instance = ".".join(member_chain)
-            full_access = f"{struct_instance}.{final_member}"
-
-            if expected_type not in {"chungus", "chudeluxe", "forsencd", "forsen", "lwk"}:
-                expected_type = "aura"
-
-            if is_list:
-                if tokens[index].type != "[":
-                    raise SemanticError(f"Semantic Error: Missing index for list '{full_access}'.", tokens[index].line)
-
-                index += 1
-                expr_node, index = parse_expression(tokens, index)
-
-                if tokens[index].type != "]":
-                    raise SemanticError("Syntax Error: Missing closing bracket.", tokens[index].line)
-
-                index_node = ASTNode("Index", line=tokens[index].line)
-                index_node.add_child(expr_node)
-
-                list_access_node = ListAccessNode(full_access, index_node, line=tokens[index].line)
-                index += 1
-
-            if tokens[index].type == "[":
-                raise SemanticError(f"Semantic Error: '{full_access}' is not a list.", tokens[index].line)
-
-            struct_node = StructMemberAccessNode(struct_instance, final_member, member_type=expected_type, line=token.line)
-            
-            if is_list:
-                struct_node.add_child(list_access_node)
-                args.append(struct_node)
-
-            if expected_type in {"forsencd"}:
-                expr_node, index = parse_expression_forsencd(tokens, start_index)
-                args.append(expr_node)
-            
-            elif expected_type in {"chungus", "chudeluxe"}:
-                expr_node, index = parse_expression(tokens, start_index)
-                args.append(expr_node)
-
-            else:
-                args.append(ASTNode("Value", full_access, line=line))
-
         else:   
             arg_info = symbol_table.lookup_variable(identif_name)
             if isinstance(arg_info, str):
@@ -2138,79 +1695,6 @@ def parse_print(tokens, index):
             arg_node, index = parse_expression(tokens, index)
             actual_args.append(arg_node)
 
-        elif (
-            tokens[index].type == "identifier" and
-            tokens[index + 1].type == "." and
-            tokens[index + 2].type == "identifier"
-        ):
-            struct_instance = tokens[index].value 
-            member_chain = [struct_instance]
-            start_index = index
-            index += 1 
-
-            instance_info = symbol_table.lookup_variable(struct_instance)
-            if isinstance(instance_info, str):
-                raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", tokens[index].line)
-
-            struct_name = instance_info["type"]
-            struct_info = symbol_table.lookup_struct(struct_name)
-
-            while tokens[index].type == ".":
-                index += 1
-
-                if tokens[index].type != "identifier":
-                    raise SemanticError(f"Syntax Error: Expected member name after '.'.", tokens[index].line)
-
-                member_name = tokens[index].value
-                member_chain.append(member_name)
-                index += 1
-
-                if member_name not in struct_info:
-                    full_chain = ".".join(member_chain)
-                    raise SemanticError(f"Semantic Error: '{struct_name}' has no member '{member_name}' in '{full_chain}'.", token.line)
-
-                member_info = struct_info[member_name]
-                expected_type = struct_info[member_name]["type"]
-                is_list = member_info.get("is_list", False)
-
-                if symbol_table.lookup_struct(expected_type):
-                    struct_name = expected_type 
-                    struct_info = symbol_table.lookup_struct(expected_type)
-                else:
-                    break 
-
-            final_member = member_chain.pop()
-            struct_instance = ".".join(member_chain)
-            full_access = f"{struct_instance}.{final_member}"
-
-            if expected_type not in {"chungus", "chudeluxe", "forsencd", "forsen", "lwk"}:
-                expected_type = "aura"
-
-            if is_list:
-                if tokens[index].type != "[":
-                    raise SemanticError(f"Semantic Error: Missing index for list '{full_access}'.", tokens[index].line)
-
-                index += 1
-                expr_node, index = parse_expression(tokens, index)
-
-                if tokens[index].type != "]":
-                    raise SemanticError("Syntax Error: Missing closing bracket.", tokens[index].line)
-
-                index_node = ASTNode("Index", line=tokens[index].line)
-                index_node.add_child(expr_node)
-
-                list_access_node = ListAccessNode(full_access, index_node, line=tokens[index].line)
-                index += 1
-
-            if expected_type in {"chungus", "chudeluxe"}:
-                arg_node, index = parse_expression(tokens, start_index)
-                actual_args.append(arg_node)
-                
-            elif is_list:
-                actual_args.append(list_access_node)
-            
-            else:
-                actual_args.append(ASTNode("Value", full_access, line=line))
 
         elif tokens[index].type == "identifier" and tokens[index + 1].type == "[":
             print(tokens[index].type)
@@ -2396,7 +1880,7 @@ def parse_sturdy(tokens, index):
     if tokens[index].type == ",":
         raise SemanticError(f"Semantic Error: Multiple sturdy declaration is not allowed.", line)
 
-    error = symbol_table.declare_variable(var_name, var_type, value=value_node, is_list=False, is_struct=False, is_sturdy=True)
+    error = symbol_table.declare_variable(var_name, var_type, value=value_node, is_list=False, is_sturdy=True)
     if isinstance(error, str):
         raise SemanticError(error, line)
 
@@ -2980,236 +2464,6 @@ def parse_remove(tokens, index, var_name, expected_type):
     index += 1
 
     return RemoveNode(var_name, index_value, line=line), index
-
-
-def parse_struct(tokens, index):
-    line = tokens[index].line
-    index += 1 
-
-    if tokens[index].type != "identifier":
-        raise SemanticError(f"Semantic Error: Expected struct name after 'aura'.", line)
-
-    struct_name = tokens[index].value
-    index += 1
-
-    if tokens[index].type != "{":
-        raise SemanticError(f"Syntax Error: Expected '{{' to start struct body.", line)
-    index += 1
-
-    member_nodes = []
-    struct_members = {}
-
-    while tokens[index].type != "}":
-        line = tokens[index].line
-        
-        if tokens[index].value == "aura":
-            index += 1
-            if tokens[index].type != "identifier":
-                raise SemanticError(f"Semantic Error: Expected struct type name after 'aura'.", line)
-            member_type = tokens[index].value
-            struct_info = symbol_table.lookup_struct(member_type)
-            if isinstance(struct_info, str):
-                raise SemanticError(f"Semantic Error: Struct '{member_type}' is not defined.", line)
-            index += 1
-
-        elif tokens[index].value in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
-            member_type = tokens[index].value
-            index += 1
-
-        else:
-            raise SemanticError(f"Semantic Error: Expected valid data type in struct declaration.", line)
-        
-
-        if tokens[index].type != "identifier":
-            raise SemanticError(f"Semantic Error: Expected member variable name after data type.", line)
-
-        member_name = tokens[index].value
-        index += 1
-
-        if member_name == struct_name:
-            raise SemanticError(f"Semantic Error: Struct member name '{member_name}' cannot be the same as struct name.", line)
-
-        if member_name in struct_members:
-            raise SemanticError(f"Semantic Error: Duplicate member name '{member_name}' in struct '{struct_name}'.", line)
-
-        member_node = ASTNode("Member", f"{member_type} {member_name}", line=line)
-        default_value = None
-
-        if tokens[index].type == "=":
-            if member_type not in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
-                raise SemanticError(f"Semantic Error: Cannot assign a default value to struct member.", line)
-            
-            index += 1
-            default_value_node = ASTNode("DefaultValue", line=line)
-            if tokens[index].type == "[":  # List initialization
-                list_node, index = parse_list(tokens, index, member_type)
-                default_value_node.add_child(list_node)
-                default_value = list_node.elements
-            else:  # Regular value
-                default_node, index = parse_expression_type(tokens, index, member_type)
-                default_value_node.add_child(default_node)
-                default_value = default_node.value
-
-            member_node.add_child(default_value_node)
-
-        struct_members[member_name] = {
-            "type": member_type,
-            "default": default_value,
-            "is_list": isinstance(default_value, list)
-        }
-        member_nodes.append(member_node)
-
-    index += 1
-    symbol_table.declare_struct(struct_name, struct_members)
-    return StructNode(struct_name, member_nodes, line=line), index
-
-
-def parse_struct_instance(tokens, index):
-    line = tokens[index].line
-
-    if tokens[index].value == "aura":
-        index += 1
-
-    if tokens[index].type != "identifier":
-        raise SemanticError(f"Semantic Error: Expected struct name after 'aura'.", line)
-
-    struct_name = tokens[index].value
-    index += 1
-
-
-    struct_info = symbol_table.lookup_struct(struct_name)
-    if isinstance(struct_info, str):
-        raise SemanticError(f"Semantic Error: Struct '{struct_name}' is not defined.", line)
-
-    struct_instances = []
-    
-
-    while tokens[index].type == "identifier":
-        instance_name = tokens[index].value 
-        index += 1
-
-        instance_values = {} 
-
-        while tokens[index].type == ".":
-            index += 1
-
-            if tokens[index].type != "identifier":
-                raise SemanticError(f"Syntax Error: Expected struct member name after '.'.", line)
-            
-            member_name = tokens[index].value  
-            index += 1
-
-            if member_name not in struct_info:
-                raise SemanticError(f"Semantic Error: Struct '{struct_name}' has no member '{member_name}'.", line)
-            
-            if tokens[index].type != "=":
-                raise SemanticError(f"Syntax Error: Expected '=' in struct member assignment.", line)
-            index += 1
-
-            expected_type = struct_info[member_name]["type"]
-
-
-            if tokens[index].type == "[":
-                value_node, index = parse_list(tokens, index, expected_type)
-            else:
-                value_node, index = parse_expression_type(tokens, index, expected_type)
-            
-            instance_values[member_name] = value_node
-
-        symbol_table.declare_variable(instance_name, struct_name, is_struct=True)
-
-        struct_instances.append(StructInstanceNode(struct_name, instance_name, instance_values, line=line))
-
-        if tokens[index].type == ",":
-            index += 1
-
-        else:
-            break
-
-    if len(struct_instances) == 1:
-        return struct_instances[0], index
-    else:
-        struct_list_node = ASTNode("StructInstanceList")
-        for instance in struct_instances:
-            struct_list_node.add_child(instance)
-        return struct_list_node, index
-
-
-def parse_struct_member_assignment(tokens, index):
-    line = tokens[index].line
-
-    if tokens[index].type != "identifier":
-        raise SemanticError(f"Semantic Error: Expected struct instance name.", line)
-    
-    struct_instance = tokens[index].value
-    member_chain = [struct_instance]  
-    index += 1
-
-    instance_info = symbol_table.lookup_variable(struct_instance)
-    if isinstance(instance_info, str):
-        raise SemanticError(f"Semantic Error: Struct instance '{struct_instance}' is not declared.", line)
-    
-    current_struct_name = instance_info["type"]
-    current_struct_info = symbol_table.lookup_struct(current_struct_name)
-    
-    while tokens[index].type == ".":
-        index += 1 
-
-        if tokens[index].type != "identifier":
-            raise SemanticError(f"Syntax Error: Expected member name after '.'.", line)
-        member_name = tokens[index].value
-        member_chain.append(member_name)
-        index += 1
-
-        if member_name not in current_struct_info:
-            chain_str = ".".join(member_chain)
-            raise SemanticError(f"Semantic Error: '{current_struct_name}' has no member '{member_name}' in '{chain_str}'.", line)
-
-        member_info = current_struct_info[member_name]
-        member_type = current_struct_info[member_name]["type"]
-        is_list = member_info.get("is_list", False)
-
-        if symbol_table.lookup_struct(member_type):
-            current_struct_name = member_type  
-            current_struct_info = symbol_table.lookup_struct(member_type)  
-        else:
-            break
-
-    final_member = member_chain.pop()
-    struct_instance = ".".join(member_chain)
-    full_access = f"{struct_instance}.{final_member}"
-
-    if member_type not in {"chungus", "chudeluxe", "forsen", "forsencd", "lwk"}:
-        raise SemanticError(f"Semantic Error: Expected primitive type after struct member.", line)
-    
-
-    if tokens[index].type != "=":
-        chain_str = ".".join(member_chain)
-        raise SemanticError(f"Syntax Error: Expected '=' in struct member assignment for '{chain_str}'.", line)
-    index += 1
-
-    if is_list:
-        if tokens[index].type == "[":
-            value_node, index = parse_list(tokens, index, member_type)
-
-        elif tokens[index].value == "append":
-            value_node, index = parse_append(tokens, index, full_access, member_type)
-
-        elif tokens[index].value == "insert":
-            value_node, index = parse_insert(tokens, index, full_access, member_type)
-
-        elif tokens[index].value == "remove":
-            value_node, index = parse_remove(tokens, index, full_access, member_type)
-
-        else:
-            raise SemanticError(f"Semantic Error: Invalid statement for list assignment for '{full_access}'.", line)
-
-    else:
-        value_node, index = parse_expression_type(tokens, index, member_type)
-
-    struct_member_node = StructMemberAssignmentNode(struct_instance, full_access, value_node, line=line)
-
-    return struct_member_node, index
 
 
 def is_inside_loop_or_switch_stack():

@@ -50,7 +50,6 @@ unary_dlm = ' )\t\n,' + ALPHANUM
 #TOKENS
 
 TT_RW_APPEND        = 'append'
-TT_RW_AURA          = 'aura'
 TT_RW_BACK          = 'back'
 TT_RW_CASEOH        = 'caseoh'
 TT_RW_CHAT          = 'chat'
@@ -136,7 +135,7 @@ TT_COMMENT      = 'comment' # Comments
 
 
 #reference only
-RESERVED_KEYWORDS = ['append', 'aura', 'back', 'caseoh', 'chat', 'chudeluxe', 'chungus', 'false', 'fein', 'forsen', 'getout', 'gng', 'hawk', 'hawk tuah', 'insert', 'jit', 'lethimcook', 'lwk', 'nocap', 'npc', 'pause', 'plug', 'remove', 'skibidi', 'sturdy', 'true', 'tuah', 'yap']
+RESERVED_KEYWORDS = ['append', 'back', 'caseoh', 'chat', 'chudeluxe', 'chungus', 'false', 'fein', 'forsen', 'getout', 'gng', 'hawk', 'hawk tuah', 'insert', 'jit', 'lethimcook', 'lwk', 'nocap', 'npc', 'pause', 'plug', 'remove', 'skibidi', 'sturdy', 'true', 'tuah', 'yap']
 RESERVED_SYMBOLS = [
     # Unary Operators
     '++', '--', '-',
@@ -269,25 +268,6 @@ class Lexer:
                                             self.advance()
                                             continue
                                             
-                    elif self.current_char == "u":
-                        ident_str += self.current_char
-                        ident_count+=1
-                        self.advance()
-                        if self.current_char == "r":
-                            ident_str += self.current_char
-                            ident_count+=1
-                            self.advance()
-                            if self.current_char == "a":
-                                ident_str += self.current_char
-                                ident_count+=1
-                                self.advance()
-                                if self.current_char is None or self.current_char in spc_dlm:
-                                    tokens.append(Token(TT_RW_AURA, ident_str, line))
-                                    continue
-                                elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
-                                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                    self.advance()
-                                    continue
                 #Letter B
                 if self.current_char == "b":
                     ident_str += self.current_char
@@ -1043,7 +1023,7 @@ class Lexer:
                                 self.advance()
                                 continue
 
-                            
+                #Identifier            
                 maxIdentifierLength = 20
                 while self.current_char is not None and self.current_char in ALPHANUM + "_":
                     ident_str += self.current_char
@@ -1061,7 +1041,6 @@ class Lexer:
                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                     self.advance()
                     continue
-
 
 
             elif self.current_char == "+":

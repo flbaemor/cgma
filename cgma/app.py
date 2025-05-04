@@ -78,10 +78,6 @@ def replace_tokens(error_message):
     return modified_message
 
 
-#def replace_tokens(error_message):                              
-    #modified_message = error_message.replace("[')', ',', ']']", "[',', ']']").replace("[')', ']', ',']", "[',', ']']").replace("[']', ')', ',']", "[',', ']']").replace("[',', ')', ']']", "[',', ']']").replace("[',', ']', ')']", "[',', ']']").replace("[',', ']', ')'", "[',', ']']").replace("neg", "-").replace("[',', 'nl', ';']", "[',', 'nl']").replace("[',', ';', 'nl']", "[',', 'nl']").replace("['nl', ',', ';']", "[',', 'nl']").replace("[';', ',', 'nl']", "[',', 'nl']").replace("['nl', ';', ',']", "[',', 'nl']").replace("[',', 'nl', ',']", "[',', 'nl']")
-    #return modified_message
-
 @app.route('/api/semantic', methods=['POST'])
 def semantic_analysis():
     print("\nDEBUG: semantic_analysis() called!\n")

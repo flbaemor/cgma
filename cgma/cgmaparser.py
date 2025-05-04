@@ -60,7 +60,7 @@ class LL1Parser:
                     return False, error_messages
             
 
-            ###########remove if error xd#############
+            ###########################################
             elif top == 'EOF':
                 while token_type == 'nl':
                     index += 1

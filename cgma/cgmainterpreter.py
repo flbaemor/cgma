@@ -53,7 +53,7 @@ class Interpreter:
 
 
     ###### VARIABLE ######
-    def declare_variable(self, name, type_, value=None, is_list=False, is_struct=False, is_sturdy=False):
+    def declare_variable(self, name, type_, value=None, is_list=False, is_sturdy=False):
         scope = self.scopes[-1]
         current_func = self.current_func_name
     
@@ -66,7 +66,6 @@ class Interpreter:
                 "type": type_,  
                 "value": value,
                 "is_list": is_list,
-                "is_struct": is_struct,
                 "is_sturdy": is_sturdy
                 }
         else:
@@ -77,7 +76,6 @@ class Interpreter:
                 "type": type_,
                 "value": value,
                 "is_list": is_list,
-                "is_struct": is_struct,
                 "is_sturdy": is_sturdy
             }
             self.global_variables[name] = self.variables[name]
@@ -251,7 +249,7 @@ class Interpreter:
         var_name = node.children[1].value
         value_node = node.children[2]
         value = self.interpret(value_node)
-        self.declare_variable(var_name, var_type, value, is_list=False, is_struct=False,  is_sturdy=True)
+        self.declare_variable(var_name, var_type, value, is_list=False,  is_sturdy=True)
 
     def visit_assignment(self, node):
         target_node = node.children[0]
