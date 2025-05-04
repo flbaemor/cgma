@@ -1644,9 +1644,6 @@ def parse_print(tokens, index):
             elif list_info["is_list"]:
                 args.append(list_access_node)
             
-            else:
-                args.append(ASTNode("Value", full_access, line=line))
-
 
         else:   
             arg_info = symbol_table.lookup_variable(identif_name)
@@ -1702,6 +1699,7 @@ def parse_print(tokens, index):
             list_name = tokens[index].value
             list_info = symbol_table.lookup_variable(list_name)
             list_type = list_info["type"]
+            is_list = list_info["is_list"]
             
             if isinstance(list_info, str):
                 raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", tokens[index].line)
@@ -1728,8 +1726,6 @@ def parse_print(tokens, index):
             elif is_list:
                 actual_args.append(list_access_node)
             
-            else:
-                actual_args.append(ASTNode("Value", full_access, line=line))
 
         elif tokens[index].type == "identifier" and tokens[index+1].type == "(":
             func_name = tokens[index].value
