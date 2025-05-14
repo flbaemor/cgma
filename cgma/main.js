@@ -172,7 +172,7 @@
               console.log("Running lexer with source code:", sourceCode);
           
               term.clear();
-              term.write('Running lexer...\r\n');
+              term.write('Running lexical analysis...\r\n');
           
               try {
                   const response = await fetch('/api/lex', {
@@ -198,7 +198,7 @@
                   if (data.errors.length > 0) {
                       term.write('Lexical Errors:\r\n');
                       data.errors.forEach(err => {
-                          term.write(`[Error] ${err}\r\n`);
+                          term.write(`${err}\r\n`);
                       });
                   } else {
                       term.write('Lexical analysis successful!\r\n');
@@ -206,7 +206,7 @@
                   }
           
               } catch (error) {
-                  console.error("Error running lexer:", error);
+                  console.error("Error running lexical analysis:", error);
                   term.write('Error running lexical analysis.\r\n');
                   return false;
               }
@@ -243,7 +243,7 @@
                 } else {
                   term.write('Syntax Errors:\r\n');
                   data.errors.forEach(err => {
-                  term.write(`[Error] ${err}\r\n`);
+                  term.write(`${err}\r\n`);
                   });
                 }
             
@@ -286,7 +286,7 @@
                 } else {
                   term.write('Semantic Errors:\r\n');
                   data.errors.forEach(err => {
-                    term.write(`[Error] ${err}\r\n`);
+                    term.write(`${err}\r\n`);
                   });
                 }
             

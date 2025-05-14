@@ -155,7 +155,7 @@ class LexicalError:
 
     def as_string(self): #Returns the error message in string format
         self.details = self.details.replace('\n', '\\n')
-        return f"Ln {self.pos.ln + 1} Lexical Error: {self.details}"
+        return f"Ln {self.pos.ln} Lexical Error: {self.details}"
     
 
 #TOKEN
@@ -169,7 +169,7 @@ class Token:
 class Lexer:
     def __init__(self, source_code): 
         self.source_code = source_code #Actual source code (passed from app.py)
-        self.pos = Position(-1, 0) #Position of the current character (-1 = before the first character, 0 = before the first line)
+        self.pos = Position(-1, 1) #Position of the current character (-1 = before first character, 1 = first line)
         self.current_char = None
         self.advance()
 
