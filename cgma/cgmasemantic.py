@@ -1,3 +1,5 @@
+import re
+
 ##### ERROR ######
 class SemanticError(Exception):
     def __init__(self, message,  line):
