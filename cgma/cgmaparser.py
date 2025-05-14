@@ -16,6 +16,8 @@ class LL1Parser:
                 if predict_key in self.predict_sets:
                     for terminal in self.predict_sets[predict_key]:
                         parsing_table[non_terminal][terminal] = production
+        #for non_terminal in parsing_table:
+            #print(f"Parsing table for {non_terminal}: {parsing_table[non_terminal]}")
         return parsing_table
 
     def parse(self, tokens):
@@ -32,11 +34,11 @@ class LL1Parser:
 
             #print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
-            if top == token_type or top == token_value:
+            if top == token_type:
                 #print(f"Matched: {top}")
                 index += 1 
                 
-            elif top in self.parsing_table:
+            elif top in self.parsing_table: # top is non terminal
                 if token_type in self.parsing_table[top]:
                     production = self.parsing_table[top][token_type]
                     #print(f"Expand: {top} → {' '.join(production)}")
@@ -44,7 +46,7 @@ class LL1Parser:
                         self.stack.extend(reversed(production))
                     #print(f"Updated Stack: {self.stack}")
                 else:
-                    expected_tokens = list(set(self.parsing_table[top].keys()) - {'$', 'ε'})
+                    expected_tokens = list(set(self.parsing_table[top].keys()) - {'ε'})
                     error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: {expected_tokens}"
                     #print(error_message)
                     error_messages.append(error_message)
@@ -74,4 +76,4 @@ class LL1Parser:
         
         else:
             #print("Error: Tokens remaining after parsing")
-            return False, ["Error: Tokens remaining after parsing"]
+            return False, error_messages

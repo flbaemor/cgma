@@ -57,6 +57,7 @@ def parse():
         return jsonify({'success': False, 'errors': modified_parse_errors})
     return jsonify({'success': True, 'errors': []})
 
+
 def replace_tokens(error_message):
     modified_message = error_message.replace("[')', ',', ']']", "[',', ']']").replace("[')', ']', ',']", "[',', ']']").replace("[']', ')', ',']", "[',', ']']").replace("[',', ')', ']']", "[',', ']']").replace("[',', ']', ')']", "[',', ']']").replace("[',', ']', ')'", "[',', ']']").replace("[',', 'nl', ';']", "[',', 'nl']").replace("[',', ';', 'nl']", "[',', 'nl']").replace("['nl', ',', ';']", "[',', 'nl']").replace("[';', ',', 'nl']", "[',', 'nl']").replace("['nl', ';', ',']", "[',', 'nl']").replace("[',', 'nl', ',']", "[',', 'nl']")
 
