@@ -348,30 +348,7 @@ class Lexer:
                             ident_str += self.current_char
                             ident_count+=1
                             self.advance()
-                            if self.current_char == "n":
-                                ident_str += self.current_char
-                                ident_count+=1
-                                self.advance()
-                                if self.current_char == "g":
-                                    ident_str += self.current_char
-                                    ident_count+=1
-                                    self.advance() 
-                                    if self.current_char == "u":
-                                        ident_str += self.current_char
-                                        ident_count+=1
-                                        self.advance()      
-                                        if self.current_char == "s":
-                                            ident_str += self.current_char
-                                            ident_count+=1
-                                            self.advance()
-                                            if self.current_char is None or self.current_char in convert_dlm:
-                                                tokens.append(Token(TT_RW_CHUNGUS, ident_str, line))
-                                                continue
-                                            elif self.current_char is not None and self.current_char not in convert_dlm and self.current_char not in ALPHANUM:
-                                                errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                                self.advance()
-                                                continue
-                            elif self.current_char == "d":
+                            if self.current_char == "d":
                                 ident_str += self.current_char
                                 ident_count+=1
                                 self.advance()
@@ -402,6 +379,30 @@ class Lexer:
                                                         errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                                                         self.advance()
                                                         continue
+
+                            elif self.current_char == "n":
+                                ident_str += self.current_char
+                                ident_count+=1
+                                self.advance()
+                                if self.current_char == "g":
+                                    ident_str += self.current_char
+                                    ident_count+=1
+                                    self.advance() 
+                                    if self.current_char == "u":
+                                        ident_str += self.current_char
+                                        ident_count+=1
+                                        self.advance()      
+                                        if self.current_char == "s":
+                                            ident_str += self.current_char
+                                            ident_count+=1
+                                            self.advance()
+                                            if self.current_char is None or self.current_char in convert_dlm:
+                                                tokens.append(Token(TT_RW_CHUNGUS, ident_str, line))
+                                                continue
+                                            elif self.current_char is not None and self.current_char not in convert_dlm and self.current_char not in ALPHANUM:
+                                                errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                                                self.advance()
+                                                continue
 
                 # Letter F
                 if self.current_char == "f":
@@ -487,6 +488,7 @@ class Lexer:
                                                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                                                     self.advance()
                                                     continue
+
                                         if self.current_char is None or self.current_char in spc_dlm:
                                             tokens.append(Token(TT_RW_FORSEN, ident_str, line))
                                             continue
@@ -528,21 +530,6 @@ class Lexer:
                                             errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                                             self.advance()
                                             continue
-                    if self.current_char == "n":
-                        ident_str += self.current_char
-                        ident_count += 1
-                        self.advance
-                        if self.current_char == "g":
-                            ident_str += self.current_char
-                            ident_count+=1
-                            self.advance()
-                            if self.current_char is None or self.current_char in spc_dlm:
-                                tokens.append(Token(TT_RW_GNG, ident_str, line))
-                                continue
-                            elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
-                                errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                self.advance()
-                                continue
 
                 # Letter H
                 if self.current_char == "h":
@@ -1042,29 +1029,32 @@ class Lexer:
                     self.advance()
                     continue
 
-
-            elif self.current_char == "+":
+            
+            elif self.current_char == "-":
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
                 self.advance()
-                if self.current_char == "+":
+                if self.current_char in ALPHANUM or self.current_char == "(":
+                    tokens.append(Token(TT_NEGAT, ident_str, line))
+                    continue
+                elif self.current_char == "-":
                     ident_str += self.current_char
                     self.advance()
                     if self.current_char is None or self.current_char in unary_dlm:
-                        tokens.append(Token(TT_INC, ident_str, line))
+                        tokens.append(Token(TT_DEC, ident_str, line))
                         continue
                     else:
                         errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                         self.advance()
                         continue
-                elif self.current_char is not None and self.current_char in plus_dlm:
-                    tokens.append(Token(TT_PLUS, ident_str, line))
+                elif self.current_char is not None and self.current_char in minus_dlm:
+                    tokens.append(Token(TT_MINUS, ident_str, line))
                     continue
                 else:
                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                     self.advance()
                     continue
-                
+            
             elif self.current_char == "!":
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
@@ -1088,6 +1078,7 @@ class Lexer:
                     continue
 
                 
+            
             elif self.current_char == "%":
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
@@ -1143,32 +1134,6 @@ class Lexer:
                     self.advance()
                     continue
                 
-
-            elif self.current_char == "-":
-                ident_str = self.current_char
-                pos_start = self.pos.copy()
-                self.advance()
-                if self.current_char in ALPHANUM or self.current_char == "(":
-                    tokens.append(Token(TT_NEGAT, ident_str, line))
-                    continue
-                elif self.current_char == "-":
-                    ident_str += self.current_char
-                    self.advance()
-                    if self.current_char is None or self.current_char in unary_dlm:
-                        tokens.append(Token(TT_DEC, ident_str, line))
-                        continue
-                    else:
-                        errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
-                        continue
-                elif self.current_char is not None and self.current_char in minus_dlm:
-                    tokens.append(Token(TT_MINUS, ident_str, line))
-                    continue
-                else:
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
-                    continue
-
             elif self.current_char == "*":
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
@@ -1340,6 +1305,28 @@ class Lexer:
                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid character '{ident_str}'"))
                     self.advance()
                     continue
+            
+            elif self.current_char == "+":
+                ident_str = self.current_char
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == "+":
+                    ident_str += self.current_char
+                    self.advance()
+                    if self.current_char is None or self.current_char in unary_dlm:
+                        tokens.append(Token(TT_INC, ident_str, line))
+                        continue
+                    else:
+                        errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                        self.advance()
+                        continue
+                elif self.current_char is not None and self.current_char in plus_dlm:
+                    tokens.append(Token(TT_PLUS, ident_str, line))
+                    continue
+                else:
+                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                    self.advance()
+                    continue
 
             elif self.current_char == "<":
                 ident_str = self.current_char
@@ -1357,6 +1344,28 @@ class Lexer:
                         continue
                 elif self.current_char is not None and self.current_char in arith_operator_dlm:
                     tokens.append(Token(TT_LT, ident_str, line))
+                    continue
+                else:
+                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                    self.advance()
+                    continue
+            
+            elif self.current_char == "=":
+                ident_str = self.current_char
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == "=":
+                    ident_str += self.current_char
+                    self.advance()
+                    if self.current_char is not None and self.current_char in relat_dlm:
+                        tokens.append(Token(TT_EQ, ident_str, line))
+                        continue
+                    else:
+                        errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                        self.advance()
+                        continue
+                elif self.current_char is not None and self.current_char in equal_dlm:
+                    tokens.append(Token(TT_IS, ident_str, line))
                     continue
                 else:
                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
@@ -1385,40 +1394,72 @@ class Lexer:
                     self.advance()
                     continue
 
-            elif self.current_char == "=":
+
+            elif self.current_char == '\n':
+                pos_start = self.pos.copy()
+                while self.current_char == '\t' or self.current_char == ' ' or self.current_char == '\n':
+                    if self.current_char == '\t' or self.current_char == ' ':
+                        self.advance()
+                    else:
+                        line += 1
+                        self.advance()
+
+                if tokens and tokens[-1].type != TT_NL:
+                    tokens.append(Token(TT_NL, "\\n", line))
+                continue
+                
+            elif self.current_char == '\t':
+                ident_str = self.current_char
+                pos_start = self.pos.copy()
+                while self.current_char == '\t':
+                    self.advance()
+                
+            elif self.current_char == ' ':
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
                 self.advance()
-                if self.current_char == "=":
+                while self.current_char == ' ':
+                    self.advance()
+
+            elif self.current_char == "/":
+                ident_str = self.current_char
+                pos_start = self.pos.copy()
+                self.advance()
+                if self.current_char == "/":
                     ident_str += self.current_char
                     self.advance()
-                    if self.current_char is not None and self.current_char in relat_dlm:
-                        tokens.append(Token(TT_EQ, ident_str, line))
-                        continue
-                    else:
-                        errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                    while self.current_char is not None and self.current_char != "\n":
+                        ident_str += self.current_char
                         self.advance()
+                    #tokens.append(Token(TT_COMMENT, ident_str, line))
+                    continue
+                elif self.current_char == "*":
+                    ident_str += self.current_char
+                    self.advance()
+                    while self.current_char is not None:
+                        if self.current_char == "*" and self.text[self.pos.idx + 1] == "/":
+                            ident_str += "*/"
+                            self.advance()
+                            self.advance()
+                            break
+                        else:
+                            ident_str += self.current_char
+                            if self.current_char == "\n":
+                                line += 1
+                            self.advance()
+                    #tokens.append(Token(TT_COMMENT, ident_str, line))
+                    if self.current_char is None:
+                        errors.append(IllegalCharError(pos_start, self.pos, f"Missing closing '*/' after '{ident_str}'"))
                         continue
-                elif self.current_char is not None and self.current_char in equal_dlm:
-                    tokens.append(Token(TT_IS, ident_str, line))
+                    continue    
+                elif self.current_char is not None and self.current_char in arith_operator_dlm:
+                    tokens.append(Token(TT_DIV, ident_str, line))
                     continue
                 else:
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{string}'"))
                     self.advance()
                     continue
             
-            elif self.current_char == ":":
-                ident_str = self.current_char
-                pos_start = self.pos.copy()
-                self.advance()
-                if self.current_char is None or self.current_char in endln_dlm:
-                    tokens.append(Token(TT_COL, ident_str, line))
-                    continue
-                else:
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
-                    continue
-                
             elif self.current_char == ".":
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
@@ -1444,35 +1485,18 @@ class Lexer:
                     errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                     self.advance()
                     continue
-
-            elif self.current_char == '\n':
-                pos_start = self.pos.copy()
-                while self.current_char == '\t' or self.current_char == ' ' or self.current_char == '\n':
-                    if self.current_char == '\t' or self.current_char == ' ':
-                        self.advance()
-                    else:
-                        line += 1
-                        self.advance()
-
-                if tokens and tokens[-1].type != TT_NL:
-                    tokens.append(Token(TT_NL, "\\n", line))
-                continue
-                
-
-            elif self.current_char == '\t':
-                ident_str = self.current_char
-                pos_start = self.pos.copy()
-                while self.current_char == '\t':
-                    self.advance()
-                
-
-            elif self.current_char == ' ':
+            
+            elif self.current_char == ":":
                 ident_str = self.current_char
                 pos_start = self.pos.copy()
                 self.advance()
-                while self.current_char == ' ':
+                if self.current_char is None or self.current_char in endln_dlm:
+                    tokens.append(Token(TT_COL, ident_str, line))
+                    continue
+                else:
+                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                     self.advance()
-                
+                    continue
 
             elif self.current_char in NUM:
 
@@ -1605,46 +1629,6 @@ class Lexer:
                 tokens.append(Token(TT_FORSEN, string, line))
                 continue
 
-
-            elif self.current_char == "/":
-                ident_str = self.current_char
-                pos_start = self.pos.copy()
-                self.advance()
-                if self.current_char == "/":
-                    ident_str += self.current_char
-                    self.advance()
-                    while self.current_char is not None and self.current_char != "\n":
-                        ident_str += self.current_char
-                        self.advance()
-                    #tokens.append(Token(TT_COMMENT, ident_str, line))
-                    continue
-                elif self.current_char == "*":
-                    ident_str += self.current_char
-                    self.advance()
-                    while self.current_char is not None:
-                        if self.current_char == "*" and self.text[self.pos.idx + 1] == "/":
-                            ident_str += "*/"
-                            self.advance()
-                            self.advance()
-                            break
-                        else:
-                            ident_str += self.current_char
-                            if self.current_char == "\n":
-                                line += 1
-                            self.advance()
-                    #tokens.append(Token(TT_COMMENT, ident_str, line))
-                    if self.current_char is None:
-                        errors.append(IllegalCharError(pos_start, self.pos, f"Missing closing '*/' after '{ident_str}'"))
-                        continue
-                    continue    
-                elif self.current_char is not None and self.current_char in arith_operator_dlm:
-                    tokens.append(Token(TT_DIV, ident_str, line))
-                    continue
-                else:
-                    errors.append(IllegalCharError(pos_start, self.pos, f"Invalid delimiter '{self.current_char}' after '{string}'"))
-                    self.advance()
-                    continue
-            
             else:
                 pos_start = self.pos.copy()
                 char = self.current_char
