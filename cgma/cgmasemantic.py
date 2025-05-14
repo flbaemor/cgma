@@ -1,10 +1,3 @@
-from cgmalexer import Lexer  
-from cfg import cfg, predict_sets  
-from cgmaparser import LL1Parser
-from flask import Flask, request, jsonify  
-from flask_cors import CORS 
-import re
-
 ##### ERROR ######
 class SemanticError(Exception):
     def __init__(self, message,  line):

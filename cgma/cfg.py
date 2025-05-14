@@ -89,7 +89,7 @@ def compute_predict(cfg, first, follow):
             else:
                 first_set.add(epsilon)
             
-            predict[predict_key] = first_set
+            predict[predict_key] = first_set - {epsilon}
             if epsilon in first_set:
                 predict[predict_key] |= follow[lhs]
     return predict
@@ -254,7 +254,7 @@ for non_terminal, productions in cfg.items():
         production_str = " ".join([symbol.strip("<>").upper() if symbol.startswith("<") else symbol for symbol in production])
         production_str = "''" if production_str == "ε" else production_str
         print(f"{non_terminal} ::= {production_str}")
-
+'''
 
 print("FIRST SET:")
 for non_terminal in first_sets.keys():
@@ -270,4 +270,4 @@ print("\n\nPREDICT SET:")
 for (lhs, prod), predict_set in predict_sets.items():
     prod_str = " ".join(prod).replace("''", "")  # Remove '' in productions
     predict_set_str = ", ".join(predict_set).replace("''", "")  # Remove '' in predict set
-    print(f"Predict({lhs} → {prod_str}) -> {{{predict_set_str}}}")'''
+    print(f"Predict({lhs} → {prod_str}) -> {{{predict_set_str}}}")

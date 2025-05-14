@@ -1,11 +1,3 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from cgmalexer import Lexer
-from cfg import cfg, predict_sets
-
-app = Flask(__name__)
-CORS(app)
-
 # LL(1) Parser Class
 class LL1Parser:
     def __init__(self, cfg, predict_sets):
@@ -14,7 +6,6 @@ class LL1Parser:
         self.parsing_table = self.construct_parsing_table()
         self.stack = []
         self.tokens = []
-        self.current_token_index = 0
 
     def construct_parsing_table(self):
         parsing_table = {}
@@ -60,7 +51,6 @@ class LL1Parser:
                     return False, error_messages
             
 
-            ###########################################
             elif top == 'EOF':
                 while token_type == 'nl':
                     index += 1
@@ -71,7 +61,6 @@ class LL1Parser:
                     error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: 'EOF'"
                     error_messages.append(error_message)
                     return False, error_messages
-            ###########################################
                     
             else:
                 error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: '{top}'"
