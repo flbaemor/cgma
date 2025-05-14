@@ -116,7 +116,6 @@ def semantic_analysis():
 def output():
     data = request.json
     source_code = data.get('source_code', '')
-    user_inputs = data.get('user_inputs', {})
 
     # Lexical analysis
     tokens, errors = lexer_run(source_code)
