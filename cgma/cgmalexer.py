@@ -161,7 +161,7 @@ class LexicalError:
 #TOKEN
 class Token:
     def __init__(self, type_, value=None, line=1): 
-        self.type = type_ #Type of the token (identifier, chungus_lit, skibidi, +, "hello")
+        self.type = type_ #Type of the token (identifier, chungus_lit, skibidi, +)
         self.value = value #Lexeme (num, 5, "hi", chungus, +, etc)
         self.line = line #Line number of the token (used for errors in syntax and semantic analysis)
 

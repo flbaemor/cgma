@@ -8,7 +8,12 @@ class LL1Parser:
         self.tokens = []
 
     def construct_parsing_table(self):
-        parsing_table = {}
+        ###############################################################################################################
+        #kinukuha dito yung every value sa predict set ng kada production ng non terminal (left hand side ng cfg), 
+        #tapos nilalagay yung value with the corresponding production sa parsing table
+        #ginagamit sha para ma check kung anong production gagamitin depending sa current token
+        ###############################################################################################################
+        parsing_table = {} 
         for non_terminal, productions in self.cfg.items():
             parsing_table[non_terminal] = {}
             for production in productions:
@@ -21,39 +26,42 @@ class LL1Parser:
         return parsing_table
 
     def parse(self, tokens):
-        self.stack = ['EOF', list(self.cfg.keys())[0]]
+        self.stack = ['EOF', list(self.cfg.keys())[0]] #dulo ng stack is EOF tapos <program>
         index = 0
         error_messages = []
 
         while self.stack:
-            top = self.stack.pop()
-            token = tokens[index]
+            top = self.stack.pop() #dulo ng stack
+            token = tokens[index] 
             token_type = token.type  
             token_value = token.value  
             line = token.line
 
-            #print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
+            print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
             if top == token_type:
-                #print(f"Matched: {top}")
-                index += 1 
+                print(f"Matched: {top}")
+                index += 1 #skip sa next token
                 
             elif top in self.parsing_table: # top is non terminal
-                if token_type in self.parsing_table[top]:
-                    production = self.parsing_table[top][token_type]
-                    #print(f"Expand: {top} → {' '.join(production)}")
+                if token_type in self.parsing_table[top]: #checks if current token is nasa parsing table nung production na un
+                    production = self.parsing_table[top][token_type] #expands the non terminal (ex. <program> to <global_dec> <func_dec> skibidi...)
+                    print(f"Expand: {top} → {' '.join(production)}")
+                    
                     if production != ['ε']:
-                        self.stack.extend(reversed(production))
-                    #print(f"Updated Stack: {self.stack}")
+                        self.stack.extend(reversed(production)) #adds the production to the stack
+                    print(f"Updated Stack: {self.stack}")
                 else:
-                    expected_tokens = list(set(self.parsing_table[top].keys()) - {'ε'})
+                    expected_tokens = list(set(self.parsing_table[top].keys()))
+                    
+                    print(expected_tokens)
                     error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: {expected_tokens}"
                     #print(error_message)
                     error_messages.append(error_message)
                     return False, error_messages
             
 
-            elif top == 'EOF':
+            elif top == 'EOF': #skips newlines at the beginning and end
                 while token_type == 'nl':
                     index += 1
                     token = tokens[index]
