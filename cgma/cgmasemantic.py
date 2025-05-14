@@ -25,9 +25,9 @@ class SemanticAnalyzer:
 class ASTNode:
     def __init__(self, node_type, value=None, line=None):
         self.node_type = node_type  # Type of node (e.g., 'VariableDeclaration', 'BinaryOp')
-        self.value = value  # Optional: variable name, operator, etc.
+        self.value = value  # E.g. variable name, operator, etc.
         self.children = []  # List of child nodes
-        self.parent = None  # Reference to parent node (optional)
+        self.parent = None  # Reference to parent node
         self.line = line
 
     def add_child(self, child):

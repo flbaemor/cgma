@@ -131,12 +131,12 @@ TT_ESCAPESEQUENCE = 'escapesequence' # Escape Sequence
 TT_COMMENT      = 'comment' # Comments
 
 
-class Position:
+class Position: #Position of the current character
     def __init__(self, index, ln):
         self.index = index
         self.ln = ln
 
-    def advance(self, current_char):
+    def advance(self, current_char): #Advance to the next character
         self.index += 1
 
         if current_char == '\n':
@@ -144,103 +144,90 @@ class Position:
 
         return self
     
-    def copy(self):
+    def copy(self): #Retruns the current position(index, line) of the character
         return Position(self.index, self.ln)
         
 #ERROR
 class LexicalError:
-    def __init__(self, pos, details):
+    def __init__(self, pos, details): #Position of the error and the details of the error
         self.pos = pos
         self.details = details
 
-    def as_string(self):
+    def as_string(self): #Returns the error message in string format
         self.details = self.details.replace('\n', '\\n')
         return f"Ln {self.pos.ln + 1} Lexical Error: {self.details}"
     
 
 #TOKEN
 class Token:
-    def __init__(self, type_, value=None, line=1):
-        self.type = type_
-        self.value = value
-        self.line = line
-
-    def __repr__(self):
-        if self.value: return f'{self.type}:{self.value} (Ln {self.line})'  
-        return f'{self.type}'
-    
+    def __init__(self, type_, value=None, line=1): 
+        self.type = type_ #Type of the token (identifier, chungus_lit, skibidi, +, "hello")
+        self.value = value #Lexeme (num, 5, "hi", chungus, +, etc)
+        self.line = line #Line number of the token (used for errors in syntax and semantic analysis)
 
 #LEXER
 class Lexer:
-    def __init__(self, fn, text):
-        self.fn = fn
-        self.text = text
-        self.pos = Position(-1, 0)
+    def __init__(self, source_code): 
+        self.source_code = source_code #Actual source code (passed from app.py)
+        self.pos = Position(-1, 0) #Position of the current character (-1 = before the first character, 0 = before the first line)
         self.current_char = None
         self.advance()
 
-    def advance(self):
+    def advance(self): #Advance to the next character
         self.pos.advance(self.current_char)
-        self.current_char = self.text[self.pos.index] if self.pos.index<len(self.text) else None
+        self.current_char = self.source_code[self.pos.index] if self.pos.index<len(self.source_code) else None #sets the current character to the next character in the source code
 
     def make_tokens(self):
-        tokens = []
+        tokens = [] #List of tokens
         line = 1
         errors = []
         while self.current_char != None:
             if self.current_char in ALPHA:
                 ident_str = ''
-                ident_count = 0
                 pos = self.pos.copy()
                 #Letter A
                 if self.current_char == "a":
                     ident_str += self.current_char
-                    ident_count+=1
                     self.advance()
                     if self.current_char == "p":
                         ident_str += self.current_char
-                        ident_count+=1
                         self.advance()
                         if self.current_char == "p":
                             ident_str += self.current_char
-                            ident_count+=1
                             self.advance()
                             if self.current_char == "e":
                                 ident_str += self.current_char
-                                ident_count+=1
                                 self.advance()
                                 if  self.current_char == "n":
                                     ident_str += self.current_char
-                                    ident_count+=1
                                     self.advance()
                                     if self.current_char == "d":
                                         ident_str += self.current_char
-                                        ident_count+=1
                                         self.advance()
                                         if self.current_char is not None and self.current_char in com_dlm:
-                                            tokens.append(Token(TT_RW_APPEND, ident_str, line))
+                                            tokens.append(Token(TT_RW_APPEND, ident_str, line)) #Adds the token to the list of tokens
                                             continue
                                         elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
-                                            errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                                            errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")) #Adds the error to the list of errors
                                             self.advance()
                                             continue
                                             
                 #Letter B
                 if self.current_char == "b":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "a":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "c":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "k":
                                 ident_str += self.current_char
-                                ident_count+=1
+                                
                                 self.advance()
                                 if self.current_char is None or self.current_char in endln_dlm:
                                     tokens.append(Token(TT_RW_BACK, ident_str, line))
@@ -253,27 +240,27 @@ class Lexer:
                 #Letter C
                 if self.current_char == "c":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "a":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "s":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "e":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "o":
                                     ident_str += self.current_char
-                                    ident_count += 1
+                                    
                                     self.advance()
                                     if self.current_char == "h":
                                         ident_str += self.current_char
-                                        ident_count+=1
+                                        
                                         self.advance()
                                         if self.current_char is None or self.current_char in spc_dlm:
                                             tokens.append(Token(TT_RW_CASEOH, ident_str, line))
@@ -284,15 +271,15 @@ class Lexer:
                                             continue
                     elif self.current_char == "h":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "a":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "t":
                                 ident_str += self.current_char
-                                ident_count+=1
+                                
                                 self.advance()
                                 if self.current_char is not None and self.current_char in com_dlm:
                                     tokens.append(Token(TT_RW_CHAT, ident_str, line))
@@ -303,31 +290,31 @@ class Lexer:
                                     continue
                         if self.current_char == "u":
                             ident_str += self.current_char
-                            ident_count+=1
+                            
                             self.advance()
                             if self.current_char == "d":
                                 ident_str += self.current_char
-                                ident_count+=1
+                                
                                 self.advance()
                                 if self.current_char == "e":
                                     ident_str += self.current_char
-                                    ident_count+=1
+                                    
                                     self.advance()
                                     if self.current_char == "l":
                                         ident_str += self.current_char
-                                        ident_count+=1
+                                        
                                         self.advance()
                                         if self.current_char == "u":
                                             ident_str += self.current_char
-                                            ident_count+=1
+                                            
                                             self.advance()
                                             if self.current_char == "x":
                                                 ident_str += self.current_char
-                                                ident_count+=1
+                                                
                                                 self.advance()
                                                 if self.current_char == "e":
                                                     ident_str += self.current_char
-                                                    ident_count+=1
+                                                    
                                                     self.advance()
                                                     if self.current_char is None or self.current_char in convert_dlm:
                                                         tokens.append(Token(TT_RW_CHUDELUXE, ident_str, line))
@@ -339,19 +326,19 @@ class Lexer:
 
                             elif self.current_char == "n":
                                 ident_str += self.current_char
-                                ident_count+=1
+                                
                                 self.advance()
                                 if self.current_char == "g":
                                     ident_str += self.current_char
-                                    ident_count+=1
+                                    
                                     self.advance() 
                                     if self.current_char == "u":
                                         ident_str += self.current_char
-                                        ident_count+=1
+                                        
                                         self.advance()      
                                         if self.current_char == "s":
                                             ident_str += self.current_char
-                                            ident_count+=1
+                                            
                                             self.advance()
                                             if self.current_char is None or self.current_char in convert_dlm:
                                                 tokens.append(Token(TT_RW_CHUNGUS, ident_str, line))
@@ -364,23 +351,23 @@ class Lexer:
                 # Letter F
                 if self.current_char == "f":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "a":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "l":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "s":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "e":
                                     ident_str += self.current_char
-                                    ident_count+=1
+                                    
                                     self.advance()
                                     if self.current_char is None or self.current_char in lwk_dlm:
                                         tokens.append(Token(TT_LWK, ident_str, line))
@@ -392,15 +379,15 @@ class Lexer:
 
                     if self.current_char == "e":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "i":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "n":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char is None or self.current_char in spc_dlm:
                                     tokens.append(Token(TT_RW_FEIN, ident_str, line))
@@ -412,31 +399,31 @@ class Lexer:
 
                     if self.current_char == "o":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "r":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "s":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "e":
                                     ident_str += self.current_char
-                                    ident_count += 1
+                                    
                                     self.advance()
                                     if self.current_char == "n":
                                         ident_str += self.current_char
-                                        ident_count+=1
+                                        
                                         self.advance()
                                         if self.current_char == "c":
                                             ident_str += self.current_char
-                                            ident_count += 1
+                                            
                                             self.advance()
                                             if self.current_char == "d":
                                                 ident_str += self.current_char
-                                                ident_count += 1
+                                                
                                                 self.advance()
                                                 if self.current_char is None or self.current_char in spc_dlm:
                                                     tokens.append(Token(TT_RW_FORSENCD, ident_str, line))
@@ -458,27 +445,27 @@ class Lexer:
                 # Letter G
                 if self.current_char == "g":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "e":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "t":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "o":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "u":
                                     ident_str += self.current_char
-                                    ident_count += 1
+                                    
                                     self.advance()
                                     if self.current_char == "t":
                                         ident_str += self.current_char
-                                        ident_count+=1
+                                        
                                         self.advance()
                                         if self.current_char is None or self.current_char in endln_dlm:
                                             tokens.append(Token(TT_RW_GETOUT, ident_str, line))
@@ -491,35 +478,35 @@ class Lexer:
                 # Letter H
                 if self.current_char == "h":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "a":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "w":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "k":
                                 ident_str += self.current_char
-                                ident_count+=1
+                                
                                 self.advance()
                                 if self.current_char == "t":
                                     ident_str += self.current_char
-                                    ident_count += 1
+                                    
                                     self.advance()
                                     if self.current_char == "u":
                                         ident_str += self.current_char
-                                        ident_count += 1
+                                        
                                         self.advance()
                                         if self.current_char == "a":
                                             ident_str += self.current_char
-                                            ident_count += 1
+                                            
                                             self.advance()
                                             if self.current_char == "h":
                                                 ident_str += self.current_char
-                                                ident_count+=1
+                                                
                                                 self.advance()
                                                 if self.current_char is not None and self.current_char in com_dlm:
                                                     tokens.append(Token(TT_RW_HAWKTUAH, ident_str, line))
@@ -539,27 +526,27 @@ class Lexer:
                 # Letter I
                 if self.current_char == "i":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "n":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "s":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "e":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "r":
                                     ident_str += self.current_char
-                                    ident_count += 1
+                                    
                                     self.advance()
                                     if self.current_char == "t":
                                         ident_str += self.current_char
-                                        ident_count+=1
+                                        
                                         self.advance()
                                         if self.current_char is not None and self.current_char in com_dlm:
                                             tokens.append(Token(TT_RW_INSERT, ident_str, line))
@@ -572,15 +559,15 @@ class Lexer:
                 # Letter J
                 if self.current_char == "j":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "i":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "t":
                             ident_str += self.current_char
-                            ident_count+=1
+                            
                             self.advance()
                             if self.current_char is None or self.current_char in com_dlm:
                                 tokens.append(Token(TT_RW_JIT, ident_str, line))
@@ -593,43 +580,43 @@ class Lexer:
                 # Letter L
                 if self.current_char == "l":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "e":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "t":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "h":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "i":
                                     ident_str += self.current_char
-                                    ident_count += 1
+                                    
                                     self.advance()
                                     if self.current_char == "m":
                                         ident_str += self.current_char
-                                        ident_count += 1
+                                        
                                         self.advance()
                                         if self.current_char == "c":
                                             ident_str += self.current_char
-                                            ident_count += 1
+                                            
                                             self.advance()
                                             if self.current_char == "o":
                                                 ident_str += self.current_char
-                                                ident_count += 1
+                                                
                                                 self.advance()
                                                 if self.current_char == "o":
                                                     ident_str += self.current_char
-                                                    ident_count += 1
+                                                    
                                                     self.advance()
                                                     if self.current_char == "k":
                                                         ident_str += self.current_char
-                                                        ident_count+=1
+                                                        
                                                         self.advance()
                                                         if self.current_char is not None and self.current_char in com_dlm:
                                                             tokens.append(Token(TT_RW_LETHIMCOOK, ident_str, line))
@@ -641,11 +628,11 @@ class Lexer:
 
                     if self.current_char == "i":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "l":
                             ident_str += self.current_char
-                            ident_count+=1
+                            
                             self.advance()
                             if self.current_char is None or self.current_char in hawk_dlm:
                                 tokens.append(Token(TT_RW_LIL, ident_str, line))
@@ -657,11 +644,11 @@ class Lexer:
                         
                     if self.current_char == "w":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "k":
                             ident_str += self.current_char
-                            ident_count+=1
+                            
                             self.advance()
                             if self.current_char is None or self.current_char in spc_dlm:
                                 tokens.append(Token(TT_RW_LWK, ident_str, line))
@@ -674,23 +661,23 @@ class Lexer:
                 # Letter N
                 if self.current_char == "n":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "o":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "c":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "a":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "p":
                                     ident_str += self.current_char
-                                    ident_count+=1
+                                    
                                     self.advance()
                                     if self.current_char is None or self.current_char in spc_dlm:
                                         tokens.append(Token(TT_RW_NOCAP, ident_str, line))
@@ -702,11 +689,11 @@ class Lexer:
 
                     if self.current_char == "p":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "c":
                             ident_str += self.current_char
-                            ident_count+=1
+                            
                             self.advance()
                             if self.current_char is None or self.current_char in npc_dlm:
                                 tokens.append(Token(TT_RW_NPC, ident_str, line))
@@ -719,23 +706,23 @@ class Lexer:
                 # Letter P
                 if self.current_char == "p":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "a":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "u":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "s":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "e":
                                     ident_str += self.current_char
-                                    ident_count+=1
+                                    
                                     self.advance()
                                     if self.current_char is None or self.current_char in endln_dlm:
                                         tokens.append(Token(TT_RW_PAUSE, ident_str, line))
@@ -747,15 +734,15 @@ class Lexer:
 
                     if self.current_char == "l":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "u":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "g":
                                     ident_str += self.current_char
-                                    ident_count+=1
+                                    
                                     self.advance()
                                     if self.current_char is not None and self.current_char in com_dlm:
                                         tokens.append(Token(TT_RW_PLUG, ident_str, line))
@@ -769,27 +756,27 @@ class Lexer:
                 # Letter R
                 if self.current_char == "r":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "e":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "m":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "o":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "v":
                                     ident_str += self.current_char
-                                    ident_count += 1
+                                    
                                     self.advance()
                                     if self.current_char == "e":
                                         ident_str += self.current_char
-                                        ident_count+=1
+                                        
                                         self.advance()
                                         if self.current_char is not None and self.current_char in com_dlm:
                                             tokens.append(Token(TT_RW_REMOVE, ident_str, line))
@@ -802,31 +789,31 @@ class Lexer:
                 # Letter S
                 if self.current_char == "s":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "k":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "i":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "b":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "i":
                                     ident_str += self.current_char
-                                    ident_count += 1
+                                    
                                     self.advance()
                                     if self.current_char == "d":
                                         ident_str += self.current_char
-                                        ident_count += 1
+                                        
                                         self.advance()
                                         if self.current_char == "i":
                                             ident_str += self.current_char
-                                            ident_count+=1
+                                            
                                             self.advance()
                                             if self.current_char is not None and self.current_char in hawk_dlm:
                                                 tokens.append(Token(TT_RW_SKIBIDI, ident_str, line))
@@ -838,23 +825,23 @@ class Lexer:
 
                     if self.current_char == "t":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "u":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "r":
                                 ident_str += self.current_char
-                                ident_count += 1
+                                
                                 self.advance()
                                 if self.current_char == "d":
                                     ident_str += self.current_char
-                                    ident_count += 1
+                                    
                                     self.advance()
                                     if self.current_char == "y":
                                         ident_str += self.current_char
-                                        ident_count+=1
+                                        
                                         self.advance()
                                         if self.current_char is None or self.current_char in spc_dlm:
                                             tokens.append(Token(TT_RW_STURDY, ident_str, line))
@@ -868,23 +855,23 @@ class Lexer:
                 # Letter T
                 if self.current_char == "t":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "a":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "p":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "e":
                                 ident_str += self.current_char
-                                ident_count+=1
+                                
                                 self.advance()
                                 if self.current_char == "r":
                                     ident_str += self.current_char
-                                    ident_count+=1
+                                    
                                     self.advance()
                                     if self.current_char is None or self.current_char in com_dlm:
                                         tokens.append(Token(TT_RW_TAPER, ident_str, line))
@@ -896,15 +883,15 @@ class Lexer:
 
                     if self.current_char == "r":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "u":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "e":
                                 ident_str += self.current_char
-                                ident_count+=1
+                                
                                 self.advance()
                                 if self.current_char is None or self.current_char in lwk_dlm:
                                     tokens.append(Token(TT_LWK, ident_str, line))
@@ -916,7 +903,7 @@ class Lexer:
 
                     if self.current_char == 's':
                         ident_str += self.current_char
-                        ident_count+=1
+                        
                         self.advance()
                         if self.current_char is None or self.current_char in com_dlm:
                             tokens.append(Token(TT_RW_TS, ident_str, line))
@@ -928,15 +915,15 @@ class Lexer:
 
                     if self.current_char == "u":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "a":
                             ident_str += self.current_char
-                            ident_count += 1
+                            
                             self.advance()
                             if self.current_char == "h":
                                 ident_str += self.current_char
-                                ident_count+=1
+                                
                                 self.advance()
                                 if self.current_char is None or self.current_char in com_dlm:
                                     tokens.append(Token(TT_RW_TUAH, ident_str, line))
@@ -949,15 +936,15 @@ class Lexer:
                 # Letter Y
                 if self.current_char == "y":
                     ident_str += self.current_char
-                    ident_count += 1
+                    
                     self.advance()
                     if self.current_char == "a":
                         ident_str += self.current_char
-                        ident_count += 1
+                        
                         self.advance()
                         if self.current_char == "p":
                             ident_str += self.current_char
-                            ident_count+=1
+                            
                             self.advance()
                             if self.current_char is not None and self.current_char in com_dlm:
                                 tokens.append(Token(TT_RW_YAP, ident_str, line))
@@ -1394,7 +1381,7 @@ class Lexer:
                     ident_str += self.current_char
                     self.advance()
                     while self.current_char is not None:
-                        if self.current_char == "*" and self.text[self.pos.index + 1] == "/":
+                        if self.current_char == "*" and self.source_code[self.pos.index + 1] == "/":
                             ident_str += "*/"
                             self.advance()
                             self.advance()
@@ -1599,7 +1586,7 @@ class Lexer:
         return tokens, errors
 
     
-def run(fn, text):
-    lexer = Lexer(fn, text)
+def run(source_code):
+    lexer = Lexer(source_code)
     tokens, error = lexer.make_tokens()
     return tokens, error

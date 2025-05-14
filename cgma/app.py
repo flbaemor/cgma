@@ -36,7 +36,7 @@ def script():
 def lex():
     data = request.json
     source_code = data.get('source_code', '')
-    tokens, errors = lexer_run('<stdin>', source_code)
+    tokens, errors = lexer_run(source_code)
     return jsonify({'tokens': [{'type': token.type, 'value': token.value} for token in tokens], 'errors': [error.as_string() for error in errors]})
 
 
@@ -44,7 +44,7 @@ def lex():
 def parse():
     data = request.json
     source_code = data.get('source_code', '')
-    tokens, errors = lexer_run('<stdin>', source_code)
+    tokens, errors = lexer_run(source_code)
     if errors:
         modified_errors = [replace_tokens(error.as_string()) for error in errors]
         return jsonify({'success': False, 'errors': modified_errors})
@@ -89,7 +89,7 @@ def semantic_analysis():
 
     symbol_table = SymbolTable()
 
-    tokens, errors = lexer_run('<stdin>', source_code)
+    tokens, errors = lexer_run(source_code)
     if errors:
         return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
@@ -119,7 +119,7 @@ def output():
     user_inputs = data.get('user_inputs', {})
 
     # Lexical analysis
-    tokens, errors = lexer_run('<stdin>', source_code)
+    tokens, errors = lexer_run(source_code)
     if errors:
         return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
