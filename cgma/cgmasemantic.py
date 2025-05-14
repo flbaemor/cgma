@@ -14,12 +14,6 @@ class SemanticAnalyzer:
         self.symbol_table = symbol_table
         self.visited_nodes = set()
 
-    def analyze(self, node):
-        if node in self.visited_nodes:
-            return
-        
-        self.visited_nodes.add(node)
-
 
 ##### AST NODES #####
 class ASTNode:

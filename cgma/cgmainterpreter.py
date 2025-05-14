@@ -80,9 +80,6 @@ class Interpreter:
             }
             self.global_variables[name] = self.variables[name]
         
-        #print(f"\n[DECLARE] In function: {current_func or 'GLOBAL'} — Declaring '{name}' of type '{type_}' with value: {value}")
-        #for i, s in enumerate(self.scopes):
-            #print(f"[SCOPE {i}] {s}")
 
 
     def lookup_variable(self, name):
@@ -100,9 +97,6 @@ class Interpreter:
             scope = self.scopes[i]
             if name in scope:
                 scope[name]["value"] = value
-                #print(f"\n[SET] In function: {self.current_func_name or 'GLOBAL'} — Setting '{name}' to value: {value}")
-                #for j, s in enumerate(self.scopes):
-                    #print(f"[SCOPE {j}] {s}")
                 return  
 
         return f"Semantic Error: Variable '{name}' not declared in any scope."
@@ -123,7 +117,6 @@ class Interpreter:
     ###### SCOPE ######
     def enter_scope(self):
         self.scopes.append({})
-        #print(f"\n[ENTER SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
         
 
     def exit_scope(self):
@@ -135,7 +128,6 @@ class Interpreter:
 
             if current_func in self.function_variables:
                 self.function_variables[current_func].clear()
-        #print(f"\n[EXIT SCOPE] Current function: {self.current_func_name or 'GLOBAL'}")
 
 
 

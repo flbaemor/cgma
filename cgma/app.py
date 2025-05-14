@@ -103,8 +103,6 @@ def semantic_analysis():
         semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"nl", "\n"}]
         ast_root = build_ast(semantic_tokens)
         ast_root.print_tree()
-        semantic_analyzer = SemanticAnalyzer(symbol_table)  
-        semantic_analyzer.analyze(ast_root)  
         return jsonify({'success': True, 'message': 'Semantic analysis completed successfully'})
 
     except SemanticError as e:
@@ -132,10 +130,7 @@ def output():
         # Semantic analysis
         semantic_tokens = [token for token in tokens if getattr(token, 'type', token) not in {"nl", "\n"}]
         ast_root = build_ast(semantic_tokens)
-
         symbol_table = SymbolTable()
-        semantic_analyzer = SemanticAnalyzer(symbol_table)
-        semantic_analyzer.analyze(ast_root)
         global runner
         runner = Interpreter(symbol_table, socketio=socketio)
         runner.interpret(ast_root)
