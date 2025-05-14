@@ -36,7 +36,6 @@ class LL1Parser:
             token_type = token.type  
             token_value = token.value  
             line = token.line
-
             print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
             if top == token_type:
@@ -47,13 +46,11 @@ class LL1Parser:
                 if token_type in self.parsing_table[top]: #checks if current token is nasa parsing table nung production na un
                     production = self.parsing_table[top][token_type] #expands the non terminal (ex. <program> to <global_dec> <func_dec> skibidi...)
                     print(f"Expand: {top} → {' '.join(production)}")
-                    
                     if production != ['ε']:
                         self.stack.extend(reversed(production)) #adds the production to the stack
                     print(f"Updated Stack: {self.stack}")
                 else:
                     expected_tokens = list(set(self.parsing_table[top].keys()))
-                    
                     print(expected_tokens)
                     error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: {expected_tokens}"
                     #print(error_message)
