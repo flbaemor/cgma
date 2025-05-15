@@ -531,7 +531,7 @@ def parse_variable(tokens, index, var_name, var_type):
                     raise SemanticError(f"Semantic Error: Variable '{identifier}' used before declaration.", line)
 
                 if identifier_info["type"] != "forsencd":
-                    raise SemanticError(f"Semantic Error (Type Error): Cannot use taper function on '{identifier}'. Must be a forsencd type identifier.", line)
+                    raise SemanticError(f"Semantic Error: Cannot use taper function on '{identifier}'. Must be a forsencd type identifier.", line)
 
                 index += 5
                 is_list = True
@@ -669,7 +669,7 @@ def parse_statement(tokens, index, func_type = None):
                         raise SemanticError(var_info, line)
                     
                     if var_info["type"] not in {"chungus", "chudeluxe"}:
-                        raise SemanticError(f"Semantic Error (Type Error): Cannot use '{token.value}' of type {var_info['type']} in expression.", line)
+                        raise SemanticError(f"Semantic Error: Cannot use '{token.value}' of type {var_info['type']} in expression.", line)
                     operand = ASTNode("Identifier", token.value, line=line)
                     operator = tokens[index + 1].value
                     index += 2
@@ -686,7 +686,7 @@ def parse_statement(tokens, index, func_type = None):
                     var_name = tokens[index].value
                     var_info = symbol_table.lookup_variable(var_name)
                     if var_info["type"] not in {"chungus", "chudeluxe"}:
-                        raise SemanticError(f"Semantic Error (Type Error): Cannot use '{var_name}' of type {var_info['type']} in expression.", line)
+                        raise SemanticError(f"Semantic Error: Cannot use '{var_name}' of type {var_info['type']} in expression.", line)
                     
                     if isinstance(var_info, str):
                         raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
@@ -769,7 +769,7 @@ def parse_list_access(tokens, index):
         raise SemanticError(list_info, line)
     
     if not list_info.get("is_list", False):
-        raise SemanticError(f"Semantic Error (Type Error): Variable '{list_name}' is not a list.", line)
+        raise SemanticError(f"Semantic Error: Variable '{list_name}' is not a list.", line)
     
     list_type = list_info["type"]
     index += 2 
@@ -795,7 +795,7 @@ def parse_list_assignment(tokens, index):
         raise SemanticError(var_info, line)
     
     if not var_info.get("is_list", False):
-        raise SemanticError(f"Semantic Error (Type Error): '{var_name}' is not a list.", line)
+        raise SemanticError(f"Semantic Error: '{var_name}' is not a list.", line)
     
     var_type = var_info["type"] 
 
@@ -834,7 +834,7 @@ def parse_list_assignment(tokens, index):
                     tokens[index + 2].value == "taper"
                 ):
                     if source_info["type"] != "forsencd":
-                        raise SemanticError(f"Semantic Error (Type Error): Cannot use taper function on '{source_var}'. Must be a forsencd type identifier.", line)
+                        raise SemanticError(f"Semantic Error: Cannot use taper function on '{source_var}'. Must be a forsencd type identifier.", line)
 
                     index += 5
                     is_list = True
@@ -848,7 +848,7 @@ def parse_list_assignment(tokens, index):
         elif var_type != source_type:
             if not (var_type in {"chungus", "chudeluxe"} and source_type in {"chungus", "chudeluxe"}):
                 raise SemanticError(
-                    f"Semantic Error (Type Error): Cannot assign list of '{source_type}' type to list of '{var_type}' type.", line
+                    f"Semantic Error: Cannot assign list of '{source_type}' type to list of '{var_type}' type.", line
                 )
             
         else:
@@ -880,7 +880,7 @@ def parse_expression_type(tokens, index, var_type):
         return parse_expression_lwk(tokens, index)
 
     else:
-        error = f"Semantic Error (Type Error): Invalid type for assignment."
+        error = f"Semantic Error: Invalid type for assignment."
         raise SemanticError(error, line)
 
 def parse_expression_forsen(tokens, index):
@@ -893,7 +893,7 @@ def parse_expression_forsen(tokens, index):
         func_params = func_info["params"]
         
         if func_return_type not in {"forsen"}:
-            error = f"Semantic Error (Type Error): Cannot use function '{func_name}' of type {func_return_type} in this expression."
+            error = f"Semantic Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
             raise SemanticError(error, line)
         index += 1
         return parse_function_call(tokens, index, func_name, func_return_type, func_params)
@@ -906,14 +906,14 @@ def parse_expression_forsen(tokens, index):
         is_list = variable_info.get("is_list", False)
 
         if is_list and tokens[index + 1].type != "[":
-            raise SemanticError(f"Semantic Error (Type Error): List '{token.value}' must be indexed with '[]' in expressions.", line)
+            raise SemanticError(f"Semantic Error: List '{token.value}' must be indexed with '[]' in expressions.", line)
 
         if isinstance(variable_info, str):
             error = f"Semantic Error: Variable '{tokens[index].value}' used before declaration."
             raise SemanticError(error, line)
         
         if variable_info["type"] != "forsen":
-            error = f"Semantic Error (Type Error): Cannot use '{tokens[index].value}' of type {variable_info['type']} in forsen expression.", line
+            error = f"Semantic Error: Cannot use '{tokens[index].value}' of type {variable_info['type']} in forsen expression.", line
             raise SemanticError(error, line)
 
         node = ASTNode("Value", tokens[index].value)
@@ -926,7 +926,7 @@ def parse_expression_forsen(tokens, index):
         return node, index
 
     else:
-        error = f"Semantic Error (Type Error): forsen can only be assigned with identifier of type forsen or a forsen literal."
+        error = f"Semantic Error: forsen can only be assigned with identifier of type forsen or a forsen literal."
         raise SemanticError(error, line) 
 
 def parse_expression_forsencd(tokens, index):
@@ -934,7 +934,7 @@ def parse_expression_forsencd(tokens, index):
     token = tokens[index]
 
     if tokens[index].type not in {"forsencd_lit", "identifier"}:
-        raise SemanticError(f"Semantic Error (Type Error): forsencd can only be assigned a forsencd_lit or an identifier of type forsen/forsencd.", line)
+        raise SemanticError(f"Semantic Error: forsencd can only be assigned a forsencd_lit or an identifier of type forsen/forsencd.", line)
 
     if tokens[index].type == "identifier" and tokens[index + 1].type == "(":
         func_name = tokens[index].value
@@ -945,7 +945,7 @@ def parse_expression_forsencd(tokens, index):
 
         func_return_type = func_info["return_type"]
         if func_return_type not in {"forsen", "forsencd"}:
-            raise SemanticError(f"Semantic Error (Type Error): Cannot use function '{func_name}' of type '{func_return_type}' in this expression.", line)
+            raise SemanticError(f"Semantic Error: Cannot use function '{func_name}' of type '{func_return_type}' in this expression.", line)
 
         node, index = parse_function_call(tokens, index, func_name, func_return_type, func_info["params"])
 
@@ -958,7 +958,7 @@ def parse_expression_forsencd(tokens, index):
             raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", token.line)
 
         if not list_info["is_list"]:
-            raise SemanticError(f"Semantic Error (Type Error): '{list_name}' is not a list.", token.line)
+            raise SemanticError(f"Semantic Error: '{list_name}' is not a list.", token.line)
 
         index += 2
         expr_node, index = parse_expression(tokens, index)
@@ -979,12 +979,12 @@ def parse_expression_forsencd(tokens, index):
             raise SemanticError(var_info, line)
         is_list = var_info.get("is_list", False)
         if is_list and tokens[index + 1].type != "[":
-            raise SemanticError(f"Semantic Error (Type Error): List '{tokens[index].value}' must be indexed with '[]' in expressions.", line)
+            raise SemanticError(f"Semantic Error: List '{tokens[index].value}' must be indexed with '[]' in expressions.", line)
         if isinstance(var_info, str):  # Variable not found
             raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
 
         if var_info["type"] not in {"forsen", "forsencd"}:
-            raise SemanticError(f"Semantic Error (Type Error): Cannot use '{var_name}' of type {var_info['type']} in this expression.", line)
+            raise SemanticError(f"Semantic Error: Cannot use '{var_name}' of type {var_info['type']} in this expression.", line)
 
         node = ASTNode("Value", var_name, line=line)
         index += 1  
@@ -1001,7 +1001,7 @@ def parse_expression_forsencd(tokens, index):
             index += 1 
 
             if tokens[index].type not in {"forsencd_lit", "identifier", "forsen_lit"}:
-                raise SemanticError(f"Semantic Error (Type Error): forsencd can only be assigned a literal or identifier with type forsen/forsencd.", line)
+                raise SemanticError(f"Semantic Error: forsencd can only be assigned a literal or identifier with type forsen/forsencd.", line)
 
             if tokens[index].type == "identifier" and tokens[index + 1].type == "(":
                 func_name = tokens[index].value
@@ -1012,7 +1012,7 @@ def parse_expression_forsencd(tokens, index):
 
                 func_return_type = func_info["return_type"]
                 if func_return_type not in {"forsen", "forsencd"}:
-                    raise SemanticError(f"Semantic Error (Type Error): Cannot use function '{func_name}' of type '{func_return_type}' in this expression.", line)
+                    raise SemanticError(f"Semantic Error: Cannot use function '{func_name}' of type '{func_return_type}' in this expression.", line)
 
                 right_node, index = parse_function_call(tokens, index, func_name, func_return_type, func_info["params"])
 
@@ -1024,7 +1024,7 @@ def parse_expression_forsencd(tokens, index):
                     raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", token.line)
 
                 if not list_info["is_list"]:
-                    raise SemanticError(f"Semantic Error (Type Error): '{list_name}' is not a list.", token.line)
+                    raise SemanticError(f"Semantic Error: '{list_name}' is not a list.", token.line)
 
                 index += 2
                 expr_node, index = parse_expression(tokens, index)
@@ -1047,13 +1047,13 @@ def parse_expression_forsencd(tokens, index):
                 is_list = var_info.get("is_list", False)
 
                 if is_list and tokens[index + 1].type != "[":
-                    raise SemanticError(f"Semantic Error (Type Error): List '{token.value}' must be indexed with '[]' in expressions.", line)
+                    raise SemanticError(f"Semantic Error: List '{token.value}' must be indexed with '[]' in expressions.", line)
 
                 if isinstance(var_info, str):  # Variable not found
                     raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
 
                 if var_info["type"] not in {"forsen", "forsencd"}:
-                    raise SemanticError(f"Semantic Error (Type Error): Cannot use '{var_name}' of type {var_info['type']} in this expression.", line)
+                    raise SemanticError(f"Semantic Error: Cannot use '{var_name}' of type {var_info['type']} in this expression.", line)
 
                 right_node = ASTNode("Value", var_name, line=line)
                 index += 1 
@@ -1159,7 +1159,7 @@ def parse_factor(tokens, index):
         func_return_type = func_info["return_type"]
         func_params = func_info["params"]
         if func_return_type not in {"chungus", "chudeluxe"}:
-            error = f"Semantic Error (Type Error): Cannot use function '{func_name}' of type {func_return_type} in this expression."
+            error = f"Semantic Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
             raise SemanticError(error, token.line)
 
         node, index = parse_function_call(tokens, index, func_name, func_return_type, func_params)
@@ -1178,7 +1178,7 @@ def parse_factor(tokens, index):
             raise SemanticError(f"Semantic Error: Variable '{identifier}' used before declaration.", token.line)  
 
         if not identifier_info["is_list"] and identifier_info["type"] != "forsencd":
-            raise SemanticError(f"Semantic Error (Type Error): ts() can only be used on lists or strings, but '{identifier}' is of type {identifier_info['type']}.", token.line)
+            raise SemanticError(f"Semantic Error: ts() can only be used on lists or strings, but '{identifier}' is of type {identifier_info['type']}.", token.line)
         
         index += 5
 
@@ -1194,7 +1194,7 @@ def parse_factor(tokens, index):
             raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", token.line)
 
         if not list_info["is_list"]:
-            raise SemanticError(f"Semantic Error (Type Error): '{list_name}' is not a list.", token.line)
+            raise SemanticError(f"Semantic Error: '{list_name}' is not a list.", token.line)
 
         index += 2
         expr_node, index = parse_expression(tokens, index)
@@ -1216,13 +1216,13 @@ def parse_factor(tokens, index):
             raise SemanticError(variable_info, token.line)
         is_list = variable_info.get("is_list", False)
         if is_list and tokens[index + 1].type != "[":
-            raise SemanticError(f"Semantic Error (Type Error): List '{token.value}' must be indexed with '[]' in expressions.", token.line)
+            raise SemanticError(f"Semantic Error: List '{token.value}' must be indexed with '[]' in expressions.", token.line)
         
         if isinstance(variable_info, str):
             raise SemanticError(f"Semantic Error: Variable '{token.value}' used before declaration.", token.line)
         
         if variable_info["type"] not in {"chungus", "chudeluxe"}:
-            error = f"Semantic Error (Type Error): Cannot use '{token.value}' of type {variable_info['type']} in this expression."
+            error = f"Semantic Error: Cannot use '{token.value}' of type {variable_info['type']} in this expression."
             raise SemanticError(error, token.line)
         
         node = ASTNode("Value", token.value)
@@ -1237,7 +1237,7 @@ def parse_factor(tokens, index):
 
 
     else:
-        error = f"Semantic Error: Invalid factor '{token.value}' in expression."
+        error = f"Semantic Error: Cannot use '{token.value}' in this expression."
         raise SemanticError(error, token.line)
 
 
@@ -1247,7 +1247,7 @@ def parse_expression_lwk(tokens, index):
     left_node, index, left_type = parse_equality(tokens, index)
 
     if left_type in {"chungus", "chudeluxe"} and tokens[index].type not in {"==", "!=", "<", "<=", ">", ">="}:
-        raise SemanticError(f"Semantic Error (Type Error): Expected a logical or comparison operator after an arithmetic expression.", line)
+        raise SemanticError(f"Semantic Error : Expected a valid boolean expression.", line)
 
     while tokens[index].type in {"&&", "||"}:
         operator = tokens[index].value
@@ -1255,7 +1255,7 @@ def parse_expression_lwk(tokens, index):
         right_node, index, right_type = parse_equality(tokens, index)
         
         if left_type != "lwk" or right_type != "lwk":
-            raise SemanticError(f"Semantic Error (Type Error): Logical operators only apply to 'lwk' type.", line)
+            raise SemanticError(f"Semantic Error : Logical operators only apply to 'lwk' type.", line)
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
         left_type = "lwk"
@@ -1276,7 +1276,7 @@ def parse_equality(tokens, index):
         if {left_type, right_type} <= {"chungus", "chudeluxe"}:
             pass
         elif left_type != right_type:
-            raise SemanticError(f"Semantic Error (Type Error): Cannot compare '{left_type}' with '{right_type}'.", line)
+            raise SemanticError(f"Semantic Error: Cannot compare '{left_type}' with '{right_type}'.", line)
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
 
@@ -1295,7 +1295,7 @@ def parse_relational(tokens, index):
         operand_node, index, operand_type = parse_relational(tokens, index)
         
         if operand_type != "lwk":
-            raise SemanticError(f"Semantic Error (Type Error): ! operator can only apply to 'lwk' type.", line)
+            raise SemanticError(f"Semantic Error: ! operator can only apply to 'lwk' value.", line)
 
         return UnaryOpNode("!", operand_node, line=line), index, "lwk"
 
@@ -1303,14 +1303,14 @@ def parse_relational(tokens, index):
 
     if tokens[index].type in {"<", "<=", ">", ">="}:
         if left_type not in {"chungus", "chudeluxe"}:
-            raise SemanticError(f"Semantic Error (Type Error): Relational operators only apply to arithmetic types.", line)
+            raise SemanticError(f"Semantic Error: Relational operators only apply to arithmetical values.", line)
         
         operator = tokens[index].type
         index += 1
         right_node, index, right_type = parse_operand(tokens, index)
 
         if right_type not in {"chungus", "chudeluxe"}:
-            raise SemanticError(f"Semantic Error (Type Error): Relational operators only apply to arithmetic types.", line)
+            raise SemanticError(f"Semantic Error: Relational operators only apply to arithmetical values.", line)
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
 
@@ -1412,7 +1412,7 @@ def parse_operand(tokens, index):
             raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", token.line)
 
         if not list_info["is_list"]:
-            raise SemanticError(f"Semantic Error (Type Error): '{list_name}' is not a list.", token.line)
+            raise SemanticError(f"Semantic Error: '{list_name}' is not a list.", token.line)
 
         index += 2
         expr_node, index = parse_expression(tokens, index)
@@ -1455,7 +1455,7 @@ def parse_operand(tokens, index):
         is_list = var_info.get("is_list", False)
 
         if is_list and tokens[index + 1].type != "[":
-            raise SemanticError(f"Semantic Error (Type Error): List '{token.value}' must be indexed with '[]' in expressions.", line)
+            raise SemanticError(f"Semantic Error: List '{token.value}' must be indexed with '[]' in expressions.", line)
     
         # Dispatch to specific parsers based on type
         if var_type in {"chungus", "chudeluxe"}:
@@ -1470,9 +1470,9 @@ def parse_operand(tokens, index):
             return ASTNode("Value", token.value, line=line), index + 1, var_type
 
         else:
-            raise SemanticError(f"Semantic Error (Type Error): Unsupported type '{var_type}'.", line)
+            raise SemanticError(f"Semantic Error: Unsupported type '{var_type}'.", line)
 
-    raise SemanticError(f"Semantic Error (Type Error): Expected valid operand, got '{token.value}'.", line)
+    raise SemanticError(f"Semantic Error: Cannot use '{token.value}' in this expression.", line)
 
 
 def infer_literal_type(token_type):
@@ -1544,10 +1544,10 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
     index += 1 
 
     if tokens[index].type in {"++", "--"}:
-        raise SemanticError(f"Semantic Error (Type Error): Unary operators cannot be applied to function calls.", line)
+        raise SemanticError(f"Semantic Error: Unary operators cannot be applied to function calls.", line)
 
     if len(provided_args) != len(expected_params):
-        raise SemanticError(f"Semantic Error (Type Error): Function '{func_name}' expects {len(expected_params)} arguments, but {len(provided_args)} were provided.", line)
+        raise SemanticError(f"Semantic Error: Function '{func_name}' expects {len(expected_params)} arguments, but {len(provided_args)} were provided.", line)
 
     for i, (arg_node, arg_type) in enumerate(provided_args):
         expected_type = expected_params[i].children[0].value  # Get expected type
@@ -1556,7 +1556,7 @@ def parse_function_call(tokens, index, func_name, func_type, func_params):
             continue 
         
         if arg_type != expected_type:
-            raise SemanticError(f"Semantic Error (Type Error): Argument {i+1} of '{func_name}' should be '{expected_type}', but got '{arg_type}'.", line)
+            raise SemanticError(f"Semantic Error: Argument {i+1} of '{func_name}' should be '{expected_type}', but got '{arg_type}'.", line)
 
     return FunctionCallNode(func_name, args_node.children, line=line), index
 
@@ -1599,7 +1599,7 @@ def parse_print(tokens, index):
                 expr_node, index = parse_expression_lwk(tokens, index)
                 args.append(expr_node)
             else:
-                raise SemanticError(f"Semantic Error (Type Error): Function '{func_name}' returns invalid type '{func_info['return_type']}'.", line)
+                raise SemanticError(f"Semantic Error: Function '{func_name}' returns invalid type '{func_info['return_type']}'.", line)
 
 
         elif tokens[index].type == "identifier" and tokens[index + 1].type == "[":
@@ -1612,7 +1612,7 @@ def parse_print(tokens, index):
                 raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", tokens[index].line)
 
             if not list_info["is_list"]:
-                raise SemanticError(f"Semantic Error (Type Error): '{list_name}' is not a list.", tokens[index].line)
+                raise SemanticError(f"Semantic Error: '{list_name}' is not a list.", tokens[index].line)
 
             index += 2
             expr_node, index = parse_expression(tokens, index)
@@ -1694,7 +1694,7 @@ def parse_print(tokens, index):
                 raise SemanticError(f"Semantic Error: List '{list_name}' used before declaration.", tokens[index].line)
 
             if not list_info["is_list"]:
-                raise SemanticError(f"Semantic Error (Type Error): '{list_name}' is not a list.", tokens[index].line)
+                raise SemanticError(f"Semantic Error: '{list_name}' is not a list.", tokens[index].line)
 
             index += 2
             expr_node, index = parse_expression(tokens, index)
@@ -1745,7 +1745,7 @@ def parse_print(tokens, index):
             
             if arg_info["is_list"]:
                 if tokens[index + 1].type != "[":
-                    raise SemanticError(f"Semantic Error (Type Error): List '{arg_name}' must be indexed with '[]' in expressions.", line)
+                    raise SemanticError(f"Semantic Error: List '{arg_name}' must be indexed with '[]' in expressions.", line)
                 
             if arg_info["type"] in {"chungus", "chudeluxe"}:
                 arg_node, index = parse_expression(tokens, index)
@@ -1766,7 +1766,7 @@ def parse_print(tokens, index):
         raise SemanticError(f"Semantic Error: Exceeded maximum amount of 15 arguments in yap statement.", line)
 
     if placeholder_count != len(actual_args):
-        raise SemanticError(f"Semantic Error (Type Error): Found {len(actual_args)} argument(s). Expected {placeholder_count} argument(s).", line)
+        raise SemanticError(f"Semantic Error: Found {len(actual_args)} argument(s). Expected {placeholder_count} argument(s).", line)
     
     args.extend(actual_args)
 
@@ -1857,7 +1857,7 @@ def parse_sturdy(tokens, index):
     }
     
     if tokens[index].type != expected_literals[var_type]:
-        raise SemanticError(f"Semantic Error (Type Error): '{var_name}' must be initialized with a {var_type} literal.", line)
+        raise SemanticError(f"Semantic Error: '{var_name}' must be initialized with a {var_type} literal.", line)
 
     value_node = ASTNode("Value", tokens[index].value, line=line)
     index += 1
@@ -1986,7 +1986,7 @@ def parse_return(tokens, index, func_type):
 
     if func_type == "nocap":
         if tokens[index].type not in {"}"}:
-            raise SemanticError(f"Semantic Error (Type Error): nocap function must not return any value.", line)
+            raise SemanticError(f"Semantic Error: nocap function must not return any value.", line)
         return ReturnNode(None, line=line), index
 
     elif tokens[index].type == "identifier":
@@ -2000,7 +2000,7 @@ def parse_return(tokens, index, func_type):
 
             return_type = func_info["return_type"]
             if return_type != func_type:
-                raise SemanticError(f"Semantic Error (Type Error): Function '{identifier}' returns '{return_type}', but expected '{func_type}'.", line)
+                raise SemanticError(f"Semantic Error: Function '{identifier}' returns '{return_type}', but expected '{func_type}'.", line)
 
             return_expr, index = parse_expression_type(tokens, index, func_type)
 
@@ -2010,7 +2010,7 @@ def parse_return(tokens, index, func_type):
                 raise SemanticError(f"Semantic Error: Variable '{identifier}' used before declaration.", line)
 
             if var_info["type"] not in [func_type, "chungus", "chudeluxe"] and var_info["type"] != "chungus" and var_info["type"] != "chudeluxe":                
-                raise SemanticError(f"Semantic Error (Type Error): Variable '{identifier}' is of type '{var_info['type']}'. Expected return value: '{func_type}'.", line)
+                raise SemanticError(f"Semantic Error: Variable '{identifier}' is of type '{var_info['type']}'. Expected return value: '{func_type}'.", line)
 
             return_expr, index = parse_expression_type(tokens, index, func_type)
 

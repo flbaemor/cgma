@@ -81,8 +81,8 @@ TT_RW_YAP           = 'yap'
 
 TT_CHUNGUS      = 'chungus_lit'     # Whole Numbers '3'
 TT_CHUDELUXE    = 'chudeluxe_lit'   # Decimal Numbers '3.14'
-TT_FORSEN       = 'forsen_lit'  # Strings 
-TT_FORSENCD     = 'forsencd_lit' #Char
+TT_FORSEN       = 'forsen_lit'  # Char 
+TT_FORSENCD     = 'forsencd_lit' # Strings
 TT_LWK          = 'lwk_lit'     # Boolean 'true' or 'false'
 
 TT_PLUS         = '+'    # '+'
@@ -131,7 +131,7 @@ TT_ESCAPESEQUENCE = 'escapesequence' # Escape Sequence
 TT_COMMENT      = 'comment' # Comments
 
 
-class Position: #Position of the current character
+class Position:
     def __init__(self, index, ln):
         self.index = index
         self.ln = ln
@@ -144,12 +144,12 @@ class Position: #Position of the current character
 
         return self
     
-    def copy(self): #Retruns the current position(index, line) of the character
+    def copy(self): #Returnss the current position(index, line) of the character
         return Position(self.index, self.ln)
         
 #ERROR
 class LexicalError:
-    def __init__(self, pos, details): #Position of the error and the details of the error
+    def __init__(self, pos, details):
         self.pos = pos
         self.details = details
 
@@ -161,21 +161,21 @@ class LexicalError:
 #TOKEN
 class Token:
     def __init__(self, type_, value=None, line=1): 
-        self.type = type_ #Type of the token (identifier, chungus_lit, skibidi, +)
-        self.value = value #Lexeme (num, 5, "hi", chungus, +, etc)
-        self.line = line #Line number of the token (used for errors in syntax and semantic analysis)
+        self.type = type_
+        self.value = value
+        self.line = line
 
 #LEXER
 class Lexer:
     def __init__(self, source_code): 
-        self.source_code = source_code #Actual source code (passed from app.py)
-        self.pos = Position(-1, 1) #Position of the current character (-1 = before first character, 1 = first line)
+        self.source_code = source_code
+        self.pos = Position(-1, 1)
         self.current_char = None
         self.advance()
 
     def advance(self): #Advance to the next character
         self.pos.advance(self.current_char)
-        self.current_char = self.source_code[self.pos.index] if self.pos.index<len(self.source_code) else None #sets the current character to the next character in the source code
+        self.current_char = self.source_code[self.pos.index] if self.pos.index<len(self.source_code) else None
 
     def make_tokens(self):
         tokens = [] #List of tokens
@@ -1447,43 +1447,38 @@ class Lexer:
                 dot_count = 0
                 ident_str = ""
                 pos = self.pos.copy()
+                digitCount = 0
 
                 while self.current_char is not None and self.current_char in NUM + ".":
                     if self.current_char == ".":
+                        digitCount = 4
                         if dot_count == 1:
                             break
                         dot_count += 1
+
+                    digitCount += 1
+                    if digitCount > 10:
+                        break
                     ident_str += self.current_char
-                    self.advance()
-
-                if self.current_char is not None and self.current_char not in lit_dlm:
-                    invalid_part = ""
-                    while self.current_char is not None and self.current_char not in NUM + lit_dlm:
-                        invalid_part += self.current_char
+                    if digitCount <= 10:
                         self.advance()
-
-                    errors.append(LexicalError(pos, f"Invalid delimiter '{invalid_part}' after '{ident_str}'"))
-                    self.advance()
-                    continue
 
                 if dot_count == 0: 
                     ident_str = ident_str.lstrip("0") or "0"
-                    if len(ident_str) > 10: 
+                    if digitCount > 10: 
                         errors.append(LexicalError(pos, f"'{ident_str}' exceeds maximum number of characters"))
-                        self.advance()
                         continue
+                    
                     tokens.append(Token(TT_CHUNGUS, ident_str, line))
                     
                 else:  # Float case
                     parts = ident_str.split(".")
                     integer_part = parts[0].lstrip("0") or "0"
                     fractional_part = parts[1].rstrip("0") or "0"
-
                     ident_str = f"{integer_part}.{fractional_part}"
 
-                    if len(integer_part) > 10 or len(fractional_part) > 5:
+                    if digitCount > 10:
                         errors.append(LexicalError(pos, f"'{ident_str}' exceeds maximum number of characters"))
-                        self.advance()
                         continue
                     tokens.append(Token(TT_CHUDELUXE, ident_str, line))
 

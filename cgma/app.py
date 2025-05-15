@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, emit
 from cgmalexer import run as lexer_run
 from cgmaparser import LL1Parser
-from cfg import cfg, predict_sets
+from cfg import cfg, predict_sets, first_sets
 from cgmasemantic import SemanticAnalyzer
 import os
 import ast
@@ -49,7 +49,7 @@ def parse():
         modified_errors = [replace_tokens(error.as_string()) for error in errors]
         return jsonify({'success': False, 'errors': modified_errors})
 
-    parser = LL1Parser(cfg, predict_sets)
+    parser = LL1Parser(cfg, predict_sets, first_sets)
     success, parse_errors = parser.parse(tokens)
     if not success:
         modified_parse_errors = [replace_tokens(error) for error in parse_errors]
@@ -93,7 +93,7 @@ def semantic_analysis():
     if errors:
         return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
-    parser = LL1Parser(cfg, predict_sets)
+    parser = LL1Parser(cfg, predict_sets, first_sets)
     success, parse_errors = parser.parse(tokens)
 
     if not success:
@@ -121,7 +121,7 @@ def output():
         return jsonify({'success': False, 'errors': [error.as_string() for error in errors]})
 
     # Syntax parsing
-    parser = LL1Parser(cfg, predict_sets)
+    parser = LL1Parser(cfg, predict_sets, first_sets)
     success, parse_errors = parser.parse(tokens)
     if not success:
         return jsonify({'success': False, 'errors': parse_errors})

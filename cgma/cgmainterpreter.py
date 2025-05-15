@@ -916,7 +916,7 @@ class Interpreter:
 
 
         self.input_required = False  # Reset the input flag
-        self.provide_input(var_name, input_value)  # Process the input **only once**
+        self.provide_input(var_name, input_value)  # Process the input
 
         if var_type == "chungus":
             try:

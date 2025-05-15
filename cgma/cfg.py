@@ -89,7 +89,7 @@ def compute_predict(cfg, first, follow):
             else:
                 first_set.add(epsilon)
             
-            predict[predict_key] = first_set - {epsilon}
+            predict[predict_key] = first_set
             if epsilon in first_set:
                 predict[predict_key] |= follow[lhs]
     return predict

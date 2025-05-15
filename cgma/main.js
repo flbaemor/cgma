@@ -191,12 +191,11 @@
           
                   data.tokens.forEach(token => {
                       const row = tokensTableBody.insertRow();
-                      row.insertCell(0).textContent = token.type.replace(/\n/g, "\\n").replace("neg", "- (negative)");
-                      row.insertCell(1).textContent = token.value;
+                      row.insertCell(0).textContent = token.value;
+                      row.insertCell(1).textContent = token.type.replace(/\n/g, "\\n").replace("neg", "- (negative)");
                   });
           
                   if (data.errors.length > 0) {
-                      term.write('Lexical Errors:\r\n');
                       data.errors.forEach(err => {
                           term.write(`${err}\r\n`);
                       });
@@ -241,7 +240,6 @@
                   term.write('Syntax analysis successful!\r\n');
                   return true;
                 } else {
-                  term.write('Syntax Errors:\r\n');
                   data.errors.forEach(err => {
                   term.write(`${err}\r\n`);
                   });
@@ -284,7 +282,6 @@
                   term.write('Semantic analysis successful!\r\n');
                   return true;
                 } else {
-                  term.write('Semantic Errors:\r\n');
                   data.errors.forEach(err => {
                     term.write(`${err}\r\n`);
                   });
