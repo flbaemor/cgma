@@ -78,6 +78,8 @@ class LL1Parser:
                     
             else:
                 expected_tokens.add(top)
+                if token_type == 'EOF':
+                    token_value = 'EOF'
                 error_message = f"Ln {line} Syntax Error: Unexpected token '{token_value}'. Expected: {expected_tokens}"
                 #print(error_message)
                 error_messages.append(error_message)
