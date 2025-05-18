@@ -1469,7 +1469,14 @@ class Lexer:
                         errors.append(LexicalError(pos, f"'{ident_str}' exceeds maximum number of characters"))
                         continue
                     
-                    tokens.append(Token(TT_CHUNGUS, ident_str, line))
+                    if self.current_char is None or self.current_char in lit_dlm:
+                        tokens.append(Token(TT_CHUNGUS, ident_str, line))
+                        continue
+                    else:
+                        errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                        self.advance()
+                        continue
+                    
                     
                 else:  # Float case
                     parts = ident_str.split(".")
@@ -1480,7 +1487,14 @@ class Lexer:
                     if digitCount > 10:
                         errors.append(LexicalError(pos, f"'{ident_str}' exceeds maximum number of characters"))
                         continue
-                    tokens.append(Token(TT_CHUDELUXE, ident_str, line))
+
+                    if self.current_char is None or self.current_char in lit_dlm:
+                        tokens.append(Token(TT_CHUDELUXE, ident_str, line))
+                        continue
+                    else:
+                        errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                        self.advance()
+                        continue
 
             elif self.current_char == '"':
                 string = ''

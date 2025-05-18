@@ -14,7 +14,6 @@ class LL1Parser:
             parsing_table[non_terminal] = {}
             for production in productions:
                 predict_key = (non_terminal, tuple(production))
-                print(predict_key)
                 if predict_key in self.predict_sets:
                     for terminal in self.predict_sets[predict_key]:
                         parsing_table[non_terminal][terminal] = production
@@ -38,21 +37,21 @@ class LL1Parser:
             token_value = token.value  
             line = token.line
             
-            print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
+            #print(f"\nStack Top: {top}, Token Type: {token_type}, Token Value: {token_value}")
 
             if top == token_type:
-                print(f"Matched: {top}")
+                #print(f"Matched: {top}")
                 self.stack.pop()
                 index += 1
                 
             elif top in self.parsing_table: 
                 if token_type in self.parsing_table[top]: 
                     production = self.parsing_table[top][token_type] 
-                    print(f"Expand: {top} → {' '.join(production)}")
+                    #print(f"Expand: {top} → {' '.join(production)}")
                     self.stack.pop()
                     if production != ['ε']:
                         self.stack.extend(reversed(production))
-                    print(f"Updated Stack: {self.stack}")
+                    #print(f"Updated Stack: {self.stack}")
 
                 elif 'ε' in self.parsing_table[top]:
                     expected_tokens |= set(self.first_sets[top]) - set(['ε'])

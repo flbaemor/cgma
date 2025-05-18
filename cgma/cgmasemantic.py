@@ -2256,7 +2256,7 @@ def parse_switch(tokens, index, func_type):
         switch_expr, index = parse_expression_forsencd(tokens, index)
 
     else:
-        raise SemanticError(f"Semantic Error: Invalid token '{tokens[index].value}' used in expression inside switch expression.", line)
+        raise SemanticError(f"Semantic Error: Invalid token '{tokens[index].value}' used in expression.", line)
 
     if tokens[index].type != ")":
         raise SemanticError(f"Syntax Error: Expected ')' after 'switch' expression.", line)
