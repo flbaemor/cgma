@@ -893,7 +893,7 @@ def parse_expression_forsen(tokens, index):
         func_params = func_info["params"]
         
         if func_return_type not in {"forsen"}:
-            error = f"Semantic Error: Cannot use function '{func_name}' of type {func_return_type} in this expression."
+            error = f"Semantic Error: Cannot use function '{func_name}' of type {func_return_type}. Expected valid forsen value."
             raise SemanticError(error, line)
         index += 1
         return parse_function_call(tokens, index, func_name, func_return_type, func_params)
@@ -906,14 +906,14 @@ def parse_expression_forsen(tokens, index):
         is_list = variable_info.get("is_list", False)
 
         if is_list and tokens[index + 1].type != "[":
-            raise SemanticError(f"Semantic Error: List '{token.value}' must be indexed with '[]' in expressions.", line)
+            raise SemanticError(f"Semantic Error: List '{token.value}' must be indexed with '[]'.", line)
 
         if isinstance(variable_info, str):
             error = f"Semantic Error: Variable '{tokens[index].value}' used before declaration."
             raise SemanticError(error, line)
         
         if variable_info["type"] != "forsen":
-            error = f"Semantic Error: Cannot use '{tokens[index].value}' of type {variable_info['type']} in forsen expression.", line
+            error = f"Semantic Error: Cannot use '{tokens[index].value}' of type {variable_info['type']}. Expected valid forsen value.", line
             raise SemanticError(error, line)
 
         node = ASTNode("Value", tokens[index].value)
@@ -926,15 +926,15 @@ def parse_expression_forsen(tokens, index):
         return node, index
 
     else:
-        error = f"Semantic Error: forsen can only be assigned with identifier of type forsen or a forsen literal."
+        error = f"Semantic Error: Expected valid forsen value."
         raise SemanticError(error, line) 
 
 def parse_expression_forsencd(tokens, index):
     line = tokens[index].line  
     token = tokens[index]
 
-    if tokens[index].type not in {"forsencd_lit", "identifier"}:
-        raise SemanticError(f"Semantic Error: forsencd can only be assigned a forsencd_lit or an identifier of type forsen/forsencd.", line)
+    if tokens[index].type not in {"forsencd_lit", "identifier", "forsen_lit"}:
+        raise SemanticError(f"Semantic Error: Expected valid forsencd value.", line)
 
     if tokens[index].type == "identifier" and tokens[index + 1].type == "(":
         func_name = tokens[index].value
@@ -945,7 +945,7 @@ def parse_expression_forsencd(tokens, index):
 
         func_return_type = func_info["return_type"]
         if func_return_type not in {"forsen", "forsencd"}:
-            raise SemanticError(f"Semantic Error: Cannot use function '{func_name}' of type '{func_return_type}' in this expression.", line)
+            raise SemanticError(f"Semantic Error: Cannot use function '{func_name}' of type '{func_return_type}'. Expected valid forsencd value.", line)
 
         node, index = parse_function_call(tokens, index, func_name, func_return_type, func_info["params"])
 
@@ -979,17 +979,17 @@ def parse_expression_forsencd(tokens, index):
             raise SemanticError(var_info, line)
         is_list = var_info.get("is_list", False)
         if is_list and tokens[index + 1].type != "[":
-            raise SemanticError(f"Semantic Error: List '{tokens[index].value}' must be indexed with '[]' in expressions.", line)
+            raise SemanticError(f"Semantic Error: List '{tokens[index].value}' must be indexed with '[]'.", line)
         if isinstance(var_info, str):  # Variable not found
             raise SemanticError(f"Semantic Error: Variable '{var_name}' used before declaration.", line)
 
         if var_info["type"] not in {"forsen", "forsencd"}:
-            raise SemanticError(f"Semantic Error: Cannot use '{var_name}' of type {var_info['type']} in this expression.", line)
+            raise SemanticError(f"Semantic Error: Cannot use '{var_name}' of type {var_info['type']}. Expected valid forsencd value.", line)
 
         node = ASTNode("Value", var_name, line=line)
         index += 1  
 
-    elif tokens[index].type == "forsencd_lit":
+    elif tokens[index].type in {"forsencd_lit", "forsen_lit"}:
         node = ASTNode("Value", tokens[index].value, line=line)
         index += 1 
 
@@ -1001,7 +1001,7 @@ def parse_expression_forsencd(tokens, index):
             index += 1 
 
             if tokens[index].type not in {"forsencd_lit", "identifier", "forsen_lit"}:
-                raise SemanticError(f"Semantic Error: forsencd can only be assigned a literal or identifier with type forsen/forsencd.", line)
+                raise SemanticError(f"Semantic Error: Expected valid forsencd value.", line)
 
             if tokens[index].type == "identifier" and tokens[index + 1].type == "(":
                 func_name = tokens[index].value
@@ -1012,7 +1012,7 @@ def parse_expression_forsencd(tokens, index):
 
                 func_return_type = func_info["return_type"]
                 if func_return_type not in {"forsen", "forsencd"}:
-                    raise SemanticError(f"Semantic Error: Cannot use function '{func_name}' of type '{func_return_type}' in this expression.", line)
+                    raise SemanticError(f"Semantic Error: Cannot use function '{func_name}' of type '{func_return_type}'. Expected valid forsencd value", line)
 
                 right_node, index = parse_function_call(tokens, index, func_name, func_return_type, func_info["params"])
 

@@ -31,8 +31,7 @@ class InterpreterInputRequest(Exception):
         self.line = line
 
 class Interpreter:
-    def __init__(self, symbol_table, socketio=None):
-        self.symbol_table = symbol_table
+    def __init__(self, socketio=None):
         self.output = []
         self.loop_stack = []
         self.break_flag = False

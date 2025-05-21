@@ -192,7 +192,7 @@
                   data.tokens.forEach(token => {
                       const row = tokensTableBody.insertRow();
                       row.insertCell(0).textContent = token.value;
-                      row.insertCell(1).textContent = token.type.replace(/\n/g, "\\n").replace("neg", "- (negative)");
+                      row.insertCell(1).textContent = token.type.replace("neg", "- (negative)");
                   });
           
                   if (data.errors.length > 0) {
@@ -351,17 +351,6 @@
           term.onData(termDataListener);
         });
 
-
-          async function waitForInput(promptText = '') {
-            return new Promise(resolve => {
-              console.log(`DEBUG: Prompting user for input: ${promptText}`);
-              term.write(promptText);
-              term.focus();            
-              waitingForInput = true;
-              userInput = '';        
-              inputCallback = resolve; 
-            });
-          }
           
           window.runCode = async function () {
               term.clear();
@@ -403,18 +392,6 @@
           };
         });
 
-        window.debugTerminalInput = async function() {
-          // Use waitForInputasync to capture input from the terminal
-          const input = await waitForInputasync('Input for test: '); // Customize prompt here
-          term.write(`You typed: ${input}\r\n`);
-          console.log('✅ Captured input:', input);
-        };
-      
-        // Add event listener for the debug button
-        const debugButton = document.getElementById('debugButton');
-        debugButton.addEventListener('click', () => {
-          debugTerminalInput(); // Call the debug function when the button is clicked
-        });
   });
   
   

@@ -28,8 +28,6 @@ class LL1Parser:
         error_messages = []
         expected_tokens = set()
 
-
-
         while self.stack:
             top = self.stack[-1]
             token = tokens[index] 

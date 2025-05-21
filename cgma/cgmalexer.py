@@ -12,7 +12,7 @@ ASCII = ALPHANUM + PUNCTUATIONS
 NOT_OPER = '!'
 ARITH_OPER = '+-/*%'
 RELAT_OPER = '<>='
-OPER = ARITH_OPER + RELAT_OPER
+OPER = ARITH_OPER + RELAT_OPER + NOT_OPER
 
 #DELIMITERS
 
@@ -29,9 +29,9 @@ equal_dlm = ' [(-"+\t!\'' + ALPHANUM
 hawk_dlm =  ' \n{\t'
 identif_dlm = ' \n)(&|;[],.\t{' + OPER
 lit_dlm =   ' ,):\n;\t/+-%*]' + OPER
-lwk_dlm =   ' \n&|=)\t],:;' + OPER
+lwk_dlm =   ' \n&|=)\t],:;!' + RELAT_OPER
 minus_dlm = ' -()\t' + ALPHANUM
-npc_dlm =   ' :\t' + ALPHANUM
+npc_dlm =   ' :\t'
 not_dlm =   '=(\t' + ALPHA
 opbra_dlm = ' "]\t!\'+-' + ALPHANUM
 opcur_dlm = ' \n\t}' + ALPHANUM
@@ -42,7 +42,7 @@ plus_dlm =  ' ("+)\t' + ALPHANUM
 relat_dlm = ' ("\t!' + ALPHANUM
 scolon_dlm = ' +-\t' + ALPHANUM
 spc_dlm =   ' \t'
-unary_dlm = ' )\t\n,' + ALPHANUM
+unary_dlm = ' )\t\n,' + ALPHA + OPER
 
 #TOKENS
 
@@ -957,20 +957,23 @@ class Lexer:
                 #Identifier            
                 maxIdentifierLength = 20
                 while self.current_char is not None and self.current_char in ALPHANUM + "_":
+                    if len(ident_str) + 1 > maxIdentifierLength:
+                        errors.append(LexicalError(pos, f"Identifier '{ident_str}' exceeds maximum length of {maxIdentifierLength} characters."))
+                        break
                     ident_str += self.current_char
                     self.advance()
 
-                if len(ident_str) > maxIdentifierLength:
-                    errors.append(LexicalError(pos, f"Identifier '{ident_str}' exceeds maximum length of {maxIdentifierLength} characters."))
-                    continue
+                if len(ident_str) <= maxIdentifierLength:
+                    if self.current_char is None or self.current_char in identif_dlm:
+                        tokens.append(Token(TT_IDENTIFIER, ident_str, line))
+                        continue
 
-                elif self.current_char is None or self.current_char in identif_dlm:
-                    tokens.append(Token(TT_IDENTIFIER, ident_str, line))
-                    continue
+                    elif self.current_char is not None and self.current_char not in identif_dlm and self.current_char not in ALPHANUM:
+                        errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                        self.advance()
+                        continue
 
-                elif self.current_char is not None and self.current_char not in identif_dlm and self.current_char not in ALPHANUM:
-                    errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
+                else:
                     continue
 
             
@@ -1341,6 +1344,9 @@ class Lexer:
 
             elif self.current_char == '\n':
                 pos = self.pos.copy()
+                if tokens and tokens[-1].type != TT_NL:
+                    tokens.append(Token(TT_NL, "\\n", line))
+
                 while self.current_char == '\t' or self.current_char == ' ' or self.current_char == '\n':
                     if self.current_char == '\t' or self.current_char == ' ':
                         self.advance()
@@ -1348,8 +1354,6 @@ class Lexer:
                         line += 1
                         self.advance()
 
-                if tokens and tokens[-1].type != TT_NL:
-                    tokens.append(Token(TT_NL, "\\n", line))
                 continue
                 
             elif self.current_char == '\t':
@@ -1415,12 +1419,13 @@ class Lexer:
                 elif self.current_char is not None and self.current_char in NUM:
                     fractional_part = ""
                     while self.current_char in NUM:
+                        if len(fractional_part + self.current_char) > 5:
+                            errors.append(LexicalError(pos, f"'{ident_str}' exceeds maximum number of decimal places"))
+                            break
+
                         fractional_part += self.current_char
                         self.advance()
 
-                        if len(fractional_part) > 5:
-                            errors.append(LexicalError(pos, f"'{ident_str}' exceeds maximum number of decimal places"))
-                            continue
                         
                     ident_str = f"0.{fractional_part}"
                     tokens.append(Token(TT_CHUDELUXE, ident_str, line))
