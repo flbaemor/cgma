@@ -1246,7 +1246,7 @@ def parse_expression_lwk(tokens, index):
     line = tokens[index].line
     left_node, index, left_type = parse_equality(tokens, index)
 
-    if left_type in {"chungus", "chudeluxe"} and tokens[index].type not in {"==", "!=", "<", "<=", ">", ">="}:
+    if left_type in {"chungus", "chudeluxe", "forsen", "forsencd"} and tokens[index].type not in {"==", "!=", "<", "<=", ">", ">="}:
         raise SemanticError(f"Semantic Error : Expected a valid boolean expression.", line)
 
     while tokens[index].type in {"&&", "||"}:
@@ -1303,14 +1303,14 @@ def parse_relational(tokens, index):
 
     if tokens[index].type in {"<", "<=", ">", ">="}:
         if left_type not in {"chungus", "chudeluxe"}:
-            raise SemanticError(f"Semantic Error: Relational operators only apply to arithmetical values.", line)
+            raise SemanticError(f"Semantic Error: Invalid use of '{tokens[index].type}' in expression.", line)
         
         operator = tokens[index].type
         index += 1
         right_node, index, right_type = parse_operand(tokens, index)
 
         if right_type not in {"chungus", "chudeluxe"}:
-            raise SemanticError(f"Semantic Error: Relational operators only apply to arithmetical values.", line)
+            raise SemanticError(f"Semantic Error: Invalid use of '{tokens[index].type}' in expression.", line)
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
 
