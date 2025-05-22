@@ -144,8 +144,8 @@ class Interpreter:
             return self.eval_assignment(node)
         elif isinstance(node, BinaryOpNode):
             value = self.eval_binary_op(node)
-            if value > 10000000000 or value < -9999999999:
-                raise InterpreterError(f"Runtime Error: Exceeds maximum number of 10 digits", node.line)
+            #if value > 10000000000 or value < -9999999999:
+                #raise InterpreterError(f"Runtime Error: Evaluated number exceeds maximum number of 10 digits", node.line)
             return value
         elif isinstance(node, FunctionDeclarationNode):
             return self.eval_function_declaration(node)
