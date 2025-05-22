@@ -1085,12 +1085,13 @@ def parse_term(tokens, index):
 
     while tokens[index].type in {"*", "/", "%"}:
         op = tokens[index].value
+        token = tokens[index]
         index += 1
         right_node, index = parse_unary(tokens, index)
         if op in {"/", "%"} and isinstance(right_node, ASTNode) and right_node.node_type == "Value":
             try:
                 if float(right_node.value) == 0:
-                    raise SemanticError(f"Semantic Error: Division or modulus by zero is undefined.", tokens[index].line)
+                    raise SemanticError(f"Semantic Error: Division or modulus by zero is undefined.", token.line)
             except ValueError:
                 pass
             

@@ -19,8 +19,12 @@ class ReturnValue(Exception):
 
 class InterpreterError(Exception):
     def __init__(self, message, line):
-        super().__init__(f"[Line {line}] {message}")
-        self.message = f"{message}"
+        super().__init__(message)
+        if line is not None:
+            self.message = f"Ln {line} {message}"
+
+        else:
+            self.message = message
     
     def __str__(self):
         return self.message
@@ -133,79 +137,82 @@ class Interpreter:
     #INTERPRETER
     def interpret(self, node):
         if isinstance(node, ProgramNode):
-            return self.visit_program(node)
+            return self.eval_program(node)
         elif isinstance(node, VariableDeclarationNode):
-            return self.visit_variable_declaration(node)
+            return self.eval_variable_declaration(node)
         elif isinstance(node, AssignmentNode):
-            return self.visit_assignment(node)
+            return self.eval_assignment(node)
         elif isinstance(node, BinaryOpNode):
-            return self.visit_binary_op(node)
+            value = self.eval_binary_op(node)
+            if value > 10000000000 or value < -9999999999:
+                raise InterpreterError(f"Runtime Error: Exceeds maximum number of 10 digits", node.line)
+            return value
         elif isinstance(node, FunctionDeclarationNode):
-            return self.visit_function_declaration(node)
+            return self.eval_function_declaration(node)
         elif isinstance(node, PrintNode):
-            return self.visit_print(node)
+            return self.eval_print(node)
         elif isinstance(node, ListNode):
-            return self.visit_list(node)
+            return self.eval_list(node)
         elif isinstance(node, ListAccessNode):
-            return self.visit_list_access(node)
+            return self.eval_list_access(node)
         elif isinstance(node, ReturnNode):
-            return self.visit_return(node)
+            return self.eval_return(node)
         elif isinstance(node, FunctionCallNode):
-            return self.visit_function_call(node)
+            return self.eval_function_call(node)
         elif isinstance(node, AppendNode):
-            return self.visit_append(node)
+            return self.eval_append(node)
         elif isinstance(node, InsertNode):
-            return self.visit_insert(node)
+            return self.eval_insert(node)
         elif isinstance(node, RemoveNode):
-            return self.visit_remove(node)
+            return self.eval_remove(node)
         elif isinstance(node, UnaryOpNode):
-            return self.visit_unaryop(node)
+            return self.eval_unaryop(node)
         elif isinstance(node, SturdyDeclarationNode):
-            return self.visit_sturdy_declaration(node)
+            return self.eval_sturdy_declaration(node)
         elif isinstance(node, CastNode):
-            return self.visit_cast(node)
+            return self.eval_cast(node)
         elif isinstance(node, TaperNode):
-            return self.visit_taper(node)
+            return self.eval_taper(node)
         elif isinstance(node, TSNode):
-            return self.visit_ts(node)
+            return self.eval_ts(node)
         elif isinstance(node, IfStatementNode):
-            return self.visit_if_statement(node)
+            return self.eval_if_statement(node)
         elif isinstance(node, ForLoopNode):
-            return self.visit_for_loop(node)
+            return self.eval_for_loop(node)
         elif isinstance(node, WhileLoopNode):
-            return self.visit_while_loop(node)
+            return self.eval_while_loop(node)
         elif isinstance(node, DoWhileLoopNode):
-            return self.visit_do_while_loop(node)
+            return self.eval_do_while_loop(node)
         elif isinstance(node, BreakNode):
-            return self.visit_break(node)
+            return self.eval_break(node)
         elif isinstance(node, ContinueNode):
-            return self.visit_continue(node)
+            return self.eval_continue(node)
         elif isinstance(node, SwitchNode):
-            return self.visit_switch(node)
+            return self.eval_switch(node)
         elif node.node_type == "Input":
-            return self.visit_input(node)
+            return self.eval_input(node)
         elif node.node_type == "Value":
             value = self._parse_literal(node.value)
             return value
         elif node.node_type == "FormattedString":
-            return self.visit_formatted_string(node)
+            return self.eval_formatted_string(node)
         elif node.node_type == "VariableDeclarationList":
             for child in node.children:
-                self.visit_variable_declaration(child)
+                self.eval_variable_declaration(child)
         elif node.node_type == "AssignmentList":
             for child in node.children:
-                self.visit_assignment(child)
+                self.eval_assignment(child)
         else:
             raise Exception(f"Unknown AST node type: {node.node_type}")
 
-    def visit_program(self, node):
+    def eval_program(self, node):
         for child in node.children:
             self.interpret(child)
 
         main_call = FunctionCallNode("skibidi", [], node.line)
         return self.interpret(main_call)
 
-    def visit_variable_declaration(self, node):
+    def eval_variable_declaration(self, node):
         var_type = node.children[0].value
         var_name = node.children[1].value
         value_node = node.children[2]
@@ -227,22 +234,24 @@ class Interpreter:
 
             else:
                 value = self.interpret(value_node)
+
                 if isinstance(value_node, TaperNode):
                     is_list = True
                 if var_type == "chungus" and isinstance(value, float):
                     value = int(value)
-
+                
+                    
         #print(f"\nDeclaring variable '{var_name}' of type '{var_type}' with initial value: {value}")
         self.declare_variable(var_name, var_type, value, is_list=is_list)
 
-    def visit_sturdy_declaration(self, node):
+    def eval_sturdy_declaration(self, node):
         var_type = node.children[0].value
         var_name = node.children[1].value
         value_node = node.children[2]
         value = self.interpret(value_node)
         self.declare_variable(var_name, var_type, value, is_list=False,  is_sturdy=True)
 
-    def visit_assignment(self, node):
+    def eval_assignment(self, node):
         target_node = node.children[0]
         value_node = node.children[1]
 
@@ -262,7 +271,7 @@ class Interpreter:
             index = self.interpret(index_node.children[0])
 
             if not isinstance(index, int):
-                raise InterpreterError(f"Semantic Error: List index must be an integer. Got '{index}'", node.line)
+                raise InterpreterError(f"Runtime Error: List index must be an integer. Got '{index}'", node.line)
 
             list_entry = self.lookup_variable(list_name)
             if isinstance(list_entry, str):
@@ -270,10 +279,10 @@ class Interpreter:
 
             list_value = list_entry["value"]
             if not isinstance(list_value, list):
-                raise InterpreterError(f"Semantic Error: Variable '{list_name}' is not a list.", node.line)
+                raise InterpreterError(f"Runtime Error: Variable '{list_name}' is not a list.", node.line)
 
             if index < 0 or index >= len(list_value):
-                raise InterpreterError(f"Semantic Error: Index '{index}' out of bounds for list '{list_name}'.", node.line)
+                raise InterpreterError(f"Runtime Error: Index '{index}' out of bounds for list '{list_name}'.", node.line)
 
             #print(f"\nUpdating list '{list_name}' at index {index} with value: {value}")
             list_value[index] = value
@@ -295,7 +304,7 @@ class Interpreter:
             #print(f"\nUpdating variable '{var_name}' of type '{var_type}' with value: {value}")
 
 
-    def visit_binary_op(self, node):
+    def eval_binary_op(self, node):
         left = self.interpret(node.children[0])
         right = self.interpret(node.children[1])
         operator = node.value
@@ -380,7 +389,7 @@ class Interpreter:
             return value 
     
 
-    def visit_function_declaration(self, node):
+    def eval_function_declaration(self, node):
         return_type = node.children[0].value 
         parameters_node = node.children[1]
         func_name = node.value
@@ -398,7 +407,7 @@ class Interpreter:
 
         return None
 
-    def visit_block(self, block_node):
+    def eval_block(self, block_node):
         for statement in block_node.children:
             self.interpret(statement) 
             if self.continue_flag:
@@ -409,13 +418,17 @@ class Interpreter:
         self.socketio.emit('output', {'output': str(num)})
         self.output.append(str(num))
 
-    def visit_print(self, node):
+    def eval_print(self, node):
         if not node.children:
             return
 
         first = node.children[0]
 
         evaluated_first = self.interpret(first)
+        if isinstance(evaluated_first, float):
+            whole, dot, dec = str(evaluated_first).partition('.')
+            dec = dec[:5]
+            evaluated_first = float(f"{whole}.{dec}")
 
         if isinstance(evaluated_first, str) and '{}' in evaluated_first:
             values = []
@@ -424,6 +437,11 @@ class Interpreter:
                 if isinstance(value, str) and not isinstance(self.lookup_variable(value), str):
                     value = self.lookup_variable(value)["value"]
                 
+                if isinstance(value, float):
+                    whole, dot, dec = str(value).partition('.')
+                    dec = dec[:5]
+                    value = float(f"{whole}.{dec}")
+
                 values.append(value)
 
             try:
@@ -436,7 +454,7 @@ class Interpreter:
 
         self.yap(str(evaluated_first))
 
-    def visit_formatted_string(self, node):
+    def eval_formatted_string(self, node):
         value = node.value
         if value.startswith('"') and value.endswith('"'):
             value = value[1:-1]
@@ -452,7 +470,7 @@ class Interpreter:
         return value
 
         
-    def visit_list_access(self, node):
+    def eval_list_access(self, node):
         list_name = node.children[0].value
         index_node = node.children[1]
 
@@ -463,20 +481,20 @@ class Interpreter:
         index = self.interpret(index_node.children[0])
 
         if not isinstance(index, int):
-            raise InterpreterError(f"Semantic Error: List index must be an integer. Got '{index}'", node.line)
+            raise InterpreterError(f"Runtime Error: List index must be an integer. Got '{index}'", node.line)
         
         if index < 0 or index >= len(list_value):
-            raise InterpreterError(f"Semantic Error: Index '{index}' out of bounds for list '{list_name}'.", node.line)
+            raise InterpreterError(f"Runtime Error: Index '{index}' out of bounds for list '{list_name}'.", node.line)
 
         return list_value[index]
     
 
-    def visit_return(self, node):
+    def eval_return(self, node):
         value = self.interpret(node.children[0]) if node.children else None
         raise ReturnValue(value)
     
 
-    def visit_function_call(self, node):
+    def eval_function_call(self, node):
         function_name = node.value
         args = [self.interpret(arg.children[0]) for arg in node.children]
 
@@ -489,7 +507,7 @@ class Interpreter:
 
         if len(expected_params) != len(args):
             raise InterpreterError(
-                f"Semantic Error: Function '{function_name}' expects {len(expected_params)} argument(s), got {len(args)}.",
+                f"Runtime Error: Function '{function_name}' expects {len(expected_params)} argument(s), got {len(args)}.",
                 node.line
             )
         
@@ -504,7 +522,7 @@ class Interpreter:
                 self.declare_variable(param_name, param_type, arg_value)
 
             try:
-                self.visit_block(function_node.children[2])
+                self.eval_block(function_node.children[2])
 
             except ReturnValue as ret:
                 return ret.value
@@ -516,7 +534,7 @@ class Interpreter:
             self.current_func_name = None
 
 
-    def visit_append(self, node):
+    def eval_append(self, node):
         list_name = node.parent.children[0].value
         list_info = self.lookup_variable(list_name)
 
@@ -526,17 +544,17 @@ class Interpreter:
             #print(f"\nAppending value '{value}' to list '{list_name}'")
 
         
-    def visit_insert(self, node):
+    def eval_insert(self, node):
         list_name = node.parent.children[0].value
         list_info = self.lookup_variable(list_name)
 
         index = self.interpret(node.children[0].children[0])
 
         if not isinstance(index, int):
-            raise InterpreterError("Semantic Error: Insert index must be an integer", node.line)
+            raise InterpreterError("Runtime Error: Insert index must be an integer", node.line)
 
         if index < 0 or index > len(list_info["value"]):
-            raise InterpreterError(f"Semantic Error: Index {index} out of range for insert", node.line)
+            raise InterpreterError(f"Runtime Error: Index {index} out of range for insert", node.line)
 
         for child in node.children[1:]:
             value = self.interpret(child)
@@ -545,7 +563,7 @@ class Interpreter:
             #print(f"Inserted {value} at index {index} in list '{list_name}': {list_info['value']}")
 
 
-    def visit_remove(self, node):
+    def eval_remove(self, node):
         list_name = node.children[0].value
         index_node = node.children[1].children[0]
 
@@ -556,15 +574,15 @@ class Interpreter:
         index = self.interpret(index_node)
 
         if not isinstance(index, int):
-            raise InterpreterError("Semantic Error: Remove index must be an integer", node.line)
+            raise InterpreterError("Runtime Error: Remove index must be an integer", node.line)
 
         if index < 0 or index >= len(list_info["value"]):
-            raise InterpreterError(f"Semantic Error: Index {index} out of bounds for remove", node.line)
+            raise InterpreterError(f"Runtime Error: Index {index} out of bounds for remove", node.line)
 
         removed = list_info["value"].pop(index)
         #print(f"Removed value {removed} from list '{list_name}': {list_info['value']}")
 
-    def visit_unaryop(self, node):
+    def eval_unaryop(self, node):
         operand_node = node.children[0]
         operand_name = operand_node.value
         var_info = self.lookup_variable(operand_name)
@@ -597,7 +615,7 @@ class Interpreter:
 
         raise InterpreterError(f"Unknown unary operator {node.value}", node.line)
     
-    def visit_cast(self, node):
+    def eval_cast(self, node):
         value = self.interpret(node.children[1])
         cast_type = node.children[0].value
 
@@ -608,7 +626,7 @@ class Interpreter:
         else:
             raise InterpreterError(f"Unknown cast type: {cast_type}", node.line)
 
-    def visit_taper(self, node):
+    def eval_taper(self, node):
         var_name = node.children[0].value
         var_info = self.lookup_variable(var_name)
         
@@ -618,7 +636,7 @@ class Interpreter:
 
         return value
 
-    def visit_ts(self, node):
+    def eval_ts(self, node):
         var_name = node.children[0].value
         var_info = self.lookup_variable(var_name)
 
@@ -632,16 +650,16 @@ class Interpreter:
         
         return result
 
-    def visit_if_statement(self, node):
+    def eval_if_statement(self, node):
         condition_result = self.interpret(node.children[0].children[0])
         self.enter_scope()
 
         if not isinstance(condition_result, bool):
-            raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+            raise InterpreterError(f"Runtime Error: Condition must be a boolean. Got '{condition_result}'", node.line)
         
         try:
             if condition_result:
-                self.visit_block(node.children[1])
+                self.eval_block(node.children[1])
             
             else:
                 current_node = 2
@@ -653,13 +671,13 @@ class Interpreter:
                         elif_condition_result = self.interpret(elif_node.children[0].children[0])
 
                         if not isinstance(elif_condition_result, bool):
-                            raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+                            raise InterpreterError(f"Runtime Error: Condition must be a boolean. Got '{condition_result}'", node.line)
                         
                         if elif_condition_result:
                             try:
                                 self.enter_scope()
                                 #print(f"Executing ElseIf block: {elif_node.line}")
-                                self.visit_block(elif_node.children[1])
+                                self.eval_block(elif_node.children[1])
                             finally:
                                 self.exit_scope()
                             return
@@ -668,7 +686,7 @@ class Interpreter:
                         #print(f"Executing Else block: {elif_node.line}")
                         try:
                             self.enter_scope()
-                            self.visit_block(elif_node.children[0])
+                            self.eval_block(elif_node.children[0])
                         finally:
                             self.exit_scope()
                         return
@@ -679,7 +697,7 @@ class Interpreter:
 
         return None
     
-    def visit_for_loop(self, node):
+    def eval_for_loop(self, node):
         self.enter_loop('for')
         self.enter_scope()
         MAX_LOOP_ITERATIONS = 10000
@@ -703,7 +721,7 @@ class Interpreter:
             condition_result = self.interpret(condition_node)
 
             if not isinstance(condition_result, bool):
-                raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+                raise InterpreterError(f"Runtime Error: Condition must be a boolean. Got '{condition_result}'", node.line)
 
             while condition_result:
                 LOOP_COUNTER += 1
@@ -711,7 +729,7 @@ class Interpreter:
                     raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
 
                 
-                self.visit_block(node.children[3])
+                self.eval_block(node.children[3])
 
                 if self.continue_flag:
                     self.continue_flag = False
@@ -729,7 +747,7 @@ class Interpreter:
             self.exit_loop()
 
 
-    def visit_while_loop(self, node):
+    def eval_while_loop(self, node):
         self.enter_loop('while')
         self.enter_scope()
         MAX_LOOP_ITERATIONS = 10000
@@ -740,7 +758,7 @@ class Interpreter:
             condition_result = self.interpret(condition_node)
 
             if not isinstance(condition_result, bool):
-                raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+                raise InterpreterError(f"Runtime Error: Condition must be a boolean. Got '{condition_result}'", node.line)
 
             while condition_result:
                 LOOP_COUNTER += 1
@@ -748,7 +766,7 @@ class Interpreter:
                     raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
 
                 block_node = node.children[1]
-                self.visit_block(block_node)
+                self.eval_block(block_node)
 
                 if self.continue_flag:
                     self.continue_flag = False
@@ -763,7 +781,7 @@ class Interpreter:
             self.exit_scope()
 
 
-    def visit_do_while_loop(self, node):
+    def eval_do_while_loop(self, node):
         self.enter_loop('do-while')
         MAX_LOOP_ITERATIONS = 10000
         LOOP_COUNTER = 0
@@ -772,7 +790,7 @@ class Interpreter:
 
         try:
             while True:
-                self.visit_block(block_node)
+                self.eval_block(block_node)
                 LOOP_COUNTER += 1
                 if LOOP_COUNTER > MAX_LOOP_ITERATIONS:
                     raise InterpreterError("Runtime Error: Infinite loop detected!", node.line)
@@ -786,7 +804,7 @@ class Interpreter:
                 condition_result = self.interpret(condition_node)
 
                 if not isinstance(condition_result, bool):
-                    raise InterpreterError(f"Semantic Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+                    raise InterpreterError(f"Runtime Error: Condition must be a boolean. Got '{condition_result}'", node.line)
 
                 if not condition_result:
                     break
@@ -795,7 +813,7 @@ class Interpreter:
             self.enter_scopex
 
     
-    def visit_break(self, node):
+    def eval_break(self, node):
         if self.loop_stack:
             self.trigger_break()
         else:
@@ -818,7 +836,7 @@ class Interpreter:
             self.break_flag = False
             self.continue_flag = False
 
-    def visit_continue(self, node):
+    def eval_continue(self, node):
         if self.loop_stack:
             self.trigger_continue()
         else:
@@ -830,7 +848,7 @@ class Interpreter:
     def trigger_continue(self):
         self.continue_flag = True
 
-    def visit_switch(self, node):
+    def eval_switch(self, node):
         self.enter_loop('switch')
         self.enter_scope()
         switch_expr_node = node.children[0]
@@ -852,7 +870,7 @@ class Interpreter:
                         matched_case = True
                         try:
                             self.enter_scope()
-                            self.visit_block(block_node)
+                            self.eval_block(block_node)
                             if self.break_triggered():
                                 break_found = True
                                 break
@@ -865,7 +883,7 @@ class Interpreter:
             if not matched_case and not break_found and default_case:
                 try:
                     self.enter_scope()
-                    self.visit_block(default_case)
+                    self.eval_block(default_case)
                 finally:
                     self.exit_scope()
 
@@ -892,8 +910,8 @@ class Interpreter:
         self.input_events.pop(var_name, None)  # Clean up the event
         return value
 
-    # Modify the visit_input method to use the new input handling
-    def visit_input(self, node):
+    # Modify the eval_input method to use the new input handling
+    def eval_input(self, node):
         parent_node = node.parent
         if isinstance(parent_node, VariableDeclarationNode):
             var_name = parent_node.children[1].value
@@ -920,29 +938,29 @@ class Interpreter:
         if var_type == "chungus":
             try:
                 if len(input_value.strip('-').lstrip('0')) > 10:
-                    raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 10 digits", node.line)
+                    raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 10 digits", node.line)
                 input_value = int(float(input_value))
             except ValueError:
-                raise InterpreterError(f"Semantic Error: Expected integer value, got '{input_value}'", node.line)
+                raise InterpreterError(f"Runtime Error: Expected integer value, got '{input_value}'", node.line)
             
         elif var_type == "chudeluxe":
             try:
                 if '.' in input_value:
                     integer_part, decimal_part = str(input_value).split('.')
                     if len(integer_part.strip('-').lstrip('0')) > 10:
-                        raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 10 digits", node.line)
+                        raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 10 digits", node.line)
                     if len(decimal_part.rstrip('0')) > 5:
-                        raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 5 decimal numbers", node.line)
+                        raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 5 decimal numbers", node.line)
                     
                 else:
                     if len(input_value.strip('-').lstrip('0')) > 10:
-                        raise InterpreterError(f"Semantic Error: Input value exceeds maximum number of 10 digits", node.line)
+                        raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 10 digits", node.line)
                 
                 input_value = float(input_value)
                 
                 
             except ValueError:
-                raise InterpreterError(f"Semantic Error: Expected float value, got '{input_value}'", node.line)
+                raise InterpreterError(f"Runtime Error: Expected float value, got '{input_value}'", node.line)
             
         elif var_type == "lwk":
             if input_value == "true":
@@ -950,13 +968,13 @@ class Interpreter:
             elif input_value == "false":
                 input_value = False
             else:
-                raise InterpreterError(f"Semantic Error: expected lwk value, got '{input_value}'", node.line)
+                raise InterpreterError(f"Runtime Error: expected lwk value, got '{input_value}'", node.line)
             
         elif var_type == "forsencd":
             input_value = str(input_value)
 
         elif var_type == "forsen" and len(input_value) > 1:
-            raise InterpreterError(f"Semantic Error: Expected a single character for forsensd, got '{input_value}'", node.line)
+            raise InterpreterError(f"Runtime Error: Expected a single character for forsensd, got '{input_value}'", node.line)
 
         return input_value
 

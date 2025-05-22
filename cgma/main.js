@@ -192,7 +192,7 @@
                   data.tokens.forEach(token => {
                       const row = tokensTableBody.insertRow();
                       row.insertCell(0).textContent = token.value;
-                      row.insertCell(1).textContent = token.type.replace("neg", "- (negative)");
+                      row.insertCell(1).textContent = token.type.replace("neg", "-");
                   });
           
                   if (data.errors.length > 0) {

@@ -40,16 +40,19 @@ class LL1Parser:
             if top == token_type:
                 #print(f"Matched: {top}")
                 self.stack.pop()
+                expected_tokens = set()
                 index += 1
                 
             elif top in self.parsing_table: 
                 if token_type in self.parsing_table[top]: 
                     production = self.parsing_table[top][token_type] 
-                    #print(f"Expand: {top} → {' '.join(production)}")
+                    print(f"Expand: {top} → {' '.join(production)}")
+                    expected_tokens |= set(self.first_sets[top]) - set(['ε'])
+
                     self.stack.pop()
                     if production != ['ε']:
                         self.stack.extend(reversed(production))
-                    #print(f"Updated Stack: {self.stack}")
+                    print(f"Updated Stack: {self.stack}")
 
                 elif 'ε' in self.parsing_table[top]:
                     expected_tokens |= set(self.first_sets[top]) - set(['ε'])
