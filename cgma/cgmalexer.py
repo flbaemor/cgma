@@ -32,7 +32,7 @@ lit_dlm =   ' ,):\n;\t/+-%*]' + OPER
 lwk_dlm =   ' \n&|=)\t],:;!' + RELAT_OPER
 minus_dlm = ' -()\t' + ALPHANUM
 npc_dlm =   ' :\t'
-not_dlm =   '=(\t' + ALPHA
+not_dlm =   ' =(\t' + ALPHA
 opbra_dlm = ' "]\t!\'+-' + ALPHANUM
 opcur_dlm = ' \n\t}' + ALPHANUM
 operator_dlm = ' (\t!' + ALPHANUM
@@ -42,7 +42,7 @@ plus_dlm =  ' ("+)\t' + ALPHANUM
 relat_dlm = ' ("\t!' + ALPHANUM
 scolon_dlm = ' +-\t' + ALPHANUM
 spc_dlm =   ' \t'
-unary_dlm = ' )\t\n,' + ALPHA + OPER
+unary_dlm = ' )\t\n,' + OPER
 
 #TOKENS
 
@@ -91,7 +91,7 @@ TT_MUL          = '*'     # '*'
 TT_DIV          = '/'     # '/'
 TT_MOD          = '%'     # '%'
 TT_IS           = '='      # '='
-TT_NEGAT        = 'neg'   # '-'
+TT_NEGAT        = '-'   # '-'
 
 TT_EQ           = '=='      # '=='  
 TT_NEQ          = '!='     # '!='
@@ -209,7 +209,6 @@ class Lexer:
                                             continue
                                         elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                             errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'")) #Adds the error to the list of errors
-                                            self.advance()
                                             continue
                                             
                 #Letter B
@@ -234,7 +233,6 @@ class Lexer:
                                     continue
                                 elif self.current_char is not None and self.current_char not in endln_dlm and self.current_char not in ALPHANUM:
                                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                    self.advance()
                                     continue
 
                 #Letter C
@@ -267,7 +265,6 @@ class Lexer:
                                             continue
                                         elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
                                             errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                            self.advance()
                                             continue
                     elif self.current_char == "h":
                         ident_str += self.current_char
@@ -286,7 +283,6 @@ class Lexer:
                                     continue
                                 elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                    self.advance()
                                     continue
                         if self.current_char == "u":
                             ident_str += self.current_char
@@ -321,7 +317,6 @@ class Lexer:
                                                         continue
                                                     elif self.current_char is not None and self.current_char not in convert_dlm and self.current_char not in ALPHANUM:
                                                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                                        self.advance()
                                                         continue
 
                             elif self.current_char == "n":
@@ -345,7 +340,6 @@ class Lexer:
                                                 continue
                                             elif self.current_char is not None and self.current_char not in convert_dlm and self.current_char not in ALPHANUM:
                                                 errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                                self.advance()
                                                 continue
 
                 # Letter F
@@ -374,7 +368,6 @@ class Lexer:
                                         continue
                                     elif self.current_char is not None and self.current_char not in lwk_dlm and self.current_char not in ALPHANUM:
                                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                        self.advance()
                                         continue
 
                     if self.current_char == "e":
@@ -394,7 +387,6 @@ class Lexer:
                                     continue
                                 elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
                                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                    self.advance()
                                     continue
 
                     if self.current_char == "o":
@@ -430,7 +422,6 @@ class Lexer:
                                                     continue
                                                 elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
                                                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                                    self.advance()
                                                     continue
 
                                         if self.current_char is None or self.current_char in spc_dlm:
@@ -438,7 +429,6 @@ class Lexer:
                                             continue
                                         elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
                                             errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                            self.advance()
                                             continue
                                             
 
@@ -472,7 +462,6 @@ class Lexer:
                                             continue
                                         elif self.current_char is not None and self.current_char not in endln_dlm and self.current_char not in ALPHANUM:
                                             errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                            self.advance()
                                             continue
 
                 # Letter H
@@ -519,7 +508,6 @@ class Lexer:
                                     continue
                                 elif self.current_char is not None and self.current_char not in hawk_dlm and self.current_char not in ALPHANUM:
                                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                    self.advance()
                                     continue
 
                                 
@@ -553,7 +541,6 @@ class Lexer:
                                             continue
                                         elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                             errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                            self.advance()
                                             continue
 
                 # Letter J
@@ -574,7 +561,6 @@ class Lexer:
                                 continue
                             elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                 errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                self.advance()
                                 continue
 
                 # Letter L
@@ -623,7 +609,6 @@ class Lexer:
                                                             continue
                                                         elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                                             errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                                            self.advance()
                                                             continue
 
                     if self.current_char == "i":
@@ -639,7 +624,6 @@ class Lexer:
                                 continue
                             elif self.current_char is not None and self.current_char not in hawk_dlm and self.current_char not in ALPHANUM:
                                 errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                self.advance()
                                 continue
                         
                     if self.current_char == "w":
@@ -655,7 +639,6 @@ class Lexer:
                                 continue
                             elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
                                 errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                self.advance()
                                 continue
 
                 # Letter N
@@ -684,7 +667,6 @@ class Lexer:
                                         continue
                                     elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
                                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                        self.advance()
                                         continue
 
                     if self.current_char == "p":
@@ -700,7 +682,6 @@ class Lexer:
                                 continue
                             elif self.current_char is not None and self.current_char not in npc_dlm and self.current_char not in ALPHANUM:
                                 errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                self.advance()
                                 continue
                         
                 # Letter P
@@ -729,7 +710,6 @@ class Lexer:
                                         continue
                                     elif self.current_char is not None and self.current_char not in endln_dlm and self.current_char not in ALPHANUM:
                                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                        self.advance()
                                         continue
 
                     if self.current_char == "l":
@@ -749,7 +729,6 @@ class Lexer:
                                         continue
                                     elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                        self.advance()
                                         continue
 
 
@@ -783,7 +762,6 @@ class Lexer:
                                             continue
                                         elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                             errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                            self.advance()
                                             continue
 
                 # Letter S
@@ -820,7 +798,6 @@ class Lexer:
                                                 continue
                                             elif self.current_char is not None and self.current_char not in hawk_dlm and self.current_char not in ALPHANUM:
                                                 errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                                self.advance()
                                                 continue
 
                     if self.current_char == "t":
@@ -848,7 +825,6 @@ class Lexer:
                                             continue
                                         elif self.current_char is not None and self.current_char not in spc_dlm and self.current_char not in ALPHANUM:
                                             errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                            self.advance()
                                             continue
 
 
@@ -878,7 +854,6 @@ class Lexer:
                                         continue
                                     elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                        self.advance()
                                         continue
 
                     if self.current_char == "r":
@@ -898,7 +873,6 @@ class Lexer:
                                     continue
                                 elif self.current_char is not None and self.current_char not in lwk_dlm and self.current_char not in ALPHANUM:
                                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                    self.advance()
                                     continue
 
                     if self.current_char == 's':
@@ -910,7 +884,6 @@ class Lexer:
                             continue
                         elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                             errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                            self.advance()
                             continue
 
                     if self.current_char == "u":
@@ -930,7 +903,6 @@ class Lexer:
                                     continue
                                 elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                    self.advance()
                                     continue
 
                 # Letter Y
@@ -951,7 +923,6 @@ class Lexer:
                                 continue
                             elif self.current_char is not None and self.current_char not in com_dlm and self.current_char not in ALPHANUM:
                                 errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                                self.advance()
                                 continue
 
                 #Identifier            
@@ -970,7 +941,6 @@ class Lexer:
 
                     elif self.current_char is not None and self.current_char not in identif_dlm and self.current_char not in ALPHANUM:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
 
                 else:
@@ -999,7 +969,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
             
             elif self.current_char == "!":
@@ -1014,14 +983,12 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char is not None and self.current_char in not_dlm:
                     tokens.append(Token(TT_NOT, ident_str, line))
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
 
                 
@@ -1035,7 +1002,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
     
             elif self.current_char == "&":
@@ -1050,7 +1016,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid character '{ident_str}'"))
@@ -1066,7 +1031,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
                 
             elif self.current_char == ")":
@@ -1078,7 +1042,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
                 
             elif self.current_char == "*":
@@ -1090,7 +1053,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
                 
             elif self.current_char == ",":
@@ -1102,7 +1064,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
             
             elif self.current_char == "\\":
@@ -1117,7 +1078,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char == "/":
                     ident_str += self.current_char
@@ -1127,7 +1087,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char == "{":
                     ident_str += self.current_char
@@ -1137,7 +1096,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char == "}":
                     ident_str += self.current_char
@@ -1147,7 +1105,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char == "n":
                     ident_str += self.current_char
@@ -1157,7 +1114,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char == "t":
                     ident_str += self.current_char
@@ -1167,7 +1123,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid character '{ident_str}'"))
@@ -1183,7 +1138,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
                 
             elif self.current_char == "[":
@@ -1195,7 +1149,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
                 
             elif self.current_char == "]":
@@ -1207,7 +1160,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
                 
             elif self.current_char == "{":
@@ -1219,7 +1171,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
                 
             elif self.current_char == "}":
@@ -1231,7 +1182,6 @@ class Lexer:
                     continue
                 else: 
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
 
             elif self.current_char == "|":
@@ -1246,7 +1196,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid character '{ident_str}'"))
@@ -1265,14 +1214,12 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char is not None and self.current_char in plus_dlm:
                     tokens.append(Token(TT_PLUS, ident_str, line))
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
 
             elif self.current_char == "<":
@@ -1287,14 +1234,12 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char is not None and self.current_char in arith_operator_dlm:
                     tokens.append(Token(TT_LT, ident_str, line))
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
             
             elif self.current_char == "=":
@@ -1309,14 +1254,12 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char is not None and self.current_char in equal_dlm:
                     tokens.append(Token(TT_IS, ident_str, line))
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
 
             elif self.current_char == ">":
@@ -1331,14 +1274,12 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                 elif self.current_char is not None and self.current_char in arith_operator_dlm:
                     tokens.append(Token(TT_GT, ident_str, line))
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
 
 
@@ -1405,7 +1346,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{string}'"))
-                    self.advance()
                     continue
             
             elif self.current_char == ".":
@@ -1444,7 +1384,6 @@ class Lexer:
                     continue
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                    self.advance()
                     continue
 
             elif self.current_char in NUM:
@@ -1456,21 +1395,21 @@ class Lexer:
 
                 while self.current_char is not None and self.current_char in NUM + ".":
                     if self.current_char == ".":
-                        digitCount = 4
+                        digitCount = 10
                         if dot_count == 1:
                             break
                         dot_count += 1
 
                     digitCount += 1
-                    if digitCount > 10:
+                    if digitCount > 16:
                         break
                     ident_str += self.current_char
-                    if digitCount <= 10:
+                    if digitCount <= 16:
                         self.advance()
 
                 if dot_count == 0: 
                     ident_str = ident_str.lstrip("0") or "0"
-                    if digitCount > 10: 
+                    if digitCount > 16: 
                         errors.append(LexicalError(pos, f"'{ident_str}' exceeds maximum number of characters"))
                         continue
                     
@@ -1479,7 +1418,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
                     
                     
@@ -1489,7 +1427,7 @@ class Lexer:
                     fractional_part = parts[1].rstrip("0") or "0"
                     ident_str = f"{integer_part}.{fractional_part}"
 
-                    if digitCount > 10:
+                    if digitCount > 16:
                         errors.append(LexicalError(pos, f"'{ident_str}' exceeds maximum number of characters"))
                         continue
 
@@ -1498,7 +1436,6 @@ class Lexer:
                         continue
                     else:
                         errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
-                        self.advance()
                         continue
 
             elif self.current_char == '"':
@@ -1523,7 +1460,6 @@ class Lexer:
                         if self.current_char == '\\':
                             escape_character = True
                         elif self.current_char == '\n':
-                            pos_end = self.pos.copy()
                             break
                         else:
                             string += self.current_char
@@ -1534,13 +1470,11 @@ class Lexer:
                     self.advance()
 
                 else:
-                    pos_end = self.pos.copy()
-                    errors.append(LexicalError(pos, pos_end, f"Missing closing '\"' after '{string}'"))
+                    errors.append(LexicalError(pos, f"Missing closing '\"' after '{string}'"))
                     continue
 
                 if self.current_char is not None and self.current_char not in lit_dlm:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after string literal '{string}'"))
-                    self.advance()
                     continue
             
                 string = string.replace('\n', '\\n')
@@ -1556,10 +1490,8 @@ class Lexer:
 
                 while self.current_char is not None and self.current_char != "'":
                     if self.current_char == '\n':
-                        pos_end = self.pos.copy()
                         break
                     elif self.current_char == '\\':
-                        pos_end = self.pos.copy()
                         break
                     else:
                         string += self.current_char
@@ -1571,8 +1503,7 @@ class Lexer:
                     self.advance()
                     
                 else:
-                    pos_end = self.pos.copy()
-                    errors.append(LexicalError(pos, pos_end, f"Missing closing '\'' after '{string}'"))
+                    errors.append(LexicalError(pos, f"Missing closing '\'' after '{string}'"))
                     continue
 
                 if len(char) > 1:
@@ -1581,7 +1512,6 @@ class Lexer:
 
                 if self.current_char is not None and self.current_char not in lit_dlm:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{string}'"))
-                    self.advance()
                     continue
 
                 tokens.append(Token(TT_FORSEN, string, line))

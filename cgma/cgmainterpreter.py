@@ -60,9 +60,6 @@ class Interpreter:
         scope = self.scopes[-1]
         current_func = self.current_func_name
     
-        for i, scopes in enumerate(reversed(scope)):
-            if name in scopes:
-                raise SemanticError(f"Variable '{name}' already declared in this scope.", "")
 
         if name not in self.scopes[-1]:
             scope[name] = {
@@ -201,7 +198,10 @@ class Interpreter:
                 self.eval_variable_declaration(child)
         elif node.node_type == "AssignmentList":
             for child in node.children:
-                self.eval_assignment(child)
+                if isinstance(child, AssignmentNode):
+                    self.eval_assignment(child)
+                elif isinstance(child, UnaryOpNode):
+                    self.eval_unaryop(child)
         else:
             raise Exception(f"Unknown AST node type: {node.node_type}")
 
@@ -732,11 +732,11 @@ class Interpreter:
                 self.eval_block(node.children[3])
 
                 if self.continue_flag:
-                    self.continue_flag = False
+                    self.continue_flag = False  
 
                 if self.break_triggered():
                     break
-
+                
                 for update_expr in node.children[2].children:
                     self.interpret(update_expr)
 

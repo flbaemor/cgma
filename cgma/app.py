@@ -48,7 +48,6 @@ def parse():
 
     parser = LL1Parser(cfg, predict_sets, first_sets)
     success, parse_errors = parser.parse(tokens)
-    parse_errors = [e.replace('neg', '-') for e in parse_errors]
     if not success:
         return jsonify({'success': False, 'errors': parse_errors})
     return jsonify({'success': True, 'errors': []})
