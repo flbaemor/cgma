@@ -141,8 +141,8 @@ class Interpreter:
             return self.eval_assignment(node)
         elif isinstance(node, BinaryOpNode):
             value = self.eval_binary_op(node)
-            #if value > 10000000000 or value < -9999999999:
-                #raise InterpreterError(f"Runtime Error: Evaluated number exceeds maximum number of 10 digits", node.line)
+            #if value > 10000000000000000 or value < -9999999999999999:
+                #raise InterpreterError(f"Runtime Error: Evaluated number exceeds maximum number of 16 digits", node.line)
             return value
         elif isinstance(node, FunctionDeclarationNode):
             return self.eval_function_declaration(node)
@@ -937,8 +937,8 @@ class Interpreter:
 
         if var_type == "chungus":
             try:
-                if len(input_value.strip('-').lstrip('0')) > 10:
-                    raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 10 digits", node.line)
+                if len(input_value.strip('-').lstrip('0')) > 16:
+                    raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 16 digits", node.line)
                 input_value = int(float(input_value))
             except ValueError:
                 raise InterpreterError(f"Runtime Error: Expected integer value, got '{input_value}'", node.line)
@@ -947,14 +947,14 @@ class Interpreter:
             try:
                 if '.' in input_value:
                     integer_part, decimal_part = str(input_value).split('.')
-                    if len(integer_part.strip('-').lstrip('0')) > 10:
-                        raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 10 digits", node.line)
+                    if len(integer_part.strip('-').lstrip('0')) > 16:
+                        raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 16 digits", node.line)
                     if len(decimal_part.rstrip('0')) > 5:
                         raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 5 decimal numbers", node.line)
                     
                 else:
-                    if len(input_value.strip('-').lstrip('0')) > 10:
-                        raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 10 digits", node.line)
+                    if len(input_value.strip('-').lstrip('0')) > 16:
+                        raise InterpreterError(f"Runtime Error: Input value exceeds maximum number of 16 digits", node.line)
                 
                 input_value = float(input_value)
                 
