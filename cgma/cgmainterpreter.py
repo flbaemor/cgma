@@ -475,7 +475,6 @@ class Interpreter:
         index_node = node.children[1]
 
         list_entry = self.lookup_variable(list_name)
-        
         list_value = list_entry["value"]
 
         index = self.interpret(index_node.children[0])
@@ -583,35 +582,70 @@ class Interpreter:
         #print(f"Removed value {removed} from list '{list_name}': {list_info['value']}")
 
     def eval_unaryop(self, node):
-        operand_node = node.children[0]
-        operand_name = operand_node.value
-        var_info = self.lookup_variable(operand_name)
+        if not isinstance(node.children[0], ListAccessNode):
+            operand_node = node.children[0]
+            operand_name = operand_node.value
+            var_info = self.lookup_variable(operand_name)
 
-        if node.value == "++":
-            if isinstance(var_info, str):
-                raise InterpreterError(var_info, node.line)
-            if node.position == "pre":
-                var_info["value"] += 1
-                return var_info["value"]
-            else:  # post
-                original = var_info["value"]
-                var_info["value"] += 1
-                return original
+            if node.value == "++":
+                if isinstance(var_info, str):
+                    raise InterpreterError(var_info, node.line)
+                if node.position == "pre":
+                    var_info["value"] += 1
+                    return var_info["value"]
+                else:  # post
+                    original = var_info["value"]
+                    var_info["value"] += 1
+                    return original
 
-        elif node.value == "--":
-            if isinstance(var_info, str):
-                raise InterpreterError(var_info, node.line)
-            if node.position == "pre":
-                var_info["value"] -= 1
-                return var_info["value"]
-            else:  # post
-                original = var_info["value"]
-                var_info["value"] -= 1
-                return original
+            elif node.value == "--":
+                if isinstance(var_info, str):
+                    raise InterpreterError(var_info, node.line)
+                if node.position == "pre":
+                    var_info["value"] -= 1
+                    return var_info["value"]
+                else:  # post
+                    original = var_info["value"]
+                    var_info["value"] -= 1
+                    return original
+            
+            elif node.value == "-":
+                value = self.interpret(operand_node)
+                return -value
+            
+        else:
+            operand_node = node.children[0]
+            list_name = operand_node.children[0].value
+            index_node = operand_node.children[1]
+            index = self.interpret(index_node.children[0])
+
+            list_entry = self.lookup_variable(list_name)
+            if isinstance(list_entry, str):
+                raise InterpreterError(list_entry, node.line)
+
+            list_value = list_entry["value"]
+
+            if not isinstance(index, int):
+                raise InterpreterError(f"Runtime Error: List index must be an integer. Got '{index}'", node.line)
+
+            if not isinstance(list_value, list):
+                raise InterpreterError(f"Runtime Error: Variable '{list_name}' is not a list.", node.line)
+
+            if index < 0 or index >= len(list_value):
+                raise InterpreterError(f"Runtime Error: Index '{index}' out of bounds for list '{list_name}'.", node.line)
+
+            if node.value == "++":
+                original = list_value[index]
+                list_value[index] += 1
+                return original if node.position == "post" else list_value[index]
+
+            elif node.value == "--":
+                original = list_value[index]
+                list_value[index] -= 1
+                return original if node.position == "post" else list_value[index]
+
         
-        elif node.value == "-":
-            value = self.interpret(operand_node)
-            return -value
+            
 
         raise InterpreterError(f"Unknown unary operator {node.value}", node.line)
     

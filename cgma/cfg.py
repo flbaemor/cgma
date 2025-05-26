@@ -105,7 +105,6 @@ cfg = {
     "<variable_declaration>": [["<data_id>", "<var_init>"]],
     "<constant_vardec>": [["sturdy", "<variable_declaration>"]],
     "<data_id>": [["<data_type>", "identifier"]],
-    "<id>": [["identifier", "<index>"]],
     "<index>": [["ε"],
         ["[", "<expression>", "]"]],
     "<data_type>": [["chungus"],
@@ -225,13 +224,18 @@ cfg = {
         ["<expr_op>", "<expr_head>", "<expr_tail>"]],
     "<expr_op>": [["&&"],
         ["||"]],
-    "<id_stmt>": [["<id>", "<id_stmt_tail>"]],
-    "<id_stmt_tail>": [["=", "<list_value>", "<id_update_more>"],
-        ["<post_operator>", "<id_update_more>"],
+    "<id_stmt>": [["identifier", "<id_stmt_tail>"]],
+    "<id_stmt_tail>": [
+        ["<index>","<id_stmt_tail1>"],
         ["(", "<func_call_arg>", ")"]],
-    "<id_update>": [["<id>", "<id_update_tail>"]],
-    "<id_update_tail>": [["=", "<list_value>", "<id_update_more>"],
-        ["<post_operator>", "<id_update_more>"]],
+    "<id_stmt_tail1>": [
+        ["=", "<list_value>", "<id_stmt_more>"],
+        ["<post_operator>", "<id_stmt_more>"]],
+    "<id_stmt_more>": [
+        ["ε"],
+        [",", "identifier", "<index>", "<id_stmt_tail>"]],   
+    "<id_update>": [
+        ["identifier", "<index>","<post_operator>", "<id_update_more>"]],
     "<id_update_more>": [["ε"],
         [",", "<id_update>"]],
     "<literal>": [["chungus_lit"],

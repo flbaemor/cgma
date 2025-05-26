@@ -648,10 +648,18 @@ def parse_statement(tokens, index, func_type = None):
                             value_node, index = parse_expression(tokens, index)
                             assign_node = AssignmentNode(list_access_node, value_node, line=tokens[index].line)
                             assignments_node.add_child(assign_node)
-                        else:
-                            raise SyntaxError("Expected '=' after list access", tokens[index + 1].line)
 
+                        elif tokens[index + 1].type in {"++", "--"}:
+                            
+                            if var_type not in {"chungus", "chudeluxe"}:
+                                raise SemanticError(f"Semantic Error: Cannot use '{var_name}' of type {var_type} in expression.", line)
+                            operator = tokens[index + 1].value
+                            unary_node = UnaryOpNode(operator, list_access_node, "post", line=line)
+                            index += 2
 
+                            assignments_node.add_child(unary_node)
+                            
+                        
                 elif tokens[index + 1].type == "=":
                     var_name = token.value
                     error = symbol_table.lookup_variable(var_name)
