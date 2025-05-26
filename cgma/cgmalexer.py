@@ -1358,7 +1358,7 @@ class Lexer:
 
                 elif self.current_char is not None and self.current_char in NUM:
                     fractional_part = ""
-                    while self.current_char in NUM:
+                    while self.current_char is not None and self.current_char in NUM :
                         if len(fractional_part + self.current_char) > 5:
                             errors.append(LexicalError(pos, f"'{ident_str}' exceeds maximum number of decimal places"))
                             break
@@ -1368,8 +1368,15 @@ class Lexer:
 
                         
                     ident_str = f"0.{fractional_part}"
-                    tokens.append(Token(TT_CHUDELUXE, ident_str, line))
-                    continue
+                    
+                    if self.current_char is None or self.current_char in lit_dlm:
+                        tokens.append(Token(TT_CHUDELUXE, ident_str, line))
+                        continue
+                    else:
+                        errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
+                        continue
+                    
+
                 else:
                     errors.append(LexicalError(pos, f"Invalid delimiter '{self.current_char}' after '{ident_str}'"))
                     self.advance()
@@ -1395,9 +1402,9 @@ class Lexer:
 
                 while self.current_char is not None and self.current_char in NUM + ".":
                     if self.current_char == ".":
-                        digitCount = 10
                         if dot_count == 1:
                             break
+                        digitCount = 10
                         dot_count += 1
 
                     digitCount += 1
