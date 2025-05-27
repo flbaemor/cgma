@@ -1529,7 +1529,7 @@ class Lexer:
                 char = self.current_char
                 self.advance()
                 errors.append(LexicalError(pos, f"Invalid character '" + char + "'"))
-                self.advance()
+                
                 continue
                 
         if self.current_char is None:

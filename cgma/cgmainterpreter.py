@@ -332,20 +332,94 @@ class Interpreter:
                     raise InterpreterError("Runtime Error: Division by zero is undefined", node.line)
                 return left % right
             elif operator == '==':
+                if isinstance(left, str):
+                    print(left)
+                    left = 0 if left == "" else 1
+                    print(left)
+                if isinstance(right, str):
+                    right = 0 if right == "" else 1
                 return left == right
             elif operator == '!=':
+                if isinstance(left, str):
+                    print(left)
+                    left = 0 if left == "" else 1
+                    print(left)
+                if isinstance(right, str):
+                    right = 0 if right == "" else 1
                 return left != right
             elif operator == '<':
+                if isinstance(left, str):
+                    print(left)
+                    left = 0 if left == "" else 1
+                    print(left)
+                if isinstance(right, str):
+                    right = 0 if right == "" else 1
                 return left < right
             elif operator == '<=':
+                if isinstance(left, str):
+                    print(left)
+                    left = 0 if left == "" else 1
+                    print(left)
+                if isinstance(right, str):
+                    right = 0 if right == "" else 1
                 return left <= right
             elif operator == '>':
+                if isinstance(left, str):
+                    print(left)
+                    left = 0 if left == "" else 1
+                    print(left)
+                if isinstance(right, str):
+                    right = 0 if right == "" else 1
                 return left > right
+            
             elif operator == '>=':
+                if isinstance(left, str):
+                    print(left)
+                    left = 0 if left == "" else 1
+                    print(left)
+                if isinstance(right, str):
+                    right = 0 if right == "" else 1
                 return left >= right
             elif operator == '&&':
+                
+                if isinstance(left, int) or isinstance(left, float):
+                    if left == 0:
+                        left = False
+                    else:
+                        left = True
+                elif isinstance(right, int) or isinstance(right, float):
+                    if right == 0:
+                        right = False
+                    else:
+                        right = True
+                elif isinstance(left, str):
+                    left = False if left == "" else True
+                elif isinstance(right, str):
+                    right = False if right == "" else True
+
+                elif isinstance(left, str) or isinstance(right, str):
+                    left = bool(left)
+                elif isinstance(left, str) or isinstance(right, str):
+                    right = bool(right)
+
                 return bool(left) and bool(right)
             elif operator == '||':
+                if isinstance(left, int) or isinstance(left, float):
+                    if left == 0:
+                        left = False
+                    else:
+                        left = True
+                elif isinstance(right, int) or isinstance(right, float):
+                    if right == 0:
+                        right = False
+                    else:
+                        right = True
+
+                elif isinstance(left, str) or isinstance(right, str):
+                    left = bool(left)
+                elif isinstance(left, str) or isinstance(right, str):
+                    right = bool(right)
+
                 return bool(left) or bool(right)
             elif operator == '!':
                 return not bool(left)

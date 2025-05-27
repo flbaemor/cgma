@@ -1259,16 +1259,14 @@ def parse_expression_lwk(tokens, index):
     line = tokens[index].line
     left_node, index, left_type = parse_equality(tokens, index)
 
-    if left_type in {"chungus", "chudeluxe", "forsen", "forsencd"} and tokens[index].type not in {"==", "!=", "<", "<=", ">", ">="}:
-        raise SemanticError(f"Semantic Error : Expected valid boolean expression.", line)
+    
 
     while tokens[index].type in {"&&", "||"}:
         operator = tokens[index].value
         index += 1
         right_node, index, right_type = parse_equality(tokens, index)
         
-        if left_type != "lwk" or right_type != "lwk":
-            raise SemanticError(f"Semantic Error : Logical operators only apply to 'lwk' type operands.", line)
+        
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
         left_type = "lwk"
@@ -1286,10 +1284,7 @@ def parse_equality(tokens, index):
         index += 1
         right_node, index, right_type = parse_relational(tokens, index)
         
-        if {left_type, right_type} <= {"chungus", "chudeluxe"}:
-            pass
-        elif left_type != right_type:
-            raise SemanticError(f"Semantic Error: Cannot compare '{left_type}' with '{right_type}'.", line)
+        
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
 
@@ -1315,15 +1310,13 @@ def parse_relational(tokens, index):
     left_node, index, left_type = parse_operand(tokens, index)
 
     if tokens[index].type in {"<", "<=", ">", ">="}:
-        if left_type not in {"chungus", "chudeluxe"}:
-            raise SemanticError(f"Semantic Error: Invalid use of '{tokens[index].type}' in expression.", line)
+        
         
         operator = tokens[index].type
         index += 1
         right_node, index, right_type = parse_operand(tokens, index)
 
-        if right_type not in {"chungus", "chudeluxe"}:
-            raise SemanticError(f"Semantic Error: Invalid use of '{tokens[index].type}' in expression.", line)
+        
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
 

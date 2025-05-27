@@ -241,7 +241,7 @@
                   return true;
                 } else {
                   data.errors.forEach(err => {
-                  term.write(`${err}\r\n`);
+                  term.write(`${err.replace(/- /g, "-")}\r\n`);
                   });
                 }
             
