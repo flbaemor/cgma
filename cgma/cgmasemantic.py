@@ -1260,7 +1260,6 @@ def parse_expression_lwk(tokens, index):
     left_node, index, left_type = parse_equality(tokens, index)
 
     
-
     while tokens[index].type in {"&&", "||"}:
         operator = tokens[index].value
         index += 1
@@ -1283,7 +1282,6 @@ def parse_equality(tokens, index):
         operator = tokens[index].type
         index += 1
         right_node, index, right_type = parse_relational(tokens, index)
-        
         
 
         left_node = BinaryOpNode(left_node, operator, right_node, line=line)
@@ -1385,13 +1383,10 @@ def parse_operand(tokens, index):
         return expr_node, index, infer_literal_type(token.type)
 
     # Forsencd (String concatenation or manipulation)
-    if token.type == "forsencd_lit":
+    if token.type in {"forsencd_lit", "forsen_lit"}:
         expr_node, index = parse_expression_forsencd(tokens, index)
         return expr_node, index, infer_literal_type(token.type)
 
-    # Forsen (String literal)
-    if token.type == "forsen_lit":
-        return ASTNode("Value", token.value, line=line), index + 1, "forsen"
 
     # Lwk (Boolean literal)
     if token.type == "lwk_lit":

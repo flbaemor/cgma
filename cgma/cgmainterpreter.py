@@ -332,20 +332,8 @@ class Interpreter:
                     raise InterpreterError("Runtime Error: Division by zero is undefined", node.line)
                 return left % right
             elif operator == '==':
-                if isinstance(left, str):
-                    print(left)
-                    left = 0 if left == "" else 1
-                    print(left)
-                if isinstance(right, str):
-                    right = 0 if right == "" else 1
                 return left == right
             elif operator == '!=':
-                if isinstance(left, str):
-                    print(left)
-                    left = 0 if left == "" else 1
-                    print(left)
-                if isinstance(right, str):
-                    right = 0 if right == "" else 1
                 return left != right
             elif operator == '<':
                 if isinstance(left, str):
@@ -381,7 +369,6 @@ class Interpreter:
                     right = 0 if right == "" else 1
                 return left >= right
             elif operator == '&&':
-                
                 if isinstance(left, int) or isinstance(left, float):
                     if left == 0:
                         left = False
