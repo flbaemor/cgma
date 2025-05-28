@@ -765,9 +765,6 @@ def parse_statement(tokens, index, func_type = None):
         index += 1
         return node, index
 
-    elif token.value in {"<", ">", "<=", ">=", "==", "!=", "&&", "||"}:
-        raise SemanticError(f"Semantic Error: Expected valid arithmetic expression.", line)
-
     else:
         raise SemanticError(f"Syntax Error: Unexpected token '{token.value}' in statement.", line)
 
@@ -880,13 +877,13 @@ def parse_list_assignment(tokens, index):
 def parse_expression_type(tokens, index, var_type):
     line = tokens[index].line
     if var_type in {"chungus", "chudeluxe"}:
-        return parse_expression(tokens, index)
+        return parse_expression_lwk(tokens, index)
 
     elif var_type == "forsencd":
-        return parse_expression_forsencd(tokens, index)
+        return parse_expression_lwk(tokens, index)
 
     elif var_type == "forsen":
-        return parse_expression_forsen(tokens, index)
+        return parse_expression_lwk(tokens, index)
     
     elif var_type == "lwk":
         return parse_expression_lwk(tokens, index)
@@ -1007,13 +1004,10 @@ def parse_expression_forsencd(tokens, index):
 
     left_node = node
 
-    if tokens[index].type == "+":
-        while tokens[index].type == "+":
+    if tokens[index].type in {"+", "-", "*", "/", "%", "<", ">", "<=", ">=", "==", "!="}:
+        while tokens[index].type in {"+", "-", "*", "/", "%"}:
             op = tokens[index].value  
             index += 1 
-
-            if tokens[index].type not in {"forsencd_lit", "identifier", "forsen_lit"}:
-                raise SemanticError(f"Semantic Error: Expected valid forsencd value.", line)
 
             if tokens[index].type == "identifier" and tokens[index + 1].type == "(":
                 func_name = tokens[index].value
@@ -1070,7 +1064,7 @@ def parse_expression_forsencd(tokens, index):
                 right_node = ASTNode("Value", var_name, line=line)
                 index += 1 
 
-            elif tokens[index].type in {"forsencd_lit", "forsen_lit"}:
+            else:
                 right_node = ASTNode("Value", tokens[index].value, line=line)
                 index += 1  
 
@@ -1161,7 +1155,7 @@ def parse_factor(tokens, index):
         index += 1  
         return node, index  
     
-    if token.type in {"chungus_lit", "chudeluxe_lit"}:
+    if token.type in {"chungus_lit", "chudeluxe_lit", "forsencd_lit", "forsen_lit", "lwk_lit"}:
         node = ASTNode("Value", token.value)
         index += 1
         return node, index
@@ -1234,9 +1228,6 @@ def parse_factor(tokens, index):
         if isinstance(variable_info, str):
             raise SemanticError(f"Semantic Error: Variable '{token.value}' used before declaration.", token.line)
         
-        if variable_info["type"] not in {"chungus", "chudeluxe"}:
-            error = f"Semantic Error: Cannot use '{token.value}' of type {variable_info['type']} in this expression."
-            raise SemanticError(error, token.line)
         
         node = ASTNode("Value", token.value)
         index += 1  
@@ -1359,7 +1350,11 @@ def parse_operand(tokens, index):
             expr_node, index = parse_expression(tokens, index)
             return expr_node, index, expr_type
         
-        else:
+        elif tokens[index + 1].type in {"identifier"}:
+            var_name = tokens[index +1].value
+            var_type = var_name["type"]
+
+
             is_lwk, index = check_lwk(tokens, index)
             if not is_lwk:
                 expr_node, index = parse_expression(tokens, index)
@@ -1372,8 +1367,8 @@ def parse_operand(tokens, index):
                 expr_type = "lwk"
 
             is_lwk, index = check_lwk(tokens, index)
-        if tokens[index].type != ")":
-            raise SemanticError(f"Syntax Error: Expected ')' to close expression.", line)
+       
+        
         index += 1
         return expr_node, index, expr_type
 
@@ -1384,7 +1379,7 @@ def parse_operand(tokens, index):
 
     # Forsencd (String concatenation or manipulation)
     if token.type in {"forsencd_lit", "forsen_lit"}:
-        expr_node, index = parse_expression_forsencd(tokens, index)
+        expr_node, index = parse_expression(tokens, index)
         return expr_node, index, infer_literal_type(token.type)
 
 
@@ -1459,8 +1454,9 @@ def parse_operand(tokens, index):
             raise SemanticError(f"Semantic Error: List '{token.value}' must be indexed with '[]' in expressions.", line)
     
         # Dispatch to specific parsers based on type
-        if var_type in {"chungus", "chudeluxe"}:
+        if var_type in {"chungus", "chudeluxe", "lwk"}:
             expr_node, index = parse_expression(tokens, index)
+            
             return expr_node, index, var_type
 
         elif var_type == "forsencd":
@@ -1652,7 +1648,7 @@ def parse_print(tokens, index):
                 args.append(ASTNode("Value", identif_name, line=line))
                 
     elif tokens[index].type in {"chungus_lit", "chudeluxe_lit"}:
-        expr_node, index = parse_expression(tokens, index)
+        expr_node, index = parse_expression_lwk(tokens, index)
         args.append(expr_node)
 
     elif tokens[index].type in {"lwk_lit", "!"}:
@@ -1660,11 +1656,11 @@ def parse_print(tokens, index):
         args.append(expr_node)
 
     elif tokens[index].type in {"forsen_lit"}:
-        expr_node, index = parse_expression_forsen(tokens, index)
+        expr_node, index = parse_expression_lwk(tokens, index)
         args.append(expr_node)
 
     elif tokens[index].type in {"("}:
-        expr_node, index = parse_expression(tokens, index)
+        expr_node, index = parse_expression_lwk(tokens, index)
         args.append(expr_node)
 
     elif tokens[index].type in {"++", "--", "-"}:
@@ -1679,7 +1675,7 @@ def parse_print(tokens, index):
         index += 1
         
         if tokens[index].type in {"chungus_lit", "chudeluxe_lit", "-"}:
-            arg_node, index = parse_expression(tokens, index)
+            arg_node, index = parse_expression_lwk(tokens, index)
             actual_args.append(arg_node)
 
 
@@ -1698,7 +1694,7 @@ def parse_print(tokens, index):
                 raise SemanticError(f"Semantic Error: '{list_name}' is not a list.", tokens[index].line)
 
             index += 2
-            expr_node, index = parse_expression(tokens, index)
+            expr_node, index = parse_expression_lwk(tokens, index)
 
             if tokens[index].type != "]":
                 raise SemanticError("Syntax Error: Missing closing bracket.", tokens[index].line)
@@ -1749,7 +1745,7 @@ def parse_print(tokens, index):
                     raise SemanticError(f"Semantic Error: List '{arg_name}' must be indexed with '[]' in expressions.", line)
                 
             if arg_info["type"] in {"chungus", "chudeluxe"}:
-                arg_node, index = parse_expression(tokens, index)
+                arg_node, index = parse_expression_lwk(tokens, index)
                 actual_args.append(arg_node)
                 
             else:
@@ -1757,7 +1753,7 @@ def parse_print(tokens, index):
                 index += 1
             
         elif tokens[index].type in {"("}:
-            arg_node, index = parse_expression(tokens, index)
+            arg_node, index = parse_expression_lwk(tokens, index)
             actual_args.append(arg_node)
 
         else:

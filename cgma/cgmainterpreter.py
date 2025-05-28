@@ -239,7 +239,28 @@ class Interpreter:
                     is_list = True
                 if var_type == "chungus" and isinstance(value, float):
                     value = int(value)
+
+                if var_type in {"chudeluxe", "chungus"}:
+                    if not isinstance(value, str) or not isinstance(value,bool):
+                        raise InterpreterError(f"Runtime Error: Type Mismatch! Invalid value for {var_name}", node.line)
+
+                    if var_type == "chudeluxe" and isinstance(value, int):
+                        value = float(value)
                 
+                if var_type == "forsencd":
+                    if not isinstance(value, str):
+                        raise InterpreterError(f"Runtime Error: Type Mismatch! Invalid value for {var_name}", node.line)
+
+                if var_type == "forsen":
+                    if not isinstance(value, str):
+                        raise InterpreterError(f"Runtime Error: Type Mismatch! Invalid value for {var_name}", node.line)
+
+                if var_type == "lwk":
+                    if isinstance(value, int) or isinstance(value, float):
+                        if value == 0:
+                            value = False
+                        else:
+                            value = True
                     
         #print(f"\nDeclaring variable '{var_name}' of type '{var_type}' with initial value: {value}")
         self.declare_variable(var_name, var_type, value, is_list=is_list)
@@ -300,6 +321,9 @@ class Interpreter:
             if var_type == "chudeluxe" and isinstance(value, int):
                 value = float(value)
 
+            if var_type == "lwk" and isinstance(value, int):
+                value = True if value != 0 else False
+
             self.set_variable(var_name, value)
             #print(f"\nUpdating variable '{var_name}' of type '{var_type}' with value: {value}")
 
@@ -320,14 +344,51 @@ class Interpreter:
             if operator == '+':
                 return left + right
             elif operator == '-':
+                if not isinstance(left, float or int) and not isinstance(right, float or int):
+                    if isinstance(left, bool):
+                        left = 1 if left == True else 0
+                    elif isinstance(left, str):
+                        left = 1 if left != "" else 0
+                    if isinstance(right, bool):
+                        left = 1 if left != "" else 0
+                    elif isinstance(right, str):
+                        right = 1 if right != "" else 0
+                    
                 return left - right
             elif operator == '*':
+                if not isinstance(left, float or int) and not isinstance(right, float or int):
+                    if isinstance(left, bool):
+                        left = 1 if left == True else 0
+                    elif isinstance(left, str):
+                        left = 1 if left != "" else 0
+                    if isinstance(right, bool):
+                        left = 1 if left != "" else 0
+                    elif isinstance(right, str):
+                        right = 1 if right != "" else 0
                 return left * right
             elif operator == '/':
+                if not isinstance(left, float or int) and not isinstance(right, float or int):
+                    if isinstance(left, bool):
+                        left = 1 if left == True else 0
+                    elif isinstance(left, str):
+                        left = 1 if left != "" else 0
+                    if isinstance(right, bool):
+                        left = 1 if left != "" else 0
+                    elif isinstance(right, str):
+                        right = 1 if right != "" else 0
                 if right == 0:
                     raise InterpreterError("Runtime Error: Division by zero is undefined", node.line)
                 return left / right
             elif operator == '%':
+                if not isinstance(left, float or int) and not isinstance(right, float or int):
+                    if isinstance(left, bool):
+                        left = 1 if left == True else 0
+                    elif isinstance(left, str):
+                        left = 1 if left != "" else 0
+                    if isinstance(right, bool):
+                        left = 1 if left != "" else 0
+                    elif isinstance(right, str):
+                        right = 1 if right != "" else 0
                 if right == 0:
                     raise InterpreterError("Runtime Error: Division by zero is undefined", node.line)
                 return left % right
@@ -749,8 +810,7 @@ class Interpreter:
         condition_result = self.interpret(node.children[0].children[0])
         self.enter_scope()
 
-        if not isinstance(condition_result, bool):
-            raise InterpreterError(f"Runtime Error: Condition must be a boolean. Got '{condition_result}'", node.line)
+
         
         try:
             if condition_result:
