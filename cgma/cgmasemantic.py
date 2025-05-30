@@ -1385,7 +1385,8 @@ def parse_operand(tokens, index):
 
     # Lwk (Boolean literal)
     if token.type == "lwk_lit":
-        return ASTNode("Value", token.value, line=line), index + 1, "lwk"
+        expr_node, index = parse_expression(tokens, index)
+        return expr_node, index, infer_literal_type(token.type)
 
     if token.type == "identifier" and tokens[index + 1].type == "(":
         func_name = tokens[index].value

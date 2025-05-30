@@ -141,8 +141,9 @@ class Interpreter:
             return self.eval_assignment(node)
         elif isinstance(node, BinaryOpNode):
             value = self.eval_binary_op(node)
-            #if value > 10000000000000000 or value < -9999999999999999:
-                #raise InterpreterError(f"Runtime Error: Evaluated number exceeds maximum number of 16 digits", node.line)
+            if isinstance(value, int or float):
+                if value > 1000000000000000 or value < -9999999999999999:
+                    raise InterpreterError(f"Runtime Error: Evaluated number exceeds maximum number of 16 digits", node.line)
             return value
         elif isinstance(node, FunctionDeclarationNode):
             return self.eval_function_declaration(node)
@@ -241,19 +242,23 @@ class Interpreter:
                     value = int(value)
 
                 if var_type in {"chudeluxe", "chungus"}:
-                    if not isinstance(value, str) or not isinstance(value,bool):
-                        raise InterpreterError(f"Runtime Error: Type Mismatch! Invalid value for {var_name}", node.line)
+                    if not isinstance(value, int or float):
+                        raise InterpreterError(f"Semantic Error: Type Mismatch! Invalid value for {var_name}", node.line)
+                    
+                    if isinstance(value, bool):
+                        raise InterpreterError(f"Semantic Error: Type Mismatch! Invalid value for {var_name}", node.line)
+
 
                     if var_type == "chudeluxe" and isinstance(value, int):
                         value = float(value)
                 
                 if var_type == "forsencd":
                     if not isinstance(value, str):
-                        raise InterpreterError(f"Runtime Error: Type Mismatch! Invalid value for {var_name}", node.line)
+                        raise InterpreterError(f"Semantic Error: Type Mismatch! Invalid value for {var_name}", node.line)
 
                 if var_type == "forsen":
                     if not isinstance(value, str):
-                        raise InterpreterError(f"Runtime Error: Type Mismatch! Invalid value for {var_name}", node.line)
+                        raise InterpreterError(f"Semantic Error: Type Mismatch! Invalid value for {var_name}", node.line)
 
                 if var_type == "lwk":
                     if isinstance(value, int) or isinstance(value, float):
@@ -342,7 +347,17 @@ class Interpreter:
 
         try:
             if operator == '+':
+                if not isinstance(left, float or int) and not isinstance(right, float or int):
+                    if isinstance(left, bool):
+                        left = 1 if left == True else 0
+                    elif isinstance(left, str):
+                        left = 1 if left != "" else 0
+                    if isinstance(right, bool):
+                        left = 1 if left != "" else 0
+                    elif isinstance(right, str):
+                        right = 1 if right != "" else 0
                 return left + right
+            
             elif operator == '-':
                 if not isinstance(left, float or int) and not isinstance(right, float or int):
                     if isinstance(left, bool):
